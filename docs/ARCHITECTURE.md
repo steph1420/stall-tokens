@@ -67,6 +67,13 @@ The op log does not know how ops travel. The sync engine (`data/sync/engine.ts`)
 - Bluetooth printer: `data/adapters/btPrinter.ts` (Web Bluetooth, writable characteristic on common ESC/POS services, 100-byte chunks); bytes from the pure `store/rules/escpos.ts` (F-41).
 - Shared settings via `setting.set`: `tipChips`, `roundOffSteps` (F-45), `splitMode`, `splitExact:<personId>` (F-47).
 
+### 4.6 Sheet v2: editable info tabs (F-48, D-SHEET-V2, D-SHEET-WINS, Steve 16 Nov 20:10–20:12 IST)
+- Sheet hand edits are ops. `apps-script/Code.gs` (CFG block, `VERSION` 2.0.0, schema 2) has a simple `onEdit` trigger that turns an edited info-tab row into ops from writer `sheet` (`item.set`, `person.set`, `payee.set`, `setting.set`, or the new `record.set {table, id, fields, removed}` for business / event / event_day / source / source_item / station / person_info / item_info). Their `vv` = the bridge's version vector (Script Property) and `lamport` = its highest + 1, so they come after everything synced.
+- Info tabs are views. After every push or edit, `rebuild_` folds the whole `ops` log with `foldState_` (it mirrors `store/fold`; `sheetSchema.test.ts` checks both give the same state) and rewrites the 12 visible tabs by id. Log tabs stay append-only and hidden.
+- Conflicts. `store/fold/lww.ts` returns `{state, conflict, apply}`. A true clash (vv-concurrent) normally goes to the later sort order; if the earlier write came from `sheet` the Sheet keeps it (D-SHEET-WINS). Every clash is a `Conflict {rule}` in state and a row in the hidden `conflicts` tab. Settings > Sync > Review (`ui/stall/ReviewSheet.tsx`, `store/conflicts.ts`) flips one with a new op.
+- Transport. Ops carry `recvAt` (set by the bridge on pull; tiebreak and display only). `push` returns `{stored, resend}`; a seq gap per writer (`gaps_`) makes the bridge ask for the missing ops, and the engine re-queues them from the local log. Ops with an older contract `v` are refused with "update the app".
+- Units: logs keep paise; info tabs show rupees (`*_inr`) for hand editing (D-INFO-INR).
+
 ## 5. Interaction owners
 | Screen | Interaction owner | Gestures (one per direction) |
 | --- | --- | --- |

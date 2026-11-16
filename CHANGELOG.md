@@ -2,6 +2,11 @@
 All notable changes to Stall Tokens. SemVer. Times IST.
 
 ## [Unreleased] — 2.0.0 (branch `feat/v2.0.0`)
+### Added (16 Nov 21:30, Sheet v2 info tabs + Q-HARM-10 audit, F-48, Steve 20:10–20:12)
+- Sheet schema v2 (add-only migration): 12 visible, editable info tabs (business, events, event_days, partners, associates, sources, source_items, menu, stock_current, stations, payees, settings) with stable ids, frozen header (the only protected row), checkboxes, dropdowns and dates; every log tab, `_schema` and the new `records_log` / `conflicts` are hidden and kept intact.
+- Two-way: Sheet hand edits become ops from writer `sheet` (`onEdit`); info tabs are rewritten from the full op log after every push. New op `record.set` for business / event / day / source / station / extra details.
+- Q-HARM-10: ops gain `recvAt`; gaps make the bridge ask for a resend; clashes are recorded (Sheet wins on a true clash) in a hidden `conflicts` tab and under Settings > Sync > Review, one tap to switch; old-contract pushes get "update the app". Code.gs gains a CFG block and `VERSION` 2.0.0. 9 tests (clock skew ±1 day, offline concurrency, duplicates, gaps, old app, bridge fold = app fold).
+
 ### Added (16 Nov 20:55, settle-up extras, F-47, Q-SETTLE-EXTRAS C)
 - Partners: split type Share % / Exact ₹ (shared settings `splitMode`, `splitExact:<personId>`); exact amounts must add up before Split and lock.
 - Settle up: Fewest transfers (simplify debts, greedy, at most n − 1 moves, the stall cash as one party) and Share receipt (plain text through the phone's share sheet, else copied).

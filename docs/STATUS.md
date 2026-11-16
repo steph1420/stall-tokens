@@ -3,6 +3,11 @@
 Stopped early on Steve's request (quota). Nothing deployed; main untouched.
 
 
+## Sheet v2 + Q-HARM-10 audit (2026-11-16 20:10 IST onwards, Pos; Steve 20:10 / 20:11 / 20:12)
+- Sheet schema v2 (F-48, D-SHEET-V2): 12 visible editable info tabs (business, events, event_days, partners, associates, sources, source_items, menu, stock_current, stations, payees, settings), header row the only protected part; all log tabs + `_schema` + new `records_log` / `conflicts` hidden. Applied to the live Sheet through the Sheets connector; Code.gs `ensureSchema_` repeats it idempotently. Code.gs 2.0.0 on the raw link (b3fe37d). Web app still not deployed (Steve).
+- Two-way: Sheet edits become `sheet` ops (`onEdit`); info tabs rebuilt from the full log after each push (D-SHEET-WINS on a true clash, every clash in `conflicts` and Settings > Sync > Review). Tests: `src/store/fold/harm10.test.ts` (5), `src/data/sheetSchema.test.ts` (4). Shots: `s66-settings-sync-review`, `s67-review-clashes`.
+- Q-HARM-10 audit fixes: recvAt, gap resend, conflicts tab + Review, sheet writer, `vv_json`, old-contract refusal, CFG + VERSION, info tabs as views. Limits: full rebuild on every push (cost grows with the log, Q-SHEET-COMPACT); simple `onEdit` misses script / API edits (Q-SHEET-DIFF).
+
 ## Build pass 3 (2026-11-16 19:35 IST onwards, Pos; Steve 19:31 / 19:33)
 - Sheet (Q-SHEET-DEPLOY): "Stall Tokens — Data (v2)" in Steve's Drive (link not kept in the repo); Code.gs schema v1. Web app deploy waits for Steve (docs/SHEET_SETUP.md).
 - Sign-in links (F-44): Developer > Sign-in links; passcode off by default (code kept). Test: `src/data/join.test.ts` (2). Shots: `s80-signin-links`, `s81-link-opened-station`.
