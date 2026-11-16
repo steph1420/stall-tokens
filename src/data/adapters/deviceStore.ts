@@ -29,7 +29,11 @@ export function createDeviceStore(storage: Storage | null, makeId: () => string)
     read() {
       if (memory) return memory;
       let raw: unknown;
-      try { raw = JSON.parse(storage?.getItem(PREFS_KEY) ?? 'null'); } catch { raw = null; /* corrupt prefs: start from defaults */ }
+      try { raw = JSON.parse(storage?.getItem(PREFS_KEY) ?? 'null'); } catch (e) {
+        // Corrupt prefs: start from defaults rather than block the counter.
+        console.warn('device prefs unreadable, using defaults', e);
+        raw = null;
+      }
       memory = merge(defaultPrefs(makeId), raw);
       this.write(memory);
       return memory;

@@ -27,7 +27,7 @@ export async function seed(page: Page, o: { theme?: 'night' | 'day'; ops?: Op[];
         tx.onerror = () => { rej(tx.error ?? new Error('tx')); };
       };
     });
-  }, { prefix: PREFIX, ver: CONFIG.storage.dbVersion, theme: o.theme ?? 'night', ops: o.ops ?? demoOps(), serving: o.serving ?? 'Asha' });
+  }, { prefix: PREFIX, ver: CONFIG.storage.dbVersion, theme: o.theme ?? 'night', ops: o.ops ?? demoOps(), serving: o.serving ?? 'Server-A' });
   await page.reload();
 }
 

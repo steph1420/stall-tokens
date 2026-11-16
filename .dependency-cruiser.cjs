@@ -1,4 +1,6 @@
 // Copied from steph1420/agent-common checks/ at commit 88c9672. Do not edit here; change agent-common and copy again.
+// One local change (Pos, 16 Nov audit): not-to-unresolvable skips `virtual:pwa-register`, a Vite PWA build-time module
+// that dependency-cruiser cannot resolve on disk. To be offered upstream to agent-common checks/ (see docs/STATUS.md).
 // agent-common/checks: shared dependency-cruiser rules (06 rules 1, 2, 4, 11; templates/ARCHITECTURE.md §2).
 // Apps copy this to the repo root as .dependency-cruiser.cjs.
 // Layout: src/{config,tokens,contract,data,store,motion,ui,mock}. Flow: ui -> store -> data (adapters).

@@ -11,7 +11,7 @@ for (const theme of ['night', 'day']) {
   p.on('console', (m) => { if (m.type() === 'error' || m.type() === 'warning') console.log('CONSOLE', m.text()); });
   await p.goto(base);
   await p.evaluate(async ({ theme, ops }) => {
-    localStorage.setItem('stall-tokens.v2.device', JSON.stringify({ deviceId: 'shotdevice01', theme, servingName: 'Asha', rangeIndex: 0, haptics: 'off', autoPrep: false, stationLook: 'full' }));
+    localStorage.setItem('stall-tokens.v2.device', JSON.stringify({ deviceId: 'shotdevice01', theme, servingName: 'Server-A', rangeIndex: 0, haptics: 'off', autoPrep: false, stationLook: 'full' }));
     await new Promise((res) => { const r = indexedDB.open('stall-tokens.v2.log', 1); r.onupgradeneeded = () => r.result.createObjectStore('ops', { keyPath: 'opId' });
       r.onsuccess = () => { const tx = r.result.transaction('ops', 'readwrite'); ops.forEach((o) => tx.objectStore('ops').put(o)); tx.oncomplete = () => { r.result.close(); res(); }; }; });
   }, { theme, ops: demoOps() });

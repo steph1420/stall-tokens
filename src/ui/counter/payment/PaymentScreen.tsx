@@ -37,7 +37,7 @@ function Slider({ split, covered, onSlide }: { split: pay.Split; covered: Paise;
       <div className={s.ticks} aria-hidden="true">{Array.from({ length: 19 }, (_, i) => <i key={i} className={i % 5 === 0 || i === 18 ? s.maj : undefined} />)}</div>
       <div className={s.tickLabs} aria-hidden="true">
         <span className={s.t0}>₹0</span>
-        {f > 0.12 && f < 0.88 ? <span className={s.tMid} style={{ left: `${String(f * 100)}%` }}>{`₹${(split.cash / R).toLocaleString('en-IN')}`}</span> : null}
+        {f > CONFIG.payment.sliderLabelEdge && f < 1 - CONFIG.payment.sliderLabelEdge ? <span className={s.tMid} style={{ left: `${String(f * 100)}%` }}>{`₹${(split.cash / R).toLocaleString('en-IN')}`}</span> : null}
         <span className={s.tEnd}>{`₹${(covered / R).toLocaleString('en-IN')}`}</span>
       </div>
     </>
@@ -186,7 +186,7 @@ function WaivedSheetHost({ by, note, onSave }: { by: string; note: string; onSav
         <input id="wby" className={k.input} value={b} maxLength={CONFIG.limits.nameMaxChars} onChange={(e) => { setB(e.target.value); }} /></div>
       <div className={k.field}><label className={k.fieldLab} htmlFor="wnote">Note</label>
         <input id="wnote" className={k.input} value={n} maxLength={CONFIG.limits.noteMaxChars} onChange={(e) => { setN(e.target.value); }} /></div>
-      <button type="button" className={k.cta} style={{ width: '100%' }} onClick={() => { onSave(b.trim(), n.trim()); close(null); }}>Done</button>
+      <button type="button" className={[k.cta, s.ctaFull].join(' ')} onClick={() => { onSave(b.trim(), n.trim()); close(null); }}>Done</button>
     </Sheet>
   );
 }

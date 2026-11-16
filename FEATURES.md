@@ -1,20 +1,20 @@
 # FEATURES.md — Stall Tokens v2
-Every feature has a row before work starts. IDs appear in code (`// F-xx`) and in commits. Source mockups are in agent-common `handovers/pos/assets/stall-mockups-locked/`. Status: `planned`, `building`, `LIVE (<version>)`, `deferred`, `dropped`. Rewrite column: v1 → v2 (Steve OKs every row before go-live; v1 was never used, 16 Nov 15:48 IST).
+Every feature has a row before work starts. IDs appear in code (`// F-xx`) and in commits. Source mockups are in agent-common `handovers/pos/assets/stall-mockups-locked/`. Status: `planned`, `building`, `LIVE (<version>)`, `deferred`, `dropped`. The Test column names only test files that exist (06 rule 12). `npm run check:ids` fails if code cites an ID with no row, or a `building`/`LIVE` row is cited nowhere in `src/`. Rewrite column: v1 → v2 (Steve OKs every row before go-live; v1 was never used, 16 Nov 15:48 IST).
 
 | ID | Feature | Source (mock / turn) | Status | Test | Rewrite (keep / change / drop) |
 | --- | --- | --- | --- | --- | --- |
-| F-01 | Stall theme night + day, Appearance setting | 20-polish/polish.css, Q-DAY-1, ADR-0003 | building | src/tokens/stall.test.ts, e2e theme | change |
+| F-01 | Stall theme night + day, Appearance setting | 20-polish/polish.css, Q-DAY-1, ADR-0003 | building | `npm run contrast` (336 pairs); UI/e2e theme test not written yet | change |
 | F-02 | Op log, fold, version vectors, conflicts | plan §2, Q-HARM-10 | building | src/store/fold/fold.test.ts | change |
-| F-03 | Local data (IndexedDB) + fake transport + tab channel | plan §2, Q-HARM-1 | building | src/data/**/*.test.ts | change |
-| F-04 | Launch screen (Counter, Kitchen, Stations, quiet Stall section) | 21-polish2/launch.html, Q-KITCHEN-1, Q-LAUNCH-1 B, D-NAV | building | src/ui/launch/*.test.tsx, e2e | change |
-| F-05 | Counter header, order strip, Open orders list | 20-polish/*.html header, 21-polish2/orders-list.html | building | src/ui/counter/*.test.tsx, e2e | change |
-| F-06 | Menu grid: tap to add, −/+, item note, fixed price, stock badges, sold out | 20-polish/menu.html, 12-stock/menu-plain.html, Q-POLISH-SET1, Q-STOCK-SET | building | menu tests, e2e | change |
-| F-07 | Add / edit menu item (name, price, colour, category, station, stock) | 20-polish/menu.html Add item tile | building | menu tests | change |
-| F-08 | Menu press-and-hold stock panel (−/+, Mark sold out) | 21-polish2/menu-stock.html, Q-STOCK-SET | building | menu tests, e2e | planned |
-| F-09 | Billing table, line + order notes, qty strip, Delete (hold) | 20-polish/billing.html | building | billing tests, e2e | change |
+| F-03 | Local data (IndexedDB) + fake transport + tab channel | plan §2, Q-HARM-1 | building | src/data/data.test.ts | change |
+| F-04 | Launch screen (Counter, Kitchen, Stations, quiet Stall section) | 21-polish2/launch.html, Q-KITCHEN-1, Q-LAUNCH-1 B, D-NAV | building | none yet (UI tests deferred to the verify run) | change |
+| F-05 | Counter header, order strip, Open orders list | 20-polish/*.html header, 21-polish2/orders-list.html | building | none yet (UI tests deferred to the verify run) | change |
+| F-06 | Menu grid: tap to add, −/+, item note, fixed price, stock badges, sold out | 20-polish/menu.html, 12-stock/menu-plain.html, Q-POLISH-SET1, Q-STOCK-SET | building | src/store/counter.test.ts (store); UI none yet | change |
+| F-07 | Add / edit menu item (name, price, colour, category, station, stock) | 20-polish/menu.html Add item tile | building | src/store/counter.test.ts (store); UI none yet | change |
+| F-08 | Menu press-and-hold stock panel (−/+, Mark sold out) | 21-polish2/menu-stock.html, Q-STOCK-SET | building | src/store/counter.test.ts (store); UI none yet | planned |
+| F-09 | Billing table, line + order notes, qty strip, Delete (hold) | 20-polish/billing.html | building | src/store/counter.test.ts (store); UI none yet | change |
 | F-10 | Discount (₹ or %, allowed by, note) | billing.html, spec order rules | building | src/store/rules/bill.test.ts | change |
 | F-11 | Round-off at billing, both ways | Q-ROUND-1 A | building | bill.test.ts | planned |
-| F-12 | To kitchen (unpaid send) / Pay sends too | Q-POLISH-SET1 wording | building | store + e2e | change |
+| F-12 | To kitchen (unpaid send) / Pay sends too | Q-POLISH-SET1 wording | building | src/store/counter.test.ts (store); UI none yet | change |
 | F-13 | Tokens per day, Counter ranges (1–500, 501+) | D-TOKEN | building | src/store/rules/tokens.test.ts | change |
 | F-14 | Payment: To collect, Cash/UPI split, numpad, slider ₹10 snap, Waived row | 20-polish/payment.html, 03-payment v5 | building | src/store/rules/pay.test.ts, e2e | change |
 | F-15 | Dynamic UPI QR (upi://pay pa pn am tn), named payees | payment.html, Q-UPI-1 A (manual confirm) | building | src/store/rules/upi.test.ts | change |
@@ -44,3 +44,4 @@ Every feature has a row before work starts. IDs appear in code (`// F-xx`) and i
 | F-39 | v1 data import | D-MIGRATE | dropped (Steve 16 Nov 15:48 IST: v1 never used) | | drop |
 | F-40 | Bluetooth / local-peer sync transport | Steve 16 Nov 15:48 IST | deferred (backlog) | | |
 | F-41 | Bluetooth printing | paused by Steve | deferred | | |
+| F-42 | Token slip (about 58 mm wide, printable) | docs/STATUS.md plan, D-TOKEN | planned | | planned |

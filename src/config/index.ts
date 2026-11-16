@@ -23,6 +23,8 @@ export const CONFIG = Object.freeze({
     moreDenominations: [1000, 2000] as const,
     tipChips: [1000, 2000] as const, // ₹10, ₹20 (D-TIP)
     upiNoteMaxChars: 40,
+    // Slider: the moving ₹ label hides near either end so it never overlaps the ₹0 / total labels.
+    sliderLabelEdge: 0.12,
   },
   stations: ['Tortillas', 'Momos', 'Desserts', 'Sandwiches', 'Cutlets', 'Beverages'] as const,
   swatchCount: 8, // item colours are swatch indexes into --dl-stall-swatch-N (tokens)

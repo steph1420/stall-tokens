@@ -18,10 +18,11 @@
     "leak-scan": "node checks/leak-scan.mjs",
     "check:build-output": "node checks/check-build-output.mjs",
     "check:pins": "node checks/check-pins.mjs",
+    "check:ids": "node scripts/check-feature-ids.mjs",
     "tokens": "node src/tokens/scripts/build.mjs",
     "contrast": "node src/tokens/scripts/contrast.mjs",
     "test": "vitest run",
-    "check": "npm run check:pins && npm run leak-scan && npm run check:build-output && npm run typecheck && npm run lint && npm run lint:css && npm run depcruise && npm run contrast && npm run test && npm run build"
+    "check": "npm run check:pins && npm run leak-scan && npm run check:build-output && npm run check:ids && npm run typecheck && npm run lint && npm run lint:css && npm run depcruise && npm run contrast && npm run test && npm run build"
   },
   "dependencies": {
     "framer-motion": "12.43.0",

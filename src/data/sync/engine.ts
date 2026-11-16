@@ -41,6 +41,8 @@ export function createSyncEngine(transports: readonly Transport[], known: (opId:
         } catch (e) {
           l.failures += 1;
           error = `${l.t.name}: ${e instanceof Error ? e.message : String(e)}`;
+          // STYLE_GUIDE 13: a retry is never silent; the next round waits longer (nextDelayMs).
+          console.warn(`sync round failed (${String(l.failures)} in a row)`, error);
         }
       }
       return [...fresh.values()];

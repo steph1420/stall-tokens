@@ -76,4 +76,6 @@ export default tseslint.config(
     languageOptions: { globals: { process: 'readonly', console: 'readonly', module: 'writable', require: 'readonly', __dirname: 'readonly' } },
     rules: { '@typescript-eslint/no-require-imports': 'off' },
   },
+  // e2e scripts run code inside the page (page.evaluate), where browser storage is the point: they seed it.
+  { files: ['e2e/**'], languageOptions: { globals: { localStorage: 'readonly', indexedDB: 'readonly' } } },
 );

@@ -2,6 +2,19 @@
 
 Stopped early on Steve's request (quota). Nothing deployed; main untouched.
 
+## Standards audit vs agent-common 06 v2 (2026-11-16 17:20 IST, Pos). `npm run check` green after the fixes: pins, leak scan, build output, feature IDs, typecheck, lint, stylelint, depcruise, contrast 336/336, 50 tests, build.
+Read: CODING_SYSTEM_ROLLOUT, 01-09, 06 v2, STYLE_GUIDE, CONTRIBUTING, checks/, templates/, ADR-0001 (agent-common `a6160a3`). Verdict: largely up to standard (layers, tokens + CSS Modules, no Tailwind, framer-motion only in `src/motion`, storage prefix `stall-tokens.v2`, strict TS, exact pins, ADRs, feature IDs). Small gaps fixed:
+- `checks/check-build-output.mjs` re-copied from agent-common `ab6431f` (was `88c9672`, missing the locked-archive skip).
+- New `scripts/check-feature-ids.mjs` (orphan-ID check, 06 rule 7) in `npm run check`.
+- NOT pushed (the box's GitHub login has no `workflow` scope): CI change to run on `feat/**` pushes (it only runs on `main` and PRs), add the feature-ID step, fix the stale "only a starter" comment. Patch kept on the box at `/workspace/pos-ci-workflow.patch`; needs Steve (Q-CI-1).
+- Silent catch in device prefs now logs; failed sync rounds now log (STYLE_GUIDE 7, 13).
+- Slider label edge moved from inline numbers to `CONFIG.payment.sliderLabelEdge`; inline `width: 100%` moved to a CSS Module class (no visual change).
+- FEATURES.md: Test column lists only tests that exist (06 rule 12); added F-42 token slip. README no longer points at missing files or an `e2e` script.
+- `npm run lint` was actually failing at `cba6b04` (e2e files and `playwright.config.ts` outside the TS project, browser globals in `e2e/shots.mjs`), so the earlier "lint passes" note was stale. Fixed: tsconfig includes `e2e/` and `playwright.config.ts`, e2e scripts may use browser storage globals, `PW_CHROME` read without Node types.
+- e2e demo serving name changed to the codename `Server-A`.
+- `.dependency-cruiser.cjs` local change (skip `virtual:pwa-register`) is now labelled; to offer upstream.
+Open (not fixed, need Steve or a later bundle): no UI component tests and no e2e specs yet (verify run); `e2e/seed-plain.mjs` duplicates the demo fixtures in plain JS (STYLE_GUIDE 3, warn only); `npm run check` has no tokens-drift step (CI has it); stall-tokens row in agent-common CODING_SYSTEM_ROLLOUT remnants tracker.
+
 ## Done
 - Docs: ARCHITECTURE (pluggable transport, Bluetooth sync/printer backlog, D-MIGRATE and /beta/ dropped), FEATURES, ADR-0003, CHANGELOG.
 - Scaffold from app-starter v0.1.0; stall night/day tokens (contrast 336/336 pass).

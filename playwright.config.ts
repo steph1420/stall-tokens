@@ -2,7 +2,9 @@
 import { defineConfig } from '@playwright/test';
 import { CONFIG } from './src/config';
 
-const chrome = { executablePath: process.env.PW_CHROME ?? '/usr/bin/google-chrome', args: ['--no-sandbox'] };
+// Read through globalThis so the app tsconfig needs no Node types; PW_CHROME overrides the box's Chrome.
+const env = (globalThis as { process?: { env: Record<string, string | undefined> } }).process?.env ?? {};
+const chrome = { executablePath: env.PW_CHROME ?? '/usr/bin/google-chrome', args: ['--no-sandbox'] };
 export default defineConfig({
   testDir: 'e2e',
   timeout: 30_000,
