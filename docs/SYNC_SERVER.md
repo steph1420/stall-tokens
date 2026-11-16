@@ -1,10 +1,12 @@
-# Sync server (Go) — design (Q-SYNC-GO, Q-SHEET-FLUSH, Q-GO-HOST)
-Written by Pos, 16 Nov 2026, 23:40 IST; revised 16 Nov 2026, 23:36 IST for Q-GO-HOST (t80u). **Design only; no server code yet.**
+# Sync server (Go) — design (Q-SYNC-GO, Q-SHEET-FLUSH, Q-GO-HOST, Q-GO-PUSH B, Q-GO-WHEN B)
+Written by Pos, 16 Nov 2026, 23:40 IST; revised 16 Nov 2026, 23:36 IST for Q-GO-HOST (t80u); revised 16 Nov 2026, 23:45 IST for Q-GO-PUSH B and Q-GO-WHEN B. **Design for 2.2.0; no server code in 2.1.0.**
 
 **Locks this follows (Steve)**
 - **Q-SYNC-GO (t77u):** devices sync directly with a Go server using JSON, not through Google Sheets. Devices report regularly; the server sends updates to any device that is behind. A quick check tells whether a device is up to date.
 - **Q-SHEET-FLUSH (t78u):** the server keeps the Google Sheet updated and never sleeps with unsent changes.
 - **Q-GO-HOST (t80u, 23:28 IST):** "Go server writes to Google Sheets. On every restart, It'll read from sheets and triangulate with devices to figure out the latest info." The Google Sheet hidden `ops` log is the durable store. The server keeps no database of its own as source of truth. An in-memory or throwaway on-disk cache for speed is fine; losing it is harmless. Hosted on Render free.
+- **Q-GO-WHEN B (16 Nov 23:44 IST):** 2.1.0 ships on the current Code.gs bridge with the digest freshness check added. This Go server is built in 2.2.0, as its own release, Beta first.
+- **Q-GO-PUSH B (16 Nov 23:44 IST):** devices keep heartbeat polling and add an SSE live stream (`GET /v1/stream`) while a screen is open.
 
 **Also follows**
 - Q-HARM-10, unchanged: op log, Lamport + version vectors, duplicates ignored, seq gaps resent, Sheet edits come in as writer `sheet`, conflicts are recorded and never silent. Never newest-timestamp-wins.
@@ -46,7 +48,7 @@ server/
 | `POST /v1/ops` (push) | `{ ops: Op[] }` | `{ stored: opId[], resend: {writer, fromSeq}[] }`. Idempotent by `op_id`. `stored` is returned only after those ops have been written to the Sheet. |
 | `GET /v1/ops?after=<cursor>&limit=` (pull) | — | `{ ops, cursor }` (cursor = hidden `ops` tab row, or the last `op_id` in the batch) |
 | `GET /v1/health` | — | `{ ok, version, ops, writers, sheet: {last_at, pending, last_error, rebuilt_at} }` (no secrets) |
-| optional `GET /v1/stream` | SSE | `ops` events as they are written to the Sheet (Q-GO-PUSH) |
+| `GET /v1/stream` | SSE | `ops` events as they are written to the Sheet (Q-GO-PUSH B). Used while a screen is open; the heartbeat poll remains the fallback. |
 
 ## 4. Freshness digest (the "quick way to check", t77u)
 - `digest = { vv: {writer: maxSeq}, count: totalOps, sum: first 8 hex chars of SHA-256(sorted opIds joined by "\n") }`.
@@ -88,7 +90,7 @@ This is how the server "triangulates with devices to figure out the latest info.
 ## 7. What happens to Code.gs 2.0.0 (already deployed)
 - It stays deployed as the **fallback transport** and the **Sheet-edit hook**. If the Go server is down, the app can still sync through Code.gs (a transport list setting; ops are idempotent, so both paths can run).
 - When the Go server is live, Code.gs stops writing projections (the server owns them) and keeps only its `onEdit` hook, which posts edits to the server's `sheet` intake. This is cheaper than polling.
-- The 60-day compaction (Q-SHEET-COMPACT A) moves to the server: Drive backup of the Sheet first, then compact the hidden `ops` log. If Q-GO-WHEN puts the server in 2.2.0, Code.gs 2.1.0 does it as BUILD_PLAN §5 says.
+- The 60-day compaction (Q-SHEET-COMPACT A) moves to the server in 2.2.0: Drive backup of the Sheet first, then compact the hidden `ops` log. In 2.1.0, Code.gs 2.1.0 does it as BUILD_PLAN §5 says (Q-GO-WHEN B).
 
 ## 8. Auth and secrets
 - The stall key is a server env secret. Devices hold it in their sync settings (it's per-device and never synced, FEATURES §0.1) and get it through sign-in links. It is never in the repo; the leak scan checks for it.
@@ -100,14 +102,7 @@ This is how the server "triangulates with devices to figure out the latest info.
 - Shared JSON fixtures between Vitest and Go (the same ops must give the same fold hash on both sides).
 - TS: `goTransport` against a fake server; outbox held until a Sheet-write ack; the existing transport contract tests.
 
-## 10. Open choices (Q-IDs; ★ = Pos recommendation; Steve locks)
-Q-GO-HOST is locked (t80u, 23:28 IST): Render free; Sheet hidden `ops` log = durable store; no server database as source of truth. See §1, §6 and §6a.
-
-- **Q-GO-PUSH** (how a device hears about new ops):
-  - A heartbeat polling only (15 s visible / 60 s hidden).
-  - B ★ A + SSE stream while a screen is open (near-instant kitchen tickets, plain HTTP, auto-reconnect).
-  - C WebSocket (two-way, more moving parts).
-- **Q-GO-WHEN**:
-  - A build the server inside 2.1.0 (a new phase P6b; adds about a third more work).
-  - B ★ 2.1.0 ships on the current Code.gs bridge with the digest heartbeat added to it; the Go server is 2.2.0, built as its own release with Beta first.
-  - C the Go server first, then the rest of 2.1.0.
+## 10. Locked choices (no open Q-IDs left on this design)
+- **Q-GO-HOST** (t80u, 23:28 IST): Render free; Sheet hidden `ops` log = durable store; no server database as source of truth. See §1, §6 and §6a.
+- **Q-GO-PUSH B** (16 Nov 23:44 IST): heartbeat polling plus an SSE stream while a screen is open (near-instant kitchen tickets, plain HTTP, auto-reconnect). A was polling only; C was WebSocket.
+- **Q-GO-WHEN B** (16 Nov 23:44 IST): 2.1.0 ships on the current Code.gs bridge with the digest freshness check added; this server is 2.2.0, Beta first. A was build it inside 2.1.0; C was the Go server first.

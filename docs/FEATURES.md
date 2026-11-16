@@ -88,9 +88,7 @@ Steve asked (16 Nov) for only the strongest gaps to lead. Each one ships behind 
 - The other rows marked "Later — Pos idea" below stay documented for reference but are **not built** in 2.1.0.
 
 ### Mockups (redo, 16 Nov 23:55 IST): `handovers/pos/assets/roughs-2.1.0/s119…s126`
-- **Q-UNPAID-ROW** (Unpaid tab rows; open, Steve locks):
-  - A ★ each row has one **Paid** action, and a tap on the row opens it (s119);
-  - B no button, and a tap on the row opens it (s120).
+- **Q-UNPAID-ROW B (locked 16 Nov 23:44 IST):** no Paid button on the row; a tap on the row opens it. The chosen layout is **s120**. (s119 was option A, not used.)
 
 ## 1. Launch (F-04)
 | Element | What it does | States / edge cases | Status |
@@ -220,8 +218,8 @@ Steve asked (16 Nov) for only the strongest gaps to lead. Each one ships behind 
 | Element | What it does | States / edge cases | Status |
 | --- | --- | --- | --- |
 | List | Every sent order with money due, oldest first. Shows token, client, items, **₹ due** (soft red), status (In kitchen / Ready / Handed over) and age. Total at the top: "₹1,240 · 6 orders". | Drafts are not listed. Cancelled orders are not listed (they go to Refunds due instead). | new 2.1.0 (Q-HANDOVER-PAY revised) |
-| Row tap | Opens the order sheet with Take payment first. | — | new 2.1.0 |
-| Row actions | **Take payment** · **Complete** (the same yellow hold as §9). | — | new 2.1.0 |
+| Row tap | Opens the order sheet with Take payment first. There is no Paid button on the row (Q-UNPAID-ROW B, s120). | — | new 2.1.0 (Q-UNPAID-ROW B) |
+| Order sheet actions | **Take payment** · **Complete** (the same yellow hold as §9) live on the opened order sheet, not on the list row. | — | new 2.1.0 |
 | ~~Handover-unpaid name ask~~ | Not built: **Q-UNPAID-NAME B** (Steve: never ask). | — | dropped |
 | Empty | "Nothing unpaid ✓" in soft green text, no icon (Lippy kit). | — | new 2.1.0 |
 
@@ -394,4 +392,7 @@ One navigation owner (`store/nav`) pushes a history state per screen and per she
 
 ## 30. Questions for Steve (Q-IDs; lettered options, ★ = Pos recommendation; only Steve locks)
 - **Locked by Steve 16 Nov 23:21–23:26 IST:** Q-UNPAID-NAME **B** (never ask) · Q-REFUND-LIMIT **B** (no "Allowed by" on refunds at all) · Q-HISTORY-1 **A** · Q-WRITEOFF-SPLIT **A** · Q-DRAFT-EXPIRE **A** · Q-DEV-7TAP **A** · Q-MOCK-SIZE **A** (421×927 @3×) · Q-BETA-PATH **B** (own public repo `steph1420/stall-tokens-beta`; Stable never touched) · Q-RECEIPT-SYNC **C** · Q-PASSCODE-SYNC **dropped** (no passcode for now, the existing lock).
-- **Q-SYNC-GO / Q-SHEET-FLUSH (locked t77u/t78u) and Q-GO-HOST (locked t80u, 23:28 IST):** see `docs/SYNC_SERVER.md`. The Sheet hidden `ops` log is the durable store; the server has no database of its own as source of truth. Open there: Q-GO-PUSH, Q-GO-WHEN.
+- **Q-SYNC-GO / Q-SHEET-FLUSH (locked t77u/t78u) and Q-GO-HOST (locked t80u, 23:28 IST):** see `docs/SYNC_SERVER.md`. The Sheet hidden `ops` log is the durable store; the server has no database of its own as source of truth.
+- **Q-GO-PUSH B (locked 16 Nov 23:44 IST):** polling plus an SSE live stream while a screen is open. Built with the Go server in 2.2.0.
+- **Q-GO-WHEN B (locked 16 Nov 23:44 IST):** 2.1.0 ships on the current Code.gs bridge with the digest freshness check added. The Go server comes in 2.2.0, Beta first.
+- **Q-UNPAID-ROW B (locked 16 Nov 23:44 IST):** no Paid button; a tap on the row opens it. Layout is s120.
