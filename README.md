@@ -1,13 +1,7 @@
 # Stall Tokens
+Ordering, billing and token app for a fair stall: Counter (menu, billing, payment), Kitchen and stations, money, settle-up and stock. Offline-first PWA; every phone keeps the whole op log and syncs through a Google Sheet bridge.
 
-A quick ordering and token app for fair stalls. Open [the live app](https://steph1420.github.io/stall-tokens/) on a phone or tablet, or open `index.html` locally — it is a single self-contained file with no network required after the first load.
-
-Tap big menu buttons to build an order, place it to issue the next token, then mark tickets Ready and Collected from the queue. A Now serving screen shows ready token numbers to customers. Menu, day takings (cash / UPI split and a CSV export), and stall settings live in the other tabs. Everything is stored in this browser’s localStorage, so a refresh never loses the day.
-
-## Sync (not built yet)
-
-Local Bluetooth sync and internet sync between devices are planned. The data layer is already structured for that: every order and menu change is an event with a unique id, a device id and a timestamp, kept in one store module. Later adapters can call `Store.exportEvents()`, `Store.importEvents(remote)` (merge by id, then sort and re-reduce) and `Store.setSyncAdapter(adapter)`. Until then, each device keeps its own copy — there is no cross-device sync while you are offline.
-
-## Use it at a stall
-
-Add the page to your home screen for a full-screen app. Set the stall name and currency (₹ by default) in Settings. Start a new day from the Day tab when you want a fresh token counter.
+- Live: https://steph1420.github.io/stall-tokens/ (v2.0.0). Rollback: redeploy tag `v1.0.0`.
+- Docs: `docs/ARCHITECTURE.md` (read first), `FEATURES.md`, `docs/adr/`, `CHANGELOG.md`, `docs/STATUS.md`, `docs/SHEET_SETUP.md`. Still to come: `docs/VERIFY_LOG.md` (verify run).
+- Develop: `npm ci`, `npm run dev`. Full gate: `npm run check`. End-to-end (Playwright, `playwright.config.ts`): no specs yet; they come with the verify run.
+- v1 (the original single file, never used) lives in `legacy/v1/index.html`, tag `v1.0.0`, branch `backup/pre-v2.0.0`.

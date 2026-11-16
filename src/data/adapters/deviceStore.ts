@@ -1,0 +1,55 @@
+// Device prefs in localStorage under the storage prefix. Bad or missing data falls back to defaults.
+import { CONFIG } from '../../config';
+import type { DevicePrefs, DeviceStore } from '../types';
+
+export const PREFS_KEY = `${CONFIG.storage.prefix}.device`;
+
+export const defaultPrefs = (makeId: () => string): DevicePrefs => ({
+  deviceId: makeId(), theme: 'night', servingName: '', rangeIndex: 0, haptics: 'normal', autoPrep: true, stationLook: 'full', openLook: 'lines', passcode: '', passcodeOff: true, syncUrl: CONFIG.sync.bakedUrl, syncKey: CONFIG.sync.bakedKey, role: '',
+});
+
+function merge(base: DevicePrefs, raw: unknown): DevicePrefs {
+  if (typeof raw !== 'object' || raw === null) return base;
+  const r = raw as Partial<Record<keyof DevicePrefs, unknown>>;
+  const pick = <K extends keyof DevicePrefs>(k: K, ok: (v: unknown) => boolean): DevicePrefs[K] => (ok(r[k]) ? r[k] as DevicePrefs[K] : base[k]);
+  return {
+    deviceId: pick('deviceId', (v) => typeof v === 'string' && v.length >= 8),
+    theme: pick('theme', (v) => v === 'night' || v === 'day'),
+    servingName: pick('servingName', (v) => typeof v === 'string'),
+    rangeIndex: pick('rangeIndex', (v) => typeof v === 'number' && v >= 0 && v < CONFIG.tokens.ranges.length),
+    haptics: pick('haptics', (v) => v === 'off' || v === 'light' || v === 'normal' || v === 'strong'),
+    autoPrep: pick('autoPrep', (v) => typeof v === 'boolean'),
+    stationLook: pick('stationLook', (v) => v === 'full' || v === 'items' || v === 'ticket'),
+    openLook: pick('openLook', (v) => v === 'lines' || v === 'cards'),
+    passcode: pick('passcode', (v) => typeof v === 'string' && /^(\d{4})?$/.test(v)),
+    passcodeOff: pick('passcodeOff', (v) => typeof v === 'boolean'),
+    syncUrl: pick('syncUrl', (v) => typeof v === 'string'),
+    syncKey: pick('syncKey', (v) => typeof v === 'string'),
+    role: pick('role', (v) => typeof v === 'string' && (v === '' || /^(counter|kitchen|launch|station:\S{1,40})$/.test(v))),
+  };
+}
+
+export function createDeviceStore(storage: Storage | null, makeId: () => string): DeviceStore {
+  let memory: DevicePrefs | null = null;
+  return {
+    read() {
+      if (memory) return memory;
+      let raw: unknown;
+      try { raw = JSON.parse(storage?.getItem(PREFS_KEY) ?? 'null'); } catch (e) {
+        // Corrupt prefs: start from defaults rather than block the counter.
+        console.warn('device prefs unreadable, using defaults', e);
+        raw = null;
+      }
+      memory = merge(defaultPrefs(makeId), raw);
+      this.write(memory);
+      return memory;
+    },
+    write(prefs) {
+      memory = prefs;
+      try { storage?.setItem(PREFS_KEY, JSON.stringify(prefs)); } catch (e) {
+        // Private mode or full storage: prefs live in memory for this session; the op log is unaffected.
+        console.warn('device prefs not saved', e);
+      }
+    },
+  };
+}
