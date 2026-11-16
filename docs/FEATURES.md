@@ -45,7 +45,7 @@ This sheet lists every screen and every UI element: what it does, its states, ni
 - Orders and **drafts** (Q-DRAFT-SYNC) and every line, note, discount, round-off, priority and client name.
 - Payments, **refunds and refund undo** (`refund.void`), cancels and completes.
 - Menu items, **categories**, **stations**, stock counts and stock moves, sold out.
-- Shared settings: stall name, fair, tip choices, round-off steps, auto-prep, station look, Open Orders look, **menu sort**, age warnings, ask-name-on-unpaid, refund limit, alert *rules* and passcode lock (see Q-PASSCODE-SYNC).
+- Shared settings: stall name, fair, tip choices, round-off steps, auto-prep, station look, Open Orders look, **menu sort**, age warnings and alert *rules*.
 - Money entries, partners and settlement, day lock, **day notes**, info records.
 - Conflicts and Review flips.
 - **Device registry** (`device.set`): each device's label (serving name), its token range and its sign-in role, so every Counter can see who holds which range and whose draft is whose.
@@ -59,8 +59,8 @@ This sheet lists every screen and every UI element: what it does, its states, ni
 | Appearance (Night / Day / Auto) | Personal: a kitchen tablet in the sun and a Counter phone in the shade differ. |
 | Kitchen text size | Personal to the screen's distance (W-39). |
 | Quiet alerts and volume | Personal to where the device stands (PK-1). |
-| *Proposed extra, Steve to confirm:* haptics strength | Personal feel. If not confirmed, it becomes shared. |
-| *Proposed extra, Steve to confirm:* where the screen is (current order, tab, pill, station) | Navigation state, not data. It lets a device resume after a reload (W-12, PK-5). |
+| Haptics strength | Personal feel (Steve 23:2x, confirmed). |
+| Where the screen is (current order, tab, pill, station) | Navigation state, not data. Confirmed by Steve; lets a device resume (W-12, PK-5). |
 
 **Images are never synced (Q-RECEIPT-SYNC C, Steve t79u: "Don't sync photos. Sync data to generate photos.").** Token slips, refund and settle-up receipts, day summaries and share images are **drawn on demand on any device from the synced data** with fixed templates, so the same data gives the same image on every device.
 - **Edge (flagged):** a photo someone *captures* (e.g. a supplier's bill on a Money entry, F-47) stays on that device only and is not part of sync or backups. Other devices see the entry and a "photo on Ravi's phone" note, not the photo. If that device is reset or lost, the photo is gone; the entry's data is not.
@@ -197,7 +197,7 @@ This sheet lists every screen and every UI element: what it does, its states, ni
 | List | Every sent order with money due, oldest first. Shows token, client, items, **₹ due** (soft red), status (In kitchen / Ready / Handed over) and age. Total at the top: "₹1,240 · 6 orders". | Drafts are not listed. Cancelled orders are not listed (they go to Refunds due instead). | new 2.1.0 (Q-HANDOVER-PAY revised) |
 | Row tap | Opens the order sheet with Take payment first. | — | new 2.1.0 |
 | Row actions | **Take payment** · **Complete** (the same yellow hold as §9). | — | new 2.1.0 |
-| Handover-unpaid name ask | When handing over unpaid with no client name, a small sheet asks "Who has it?" (skip allowed). | — | **Q-UNPAID-NAME** (proposed A; built behind the setting `askNameOnUnpaid`, default **on**, flagged) |
+| ~~Handover-unpaid name ask~~ | Not built: **Q-UNPAID-NAME B** (Steve: never ask). | — | dropped |
 | Empty | "Nothing unpaid ✓" in soft green text, no icon (Lippy kit). | — | new 2.1.0 |
 
 ## 12. Complete rule (data)
@@ -218,7 +218,6 @@ Reached from the Open Orders sheet, Unpaid, History and Billing (after an edit).
 | Paid back by | Cash / UPI, defaulting to how the order was paid. | — | new 2.1.0 |
 | Back to stock | A toggle, off by default. On = the picked lines' qty go back to stock. | Only offered when lines are picked. | new 2.1.0 |
 | **Refund ₹X** (single tap, no hold) | `refund.add {reason, lines, restock}`, then a 5 s toast "Refunded ₹90 · Undo". Undo = a compensating `refund.void {refundId}` op (it never deletes; stock put back by `restock` is taken out again). **Does not cancel the order.** | A double tap is guarded (one refund per sheet). Undo after another device has already synced the refund still works (the void op syncs too). | new 2.1.0 (Q-REFUND-1 A amended by **Q-REFUND-INSTANT**, Steve t75u) |
-| Over-limit "Allowed by" | Refunds over ₹N, or a 100% refund, ask who allowed it (like discounts). | — | **Q-REFUND-LIMIT** (not locked; built behind the setting `refundAllowedByOverPaise`, default **off**) |
 
 ## 14. Cancel sheet
 | Element | What it does | Status |
@@ -313,8 +312,6 @@ Unchanged in 2.1.0 (existing). The Close day screen (§21) links to it.
 | Display › Alerts: Quiet, Volume | PK-1. | new 2.1.0 |
 | **Menu** › Categories | List: reorder (↑/↓, no drag), rename, default station, default colour, hide. Rename keeps the id (P-3 A). | new 2.1.0 |
 | Menu › **Stations** | Name, icon, colour, order, active. Rename keeps the id (PK-6). | new 2.1.0 (PK-6) |
-| **Counter** › Ask a name when handing over unpaid | Q-UNPAID-NAME. | new 2.1.0 (flag) |
-| Counter › Refund needs Allowed by over ₹N | Q-REFUND-LIMIT, off by default. | new 2.1.0 (flag) |
 | **Kitchen** › Auto-prep, Station look | — | existing |
 | **Money** › Partner shares, Tip choices, Round-off | — | existing (the round-off placeholder is fixed to "5, 10", W-20) |
 | **Sync** › status (dot only), Sheet sync, **Review** (clashes) | — | existing |
@@ -356,7 +353,7 @@ One navigation owner (`store/nav`) pushes a history state per screen and per she
 - Beta uses its own storage prefix `stall-tokens-beta.v2` (IndexedDB, localStorage and the SW cache), so it can't clash with Stable data on the same phone.
 - Beta never carries a baked-in sync URL. It only talks to a bridge someone types in on that phone.
 - Settings › App › About shows "Beta" or "Stable".
-- How it deploys: see BUILD_PLAN §8 and **Q-BETA-PATH**.
+- **Q-BETA-PATH B (locked):** Beta is published from its own public repo `steph1420/stall-tokens-beta` (Pages via Actions), URL `https://steph1420.github.io/stall-tokens-beta/`. Stable is never touched. The app sees the `/stall-tokens-beta/` path and switches to the Beta storage prefix with no sync config.
 
 ## 29. Not in 2.1.0
 | Item | When |
@@ -371,13 +368,5 @@ One navigation owner (`store/nav`) pushes a history state per screen and per she
 | Code.gs Drive-backup-then-compact (Q-SHEET-COMPACT A) | **2.1.0 bridge side** (BUILD_PLAN §5) |
 
 ## 30. Questions for Steve (Q-IDs; lettered options, ★ = Pos recommendation; only Steve locks)
-- **Q-UNPAID-NAME**: ask for a name when handing over unpaid with none. A ★ ask (skippable) · B never. *(Built behind a setting, default A.)*
-- **Q-REFUND-LIMIT**: refunds over ₹N or 100% need "Allowed by". A yes, N in Settings · B ★ no for now (setting present, off). *(Off by default because Steve didn't ask for it.)*
-- **Q-HISTORY-1**: where Order History lives. A ★ one History screen with Orders · Money, reachable from the Counter ⋯ and Stall · B a separate Counter tab.
-- **Q-WRITEOFF-SPLIT**: an unpaid written-off amount. A ★ shown separately, outside the partner split · B counted as a loss in the split.
-- **Q-DRAFT-EXPIRE**: old untouched drafts. A ★ amber "Old draft" mark only · B auto-discard after N min with a toast.
-- **Q-DEV-7TAP**: Developer behind 7 taps (Q-HARM-5), with Sign-in links moved to an Account row. A ★ yes · B keep today's open Developer group.
-- **Q-BETA-PATH** (how to serve /beta/ without disturbing Stable): see BUILD_PLAN §8. A ★ a one-time 2.0.1 Stable release (no visible change) that teaches the Stable service worker to ignore `/beta/` and builds Stable + Beta in one Pages workflow · B Beta in its own repo (`stall-tokens-beta`, URL `/stall-tokens-beta/`), leaving Stable completely untouched.
-- **Q-RECEIPT-SYNC**: LOCKED C (Steve t79u). No images are synced; they are drawn from the data. Captured photos stay on the device only.
-- **Q-PASSCODE-SYNC**: the passcode lock. A ★ shared (a salted hash in a shared setting; one code for the whole stall) · B per device.
-- **Q-MOCK-SIZE**: Lippy's kit says 421 px (Steve's phone, 3×) and the LFPS-SOW kit says 412×915. A ★ 421×927 at 3× · B 412×915.
+- **Locked by Steve 16 Nov 23:21–23:26 IST:** Q-UNPAID-NAME **B** (never ask) · Q-REFUND-LIMIT **B** (no "Allowed by" on refunds at all) · Q-HISTORY-1 **A** · Q-WRITEOFF-SPLIT **A** · Q-DRAFT-EXPIRE **A** · Q-DEV-7TAP **A** · Q-MOCK-SIZE **A** (421×927 @3×) · Q-BETA-PATH **B** (own public repo `steph1420/stall-tokens-beta`; Stable never touched) · Q-RECEIPT-SYNC **C** · Q-PASSCODE-SYNC **dropped** (no passcode for now, the existing lock).
+- **Q-SYNC-GO / Q-SHEET-FLUSH (locked t77u/t78u):** see `docs/SYNC_SERVER.md`. Open there: Q-GO-HOST, Q-GO-PUSH, Q-GO-WHEN.

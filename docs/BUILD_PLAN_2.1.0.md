@@ -17,7 +17,7 @@ Written by Pos, 16 Nov 2026, 23:40 IST. This plan fits ARCHITECTURE §2–§6 (0
 ## 1. Phases
 | # | Phase | Main W / lock items | Files touched (main) | Done when |
 | --- | --- | --- | --- | --- |
-| P0 | **Channel plumbing** (Q-CHANNEL A) | Beta URL, storage namespace, About shows the channel | `src/config/index.ts` (`channel`, `storage.prefix` by channel), `vite.config.ts` (SW `navigateFallbackDenylist: [/\/beta\//]` on Stable), `scripts/stamp.mjs` (build date = commit time, so a Stable rebuild is byte-identical), `.github/workflows/deploy-pages.yml` (Stable root + Beta `/beta/` in one artifact), `.github/workflows/beta-ping.yml` (on push to `beta`, dispatches deploy on main) | Beta deploys without changing Stable's bytes (checked by diffing the root artifact before/after). **Needs Q-BETA-PATH (§8).** |
+| P0 | **Channel plumbing** (Q-CHANNEL A, Q-BETA-PATH B) | Beta detected by base path, own storage prefix, no sync config, About shows the channel | `src/config/index.ts` (`channel` from base path / `VITE_CHANNEL`, `storage.prefix` by channel, no baked sync on Beta), `vite.config.ts` (manifest name by channel), Settings › About. The workflow lives in `steph1420/stall-tokens-beta` only. | Beta opens with empty data next to Stable on the same phone; Stable files and settings unchanged. |
 | P1 | **Data + rules** (no UI) | W-05/06/08/11/12/22/27/32/36, Q-COMPLETE-2 A, Q-HANDOVER-PAY, Q-REFUND-1 A data, categories (P-3), stations (PK-6), day notes (P-13) | `contract/op.ts`, `contract/state.ts`, `store/fold/orders.ts`, `store/fold/fold.ts`, `store/rules/status.ts`, `store/rules/kitchen.ts`, `store/rules/catalog.ts` (new: categories + stations from records with virtual seeds), `store/counter.ts` (`available`, newOrder reuse, day rollover), `store/open.ts` (handover/complete), `store/refund.ts` (new), `data/types.ts` (prefs: orderId, page, menuSort, lastRole, display prefs) | Unit + harm10 tests in §6 pass. |
 | P2 | **Counter** | W-01/02/03/04/07/09/12/13/14/15/16/17/18/19/21/24, Unpaid tab, Complete hold, drafts nav + big +, Prioritise, Refund sheet, Order sheet actions, menu sort + search, Back nav | `ui/counter/CounterShell.tsx`, `ui/counter/open/*`, `ui/counter/unpaid/UnpaidScreen.tsx` (new), `ui/counter/refund/RefundSheet.tsx` (new), `ui/counter/drafts/DraftsSheet.tsx` (new), `ui/counter/menu/*`, `ui/counter/CounterSheets.tsx` (split: `ItemSheet.tsx`), `ui/counter/payment/*`, `ui/slip/TokenSlip.tsx`, `store/nav.ts` (new: history owner), `ui/kit/HoldRing.tsx` (new, timed ring, motion tokens) | Playwright W-scenarios for the Counter pass in night and day. |
 | P3 | **Kitchen + Station** | W-25/26/28/29/30/31/33/35/36/37/38/39/40/41/42/43/44, PK-1/2/3/4/5/10 | `ui/kitchen/*`, `ui/station/*`, `ui/kitchen/Leaving.tsx` (synchronous leave, inert veil, 4 veils, HOLD_MS → motion token), `ui/kit/alerts.ts` (new: chime/flash; audio behind an interface + fake, 06 rule 4), `ui/kit/wakeLock.ts` (new), `store/kitchen.ts` (step gap, undo, pinned order) | Playwright kitchen scenarios plus 1024×768 and 844×390 shots. |
@@ -42,7 +42,7 @@ All new things are **additive kinds or optional fields**. `CONTRACT_VERSION` sta
 | `order.create` + optional `device: string` | the device label (serving name + short device id) | Q-DRAFT-SYNC: shows whose draft it is on every Counter. |
 | `device.set` (new kind) | `{ deviceId, label, rangeIndex, role }` | Q-SYNC-ALL device registry. |
 | `snapshot.note` (new kind) | `{ snapshotId, at, reason, opCount, hash }` | Q-SYNC-ALL backup metadata. |
-| `setting.set` keys `autoPrep`, `stationLook`, `openLook`, `menuSort`, `askNameOnUnpaid`, `refundAllowedByOverPaise`, `ageWarnMin`, `ageLateMin` | strings | Shared settings (flags in FEATURES §30). |
+| `setting.set` keys `autoPrep`, `stationLook`, `openLook`, `menuSort`, `ageWarnMin`, `ageLateMin` | strings | Shared settings (flags in FEATURES §30). |
 
 **Migration (no migration ops written):**
 - **Categories:** the list is the category records **plus virtual categories** with deterministic ids `name:<text>` for each distinct legacy `item.category`. Editing a virtual category writes `record.set category name:<text>`. Two phones doing the same edit converge on one id (no duplicates), and old items match by name.
@@ -56,8 +56,8 @@ Audit of what is on the device today (v2.0.0 `DevicePrefs`, the IDB stores) and 
 | --- | --- |
 | `servingName`, `rangeIndex`, `role` | new op `device.set {deviceId, label, rangeIndex, role}`, a device registry folded on every device. A clash on the same range = Conflict row plus a toast "Range 1–500 is also used by Ravi". |
 | `autoPrep`, `stationLook`, `openLook`, new `menuSort` | `setting.set` shared keys |
-| `passcode`, `passcodeOff` | shared setting `passcodeHash` (salted SHA-256) + `passcodeOn` (Q-PASSCODE-SYNC A ★; until it is answered, it stays as today) |
-| `haptics` | stays on the device if Steve confirms (FEATURES §0.1), else a shared setting |
+| `passcode`, `passcodeOff` | unchanged: passcode stays off (existing lock; Q-PASSCODE-SYNC dropped) |
+| `haptics` | stays on the device (confirmed) |
 | `theme`, kitchen text size, Quiet / volume, `deviceId`, `syncUrl`, `syncKey`, screen place | stay on the device (the only exceptions, FEATURES §0.1) |
 | receipt photos (IDB `receipts`) | **Q-RECEIPT-SYNC C (locked):** never synced. The entry carries `hasPhotoOn: <device label>` (an `entry.add` optional field) so other devices show the note. Slips, receipts, day summaries and share images are rendered from synced data by deterministic templates (`ui/slip`, `ui/money/Receipt.tsx`, the new day summary). |
 | snapshots (new, IDB) | content = the op log (already on the server); new op `snapshot.note {snapshotId, at, reason, opCount, hash}` so every device and the Sheet see when backups were made |
@@ -151,8 +151,7 @@ These are listed for Steve's verify run on Beta.
 | --- | --- | --- |
 | Drafts syncing add Sheet traffic | More pushes during service | Ops are already batched (`pushBatch`, adaptive poll); a draft step is one small op. Measured in the TEST Sheet run. |
 | A 2.0.0 phone meets 2.1.0 ops | It refuses unknown kinds, so state differs between phones | Beta uses its own namespace and a test bridge. At Stable cutover, every phone updates first; the bridge version register warns. |
-| Stable rebuild on each Beta deploy | Stable phones get a needless "Update ready" | Build date = commit time, so the Stable artifact is byte-identical. CI diff check. |
-| Stable SW serves its index.html for `/beta/` | Beta never loads on a phone that has Stable | 2.0.1 adds `navigateFallbackDenylist /beta/` (Q-BETA-PATH A), or a separate repo (B). |
+| Beta shares the origin with Stable | Mixed data before P0 | P0 switches the storage prefix by path; the separate repo path keeps the SW scopes apart. |
 | Compaction loses data | Unrecoverable | Drive copy first, stop on failure, locked days only, dry-run first, never the current or previous event. |
 | Categories split by typos (existing data) | Duplicate categories | Virtual categories show the duplicates side by side in Settings › Categories, with "Merge into…" (a rename to the same name), done by Steve. |
 | Back-button owner breaks a sheet | Phone Back exits | Playwright: Back from every screen and sheet. |
@@ -160,20 +159,11 @@ These are listed for Steve's verify run on Beta.
 | Audio blocked | Silent alerts | The first-tap unlock plus a visible flash always (PK-1). |
 | Scope creep (gap features) | A late 2.1.0 | Gap rows are vetoable; each is its own commit, so dropping one is a revert of that commit. |
 
-## 8. Beta channel deploy (Q-CHANNEL A, Steve t71u) and **Q-BETA-PATH**
-**Facts checked on 16 Nov, 23:3x IST:**
-- The `github-pages` environment only lets the `main` and `gh-pages` branches deploy.
-- Pages serves one artifact for the whole site, so every deploy re-uploads the root.
-- The Stable service worker's scope `/stall-tokens/` covers `/stall-tokens/beta/`, and its `navigateFallback` would answer Beta navigations with Stable's `index.html`.
-
-**Q-BETA-PATH**
-- **A ★** Beta at `/stall-tokens/beta/` (as Steve said), through a one-time **2.0.1 Stable plumbing release** on Steve's go. It has no visible change: the Stable SW ignores `/beta/`, the build date becomes the commit time, and `deploy-pages.yml` builds main at the root and the `beta` branch at `/beta/` in one artifact. A `beta-ping.yml` on the `beta` branch dispatches the main workflow (workflow_dispatch is allowed from GITHUB_TOKEN). After that, Beta updates never change Stable's bytes.
-- **B** Beta in its own public repo `steph1420/stall-tokens-beta`, URL `/stall-tokens-beta/`. Stable is never touched at all, but it means a second repo and a second Pages site.
-
-Beta build settings (both options):
-- `VITE_CHANNEL=beta`, storage prefix `stall-tokens-beta.v2`.
-- No baked-in sync URL or key (`VITE_SYNC_*` unset).
-- The manifest name is "Stall Tokens Beta", so the installed icon differs.
+## 8. Beta channel deploy (Q-CHANNEL A + Q-BETA-PATH B, locked)
+- A separate **public** repo `steph1420/stall-tokens-beta` serves `https://steph1420.github.io/stall-tokens-beta/`. **The Stable repo, its workflows, Pages settings and service worker are never touched.**
+- The beta repo holds only a workflow. It checks out the public `steph1420/stall-tokens` at `feat/v2.1.0` (input `ref`, the default), builds with `VITE_CHANNEL=beta`, and deploys to its own Pages. No secrets anywhere; it is triggered by `workflow_dispatch` (Pos runs it after each phase) and a schedule.
+- The app detects Beta from the base path (`/stall-tokens-beta/`) and also from `VITE_CHANNEL`. Beta gets the storage prefix `stall-tokens-beta.v2`, no baked sync URL or key, and the manifest name "Stall Tokens Beta". Other paths share the origin `steph1420.github.io` but not the path scope, so the service workers can't cross.
+- Until P0 lands, the deployed Beta is 2.0.0 code under a different path. Its storage prefix is still `stall-tokens.v2`, so a phone that has both Stable and Beta open **shares data between them**. Use another browser profile for Beta until P0 (flagged in the report).
 
 ## 9. ARCHITECTURE changes (made with each phase)
 - §3 state owners: add `store/nav.ts` (history), `store/refund.ts` and `store/backup.ts`.
@@ -197,7 +187,11 @@ Beta build settings (both options):
 - [x] D3 DECISIONS in agent-common (locks + PK-1…PK-10 + Prioritise + Q-CHANNEL A)
 - [x] D4 first mockup pairs (s111+; see report)
 - [ ] D5 feedback from LFPS-SOW / Lippy folded in; Steve answers FEATURES §30
-- [ ] P0 channel plumbing (needs Q-BETA-PATH)
+- [x] A locks recorded (Q-BETA-PATH B and the 23:21–23:26 answers, Q-SYNC-GO, Q-SHEET-FLUSH)
+- [ ] B docs/SYNC_SERVER.md
+- [ ] C mockup redo s119+
+- [ ] D beta repo + first Beta deploy
+- [ ] P0 channel plumbing (base-path detection, Beta storage prefix, About shows the channel; no Stable change)
 - [ ] P1 data + rules + unit tests
 - [ ] P2 Counter
 - [ ] P3 Kitchen + Station
