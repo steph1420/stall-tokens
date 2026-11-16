@@ -3,6 +3,7 @@ import { CONFIG } from '../config';
 import type { ItemFields } from '../contract';
 import type { Core, Log } from './core';
 import { isUpiId } from './rules/upi';
+import * as amounts from './rules/amounts';
 
 export type ItemDraft = Pick<ItemFields, 'name' | 'price' | 'swatch' | 'category' | 'stationId'> & { count: number | null };
 
@@ -53,6 +54,13 @@ function payeeActions(core: Core, log: Log) {
     },
     /** Shared stall settings (stall name). Trimmed and length-capped. */
     setSetting(key: 'stallName', value: string) { log.dispatch('setting.set', { key, value: value.trim().replace(/\s+/g, ' ').slice(0, CONFIG.limits.nameMaxChars) }); },
+    /** F-45 tip choices / round-off steps for every phone: text in rupees; returns an error line or null. */
+    setAmounts(key: amounts.AmountsKey, text: string): string | null {
+      const r = amounts.parseRupees(text, key);
+      if ('error' in r) return r.error;
+      log.dispatch('setting.set', { key, value: r.ok.join(',') });
+      return null;
+    },
     removePayee(payeeId: string) {
       const p = st().folded.payees[payeeId];
       if (p) log.dispatch('payee.set', { payeeId, name: p.name, upiId: p.upiId, removed: true });

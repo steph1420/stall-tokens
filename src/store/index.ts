@@ -21,6 +21,7 @@ export type { EntryDraft } from './money';
 export * as money from './rules/money';
 export * as settle from './rules/settle';
 export * as stock from './rules/stock';
+export * as amounts from './rules/amounts';
 export type { Split } from './rules/settle';
 export * as kitchen from './rules/kitchen';
 export type { Folded } from './fold/state';

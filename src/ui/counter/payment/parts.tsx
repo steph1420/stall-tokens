@@ -2,13 +2,15 @@
 import { useState } from 'react';
 import { CONFIG } from '../../../config';
 import type { Paise } from '../../../contract';
-import { pay } from '../../../store';
+import { amounts, pay, useApp } from '../../../store';
+import { AmountsEdit } from '../../kit/AmountsEdit';
 import { Icon } from '../../kit/Icon';
 import { Money } from '../../kit/Money';
 import s from './Payment.module.css';
 
 export function TipRow({ tip, onTip, onOther }: { tip: Paise; onTip: (t: Paise) => void; onOther: () => void }) {
-  const chips: readonly Paise[] = CONFIG.payment.tipChips;
+  const chips = useApp((x) => amounts.amounts(x.folded.settings, 'tipChips'));
+  const [edit, setEdit] = useState(false);
   const other = tip > 0 && !chips.includes(tip);
   return (
     <div className={s.tipBlock}>
@@ -19,7 +21,9 @@ export function TipRow({ tip, onTip, onOther }: { tip: Paise; onTip: (t: Paise) 
           <button type="button" role="radio" aria-checked={tip === c} key={c} className={tip === c ? s.chipOn : s.chip} onClick={() => { onTip(c); }}><Money p={c} /></button>
         ))}
         <button type="button" role="radio" aria-checked={other} className={other ? s.chipOn : s.chip} onClick={onOther}>{other ? <Money p={tip} /> : 'Other'}</button>
+        <button type="button" className={s.chip} aria-label="Edit tip choices" aria-expanded={edit} onClick={() => { setEdit(!edit); }}><Icon name="pencil" className={s.chipIcon} /></button>
       </div>
+      {edit ? <AmountsEdit k="tipChips" onDone={() => { setEdit(false); }} /> : null}
     </div>
   );
 }

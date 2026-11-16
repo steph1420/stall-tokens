@@ -2,7 +2,8 @@
 import { useState } from 'react';
 import { CONFIG } from '../../config';
 import { formatInr, parseRupees, type Order, type Paise } from '../../contract';
-import { bill, useApp } from '../../store';
+import { amounts, bill, useApp } from '../../store';
+import { AmountsEdit } from '../kit/AmountsEdit';
 import { Money } from '../kit/Money';
 import { Sheet } from '../kit/Sheet';
 import k from '../kit/kit.module.css';
@@ -120,7 +121,9 @@ function NoteSheet({ lineId }: { lineId: string | null }) {
 function RoundOff({ o }: { o: Order }) {
   const c = useApp((st) => st.counter);
   const ro = bill.roundOffAmount(o);
-  const choices = bill.roundOffChoices(bill.preRound(o), CONFIG.money.roundOffSteps);
+  const steps = useApp((st) => amounts.amounts(st.folded.settings, 'roundOffSteps'));
+  const [edit, setEdit] = useState(false);
+  const choices = bill.roundOffChoices(bill.preRound(o), steps);
   return (
     <>
       <div className={k.fieldLab}>Round-off on <Money p={bill.preRound(o)} /></div>
@@ -133,6 +136,8 @@ function RoundOff({ o }: { o: Order }) {
         ))}
       </div>
       {choices.length === 0 ? null : <div className={k.hint}>Round-off is set on the current total. If the bill changes it no longer applies.</div>}
+      {edit ? <AmountsEdit k="roundOffSteps" onDone={() => { setEdit(false); }} />
+        : <button type="button" className={k.quiet} onClick={() => { setEdit(true); }}>{`Steps: ${steps.map((x) => formatInr(x)).join(' / ') || 'none'} · Edit`}</button>}
     </>
   );
 }

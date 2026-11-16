@@ -2,6 +2,9 @@
 All notable changes to Stall Tokens. SemVer. Times IST.
 
 ## [Unreleased] — 2.0.0 (branch `feat/v2.0.0`)
+### Added (16 Nov 20:20, shared tip choices / round-off steps, F-45)
+- Tip choices and round-off steps are shared `setting.set` values (`tipChips`, `roundOffSteps`, comma-separated paise), synced to every phone and the Sheet `settings` tab; CONFIG keeps the defaults. Edit them in Settings > Money, with the pencil on the Payment tip row, or under Round-off in the Billing discount sheet (`ui/kit/AmountsEdit.tsx`).
+
 ### Added (16 Nov 20:05, sign-in links, F-44)
 - Developer > Sign-in links: one link per person / role; URL, stall key, role and name ride in the #fragment (`src/data/join.ts`). Opening it sets up sync, the serving name and the role screen (Counter, Kitchen, a station or the start screen). Revoke by changing STALL_KEY.
 - Passcode lock (D-ACCESS) now off by default (code kept; Settings > Developer > Passcode lock turns it on). No pairing.

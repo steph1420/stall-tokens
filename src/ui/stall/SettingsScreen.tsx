@@ -5,7 +5,8 @@ import { useState, type ReactNode } from 'react';
 import { CONFIG } from '../../config';
 import { formatInr } from '../../contract';
 import type { DevicePrefs } from '../../store';
-import { istClock, isSheetUrl, useApp } from '../../store';
+import { amounts, istClock, isSheetUrl, useApp } from '../../store';
+import { AmountsEdit } from '../kit/AmountsEdit';
 import { Sheet } from '../kit/Sheet';
 import kit from '../kit/kit.module.css';
 import { StallPage } from './StallPage';
@@ -58,6 +59,14 @@ function SyncRow() {
   );
 }
 
+/** F-45 shared tip choices / round-off steps, edited inline (same setting the Payment and Billing screens edit). */
+function AmountsOpt({ k, t, sep }: { k: amounts.AmountsKey; t: string; sep: string }) {
+  const v = useApp((x) => amounts.amounts(x.folded.settings, k));
+  const [edit, setEdit] = useState(false);
+  return edit ? <AmountsEdit k={k} onDone={() => { setEdit(false); }} />
+    : <Opt t={t} sub="Shared with every phone" value={v.map((x) => formatInr(x)).join(sep) || 'None'} onClick={() => { setEdit(true); }} />;
+}
+
 export function SettingsScreen() {
   const a = useApp((x) => x);
   const p = a.prefs;
@@ -71,8 +80,8 @@ export function SettingsScreen() {
       </Group>
       <Group label="Money">
         <Opt t="Partner shares" sub={partners.map((x) => `${x.name} ${String(x.sharePct)}`).join(' · ') || 'No partners yet'} value="" onClick={() => { a.openStall('settle'); a.unlock(); }} />
-        <Opt t="Tip choices" value={CONFIG.payment.tipChips.map((x) => formatInr(x)).join(' · ')} />
-        <Opt t="Round-off to nearest" value={CONFIG.money.roundOffSteps.map((x) => formatInr(x)).join(' / ')} />
+        <AmountsOpt k="tipChips" t="Tip choices" sep=" · " />
+        <AmountsOpt k="roundOffSteps" t="Round-off to nearest" sep=" / " />
       </Group>
       <Group label="Feel">
         <Opt t="Haptics" value={HAPTICS[p.haptics]} onClick={() => { set({ haptics: next(['off', 'light', 'normal', 'strong'], p.haptics) }); }} />
