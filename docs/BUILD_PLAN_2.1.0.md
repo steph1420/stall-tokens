@@ -165,6 +165,10 @@ These are listed for Steve's verify run on Beta.
 - The app detects Beta from the base path (`/stall-tokens-beta/`) and also from `VITE_CHANNEL`. Beta gets the storage prefix `stall-tokens-beta.v2`, no baked sync URL or key, and the manifest name "Stall Tokens Beta". Other paths share the origin `steph1420.github.io` but not the path scope, so the service workers can't cross.
 - Until P0 lands, the deployed Beta is 2.0.0 code under a different path. Its storage prefix is still `stall-tokens.v2`, so a phone that has both Stable and Beta open **shares data between them**. Use another browser profile for Beta until P0 (flagged in the report).
 
+## 8b. Go sync server (Q-SYNC-GO, Q-SHEET-FLUSH; locked t77u/t78u)
+The full design is in `docs/SYNC_SERVER.md`: `server/` in Go with SQLite as the source of truth, JSON endpoints (heartbeat digest, push, pull, health, optional SSE), and the Sheet mirror through the Sheets API that never sleeps with unsent changes. Code.gs 2.0.0 becomes the fallback transport and the Sheet-edit hook.
+**When it is built depends on Q-GO-WHEN** (★ B: 2.2.0, with the digest heartbeat added to the 2.1.0 bridge path). Q-GO-HOST and Q-GO-PUSH are open.
+
 ## 9. ARCHITECTURE changes (made with each phase)
 - §3 state owners: add `store/nav.ts` (history), `store/refund.ts` and `store/backup.ts`.
 - §4.1: add `order.complete`, the refund fields, the category / day_note tables, and unknown-kind forward compatibility.
@@ -188,7 +192,7 @@ These are listed for Steve's verify run on Beta.
 - [x] D4 first mockup pairs (s111+; see report)
 - [ ] D5 feedback from LFPS-SOW / Lippy folded in; Steve answers FEATURES §30
 - [x] A locks recorded (Q-BETA-PATH B and the 23:21–23:26 answers, Q-SYNC-GO, Q-SHEET-FLUSH)
-- [ ] B docs/SYNC_SERVER.md
+- [x] B docs/SYNC_SERVER.md
 - [ ] C mockup redo s119+
 - [ ] D beta repo + first Beta deploy
 - [ ] P0 channel plumbing (base-path detection, Beta storage prefix, About shows the channel; no Stable change)
