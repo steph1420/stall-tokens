@@ -6,6 +6,8 @@ export interface OpStore {
   load(): Promise<Op[]>;
   /** Append ops; duplicates by opId are ignored. Rejects on quota or private-mode errors. */
   append(ops: readonly Op[]): Promise<void>;
+  /** False when ops live in memory only (no usable IndexedDB). Absent = persistent. */
+  persistent?(): boolean;
 }
 
 /** One way ops travel between devices (Sheet bridge now; Bluetooth / local peer later). ARCHITECTURE §4.3. */

@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { opMaker } from '../mock/fixtures';
 import { createDeviceStore, PREFS_KEY } from './adapters/deviceStore';
 import { createFakeHub, createFakeTransport } from './adapters/fakeTransport';
+import { createFallbackOpStore } from './adapters/fallback';
 import { createLocalIdb, DB_NAME } from './adapters/localIdb';
 import { createSyncEngine } from './sync/engine';
 
@@ -64,5 +65,16 @@ describe('sync engine with the fake transport (F-03)', () => {
     const got = await b.round();
     expect(got.map((o) => o.opId)).toEqual(['devA.1:1']);
     expect(a.nextDelayMs()).toBe(4000);
+  });
+});
+
+describe('IndexedDB fallback (F-03)', () => {
+  it('works in memory and says so when the saved log cannot open', async () => {
+    const broken = { load: () => Promise.reject(new Error('blocked')), append: () => Promise.resolve() };
+    const s = createFallbackOpStore(broken);
+    expect(s.persistent?.()).toBe(true);
+    expect(await s.load()).toEqual([]);
+    expect(s.persistent?.()).toBe(false);
+    expect(createFallbackOpStore(null).persistent?.()).toBe(false);
   });
 });

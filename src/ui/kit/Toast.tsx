@@ -28,3 +28,16 @@ export function SaveBanner() {
     </div>
   );
 }
+
+/** IndexedDB fallback: calm, not blocking; the app keeps working in this tab. */
+export function MemoryBanner() {
+  const on = useApp((st) => st.memoryOnly);
+  const [hidden, setHidden] = useState(false);
+  if (!on || hidden) return null;
+  return (
+    <div className={s.banner} role="status">
+      <span>This browser cannot keep orders after it closes. Keep this tab open, or use a normal (not private) window.</span>
+      <button type="button" className={s.bannerBtn} onClick={() => { setHidden(true); }}>OK</button>
+    </div>
+  );
+}

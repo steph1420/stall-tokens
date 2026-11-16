@@ -1,7 +1,7 @@
 // data/ entry: builds the DataSource from the browser, or a fake one for tests and e2e.
 import { createDeviceStore } from './adapters/deviceStore';
+import { createFallbackOpStore } from './adapters/fallback';
 import { createLocalIdb } from './adapters/localIdb';
-import { createMemoryOpStore } from './adapters/memory';
 import { createTabChannel } from './adapters/tabChannel';
 import type { DataSource, Transport } from './types';
 
@@ -10,6 +10,7 @@ export { createSyncEngine, type SyncEngine, type SyncStatus } from './sync/engin
 export { createMemoryOpStore, createMemoryChannelHub } from './adapters/memory';
 export { createFakeHub, createFakeTransport, type FakeHub } from './adapters/fakeTransport';
 export { createDeviceStore } from './adapters/deviceStore';
+export { createFallbackOpStore } from './adapters/fallback';
 
 function safeLocalStorage(): Storage | null {
   try { return globalThis.localStorage; } catch (e) {
@@ -22,7 +23,7 @@ function safeLocalStorage(): Storage | null {
 export function createBrowserDataSource(makeId: () => string, transports: readonly Transport[] = []): DataSource {
   const idb = typeof indexedDB === 'undefined' ? null : indexedDB;
   return {
-    ops: idb ? createLocalIdb(idb) : createMemoryOpStore(),
+    ops: createFallbackOpStore(idb ? createLocalIdb(idb) : null),
     device: createDeviceStore(safeLocalStorage(), makeId),
     channel: createTabChannel(),
     transports,

@@ -64,6 +64,29 @@ function Settled({ o }: { o: Order }) {
   );
 }
 
+/** A ₹0 order (free items or a full discount): nothing to collect, so offer To kitchen instead of a stuck Confirm. */
+function NothingDue({ o }: { o: Order }) {
+  const c = useApp((st) => st.counter);
+  const unsent = o.lines.some((l) => l.status === 'draft' && l.qty > 0);
+  return (
+    <>
+      <main className={s.stage}>
+        <div className={s.due}>
+          <div className={s.dueLab}>{formatToken(o.token, CONFIG.tokens.pad)} · Nothing to collect</div>
+          <Money p={0} className={s.dueAmt} />
+        </div>
+      </main>
+      <footer className={s.bar}>
+        <button type="button" className={s.back} onClick={() => { c.setPage('billing'); }}><Icon name="backSmall" className={s.ic} />Back</button>
+        <span className={s.paid} />
+        {unsent
+          ? <button type="button" className={s.confirm} onClick={() => { c.sendToKitchen(); }}>To kitchen</button>
+          : <button type="button" className={s.confirm} onClick={() => { c.newOrder(); }}>New order</button>}
+      </footer>
+    </>
+  );
+}
+
 /** The payment draft is local to this screen (never in the log until Confirm). */
 function useDraft(o: Order | undefined) {
   const servingName = useApp((st) => st.prefs.servingName);
@@ -143,6 +166,7 @@ export function PaymentScreen() {
   const [pad, setPad] = useState<Box | null>(null);
   if (!o) return null;
   if (d.owed <= 0 && (bill.paid(o) !== 0 || bill.waived(o) > 0)) return <Settled o={o} />;
+  if (d.owed === 0 && o.lines.some((l) => l.qty > 0)) return <NothingDue o={o} />;
   const { cur, check, tip } = d;
   return (
     <>

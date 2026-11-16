@@ -13,6 +13,8 @@ export interface CoreState {
   readonly saveError: string | null;
   readonly unsaved: readonly Op[];
   readonly sync: SyncStatus;
+  /** No usable IndexedDB: orders live in this tab only (calm banner). */
+  readonly memoryOnly: boolean;
 }
 
 export interface Env {
@@ -30,7 +32,7 @@ export interface Core {
 
 export const initialCore = (prefs: DevicePrefs): CoreState => ({
   ready: false, folded: emptyFolded(), prefs, ui: initialUi, saveError: null, unsaved: [],
-  sync: { pending: 0, lastOkAt: null, error: null, online: false },
+  sync: { pending: 0, lastOkAt: null, error: null, online: false }, memoryOnly: false,
 });
 
 /** Save ops; a failure keeps them in `unsaved` and shows the banner (never silent). */
@@ -60,7 +62,7 @@ export function createLog(core: Core, writer: string) {
   return {
     load(ops: Op[]) {
       log = [...ops].sort(compareOps);
-      core.set({ folded: fold(log), ready: true });
+      core.set({ folded: fold(log), ready: true, memoryOnly: core.env.ds.ops.persistent?.() === false });
     },
     /** Make, apply and save one local op. */
     dispatch<K extends OpKind>(kind: K, body: Bodies[K]): Op {
