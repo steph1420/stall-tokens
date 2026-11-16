@@ -394,4 +394,4 @@ One navigation owner (`store/nav`) pushes a history state per screen and per she
 
 ## 30. Questions for Steve (Q-IDs; lettered options, ★ = Pos recommendation; only Steve locks)
 - **Locked by Steve 16 Nov 23:21–23:26 IST:** Q-UNPAID-NAME **B** (never ask) · Q-REFUND-LIMIT **B** (no "Allowed by" on refunds at all) · Q-HISTORY-1 **A** · Q-WRITEOFF-SPLIT **A** · Q-DRAFT-EXPIRE **A** · Q-DEV-7TAP **A** · Q-MOCK-SIZE **A** (421×927 @3×) · Q-BETA-PATH **B** (own public repo `steph1420/stall-tokens-beta`; Stable never touched) · Q-RECEIPT-SYNC **C** · Q-PASSCODE-SYNC **dropped** (no passcode for now, the existing lock).
-- **Q-SYNC-GO / Q-SHEET-FLUSH (locked t77u/t78u):** see `docs/SYNC_SERVER.md`. Open there: Q-GO-HOST, Q-GO-PUSH, Q-GO-WHEN.
+- **Q-SYNC-GO / Q-SHEET-FLUSH (locked t77u/t78u) and Q-GO-HOST (locked t80u, 23:28 IST):** see `docs/SYNC_SERVER.md`. The Sheet hidden `ops` log is the durable store; the server has no database of its own as source of truth. Open there: Q-GO-PUSH, Q-GO-WHEN.

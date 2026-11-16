@@ -165,9 +165,9 @@ These are listed for Steve's verify run on Beta.
 - The app detects Beta from the base path (`/stall-tokens-beta/`) and also from `VITE_CHANNEL`. Beta gets the storage prefix `stall-tokens-beta.v2`, no baked sync URL or key, and the manifest name "Stall Tokens Beta". Other paths share the origin `steph1420.github.io` but not the path scope, so the service workers can't cross.
 - Until P0 lands, the Beta workflow rewrites the storage prefix in the built files to `stall-tokens-beta.v2` (receipts DB too) and labels the build "Beta". So Beta never reads Stable's data or sync settings on the same origin. After P0, the app does this itself from the base path, and the workflow step becomes a check only.
 
-## 8b. Go sync server (Q-SYNC-GO, Q-SHEET-FLUSH; locked t77u/t78u)
-The full design is in `docs/SYNC_SERVER.md`: `server/` in Go with SQLite as the source of truth, JSON endpoints (heartbeat digest, push, pull, health, optional SSE), and the Sheet mirror through the Sheets API that never sleeps with unsent changes. Code.gs 2.0.0 becomes the fallback transport and the Sheet-edit hook.
-**When it is built depends on Q-GO-WHEN** (★ B: 2.2.0, with the digest heartbeat added to the 2.1.0 bridge path). Q-GO-HOST and Q-GO-PUSH are open.
+## 8b. Go sync server (Q-SYNC-GO, Q-SHEET-FLUSH, Q-GO-HOST; locked t77u/t78u/t80u)
+The full design is in `docs/SYNC_SERVER.md`: `server/` in Go with JSON endpoints (heartbeat digest, push, pull, health, optional SSE). The Google Sheet hidden `ops` log is the durable store. The server keeps no database of its own as source of truth (an in-memory or throwaway on-disk cache for speed is fine; losing it is harmless). On every restart it rebuilds from the Sheet, then reconciles with device heartbeat digests and writes any missed ops back to the Sheet. Devices keep their ops until the server confirms they reached the Sheet (ack after the Sheet write). Flush to the Sheet within seconds; never sleep with unsent changes (SIGTERM flush). Hosted on Render free. Code.gs 2.0.0 becomes the fallback transport and the Sheet-edit hook.
+**When it is built depends on Q-GO-WHEN** (★ B: 2.2.0, with the digest heartbeat added to the 2.1.0 bridge path). Q-GO-PUSH is still open.
 
 ## 9. ARCHITECTURE changes (made with each phase)
 - §3 state owners: add `store/nav.ts` (history), `store/refund.ts` and `store/backup.ts`.
@@ -195,7 +195,8 @@ The full design is in `docs/SYNC_SERVER.md`: `server/` in Go with SQLite as the 
 - [x] B docs/SYNC_SERVER.md
 - [x] C mockup redo s119–s126 (caption strip under the phones; Q-UNPAID-ROW open) + FEATURES top-4 Pos gaps (default off), the rest under Later
 - [x] D beta repo `steph1420/stall-tokens-beta` + first Beta deploy (16 Nov 23:32 IST, run 43924329468): https://steph1420.github.io/stall-tokens-beta/. Until P0, the workflow relabels the built files: title "(Beta)", manifest "Stall Tokens Beta", storage `stall-tokens-beta.v2`. It fails if the old prefix is still there.
-- [ ] **STOPPED here (16 Nov 23:58 IST).** Next: Steve locks Q-GO-HOST / Q-GO-PUSH / Q-GO-WHEN / Q-UNPAID-ROW, then P0.
+- [x] Q-GO-HOST locked (t80u, 16 Nov 23:28 IST): Sheet hidden `ops` log = durable store; no server DB as truth; Render free. SYNC_SERVER.md revised 16 Nov 23:36 IST.
+- [ ] **STOPPED here (16 Nov 23:36 IST).** Next: Steve locks Q-GO-PUSH / Q-GO-WHEN / Q-UNPAID-ROW, then P0 (after he approves the mockups). No app code until then.
 - [ ] P0 channel plumbing (base-path detection, Beta storage prefix, About shows the channel; no Stable change)
 - [ ] P1 data + rules + unit tests
 - [ ] P2 Counter
