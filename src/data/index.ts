@@ -16,6 +16,7 @@ export { createFallbackOpStore } from './adapters/fallback';
 export { createSheetTransport, isSheetUrl, type SheetConfig } from './adapters/sheetTransport';
 export { joinUrl, readJoin, isRole, type JoinLink } from './join';
 export { bluetoothPrint, canBluetoothPrint } from './adapters/btPrinter';
+export { dropReceipt, getReceipt, putReceipt, receiptIds } from './adapters/receipts';
 
 function safeLocalStorage(): Storage | null {
   try { return globalThis.localStorage; } catch (e) {

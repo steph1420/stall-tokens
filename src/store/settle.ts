@@ -1,6 +1,7 @@
 // F-26..F-29 Settlement actions: Pay (partial ok), Repay all, Mark cleared with a reason, undo, partner shares, lock / reopen.
 import { CONFIG } from '../config';
 import type { ClearReason, MoneySource, Paise } from '../contract';
+import { formatInr } from '../contract';
 import type { Core, Log } from './core';
 import { liveOrders } from './fold/fold';
 import { balances, split } from './rules/settle';
@@ -54,10 +55,13 @@ function dayActions(core: Core, log: Log, dayId: () => string) {
     /** Split (or Split anyway) locks the day with the amounts shown; Reopen unlocks it (Q-SETTLE-GAPS). */
     lockDay(): boolean {
       const s = split(st().folded, liveOrders(st().folded), dayId());
-      if (!s.sharesOk) { toast('Partner shares must add up to 100%'); return false; }
+      if (!s.sharesOk) { toast(s.mode === 'exact' ? `Exact amounts must add up to ${formatInr(s.base)}` : 'Partner shares must add up to 100%'); return false; }
       log.dispatch('day.lock', { dayId: dayId(), locked: true, split: Object.fromEntries(s.partners.map((p) => [p.person.id, p.share])) });
       return true;
     },
+    /** F-47 split type and exact amounts, shared with every phone (setting.set). */
+    setSplitMode(mode: 'share' | 'exact') { log.dispatch('setting.set', { key: 'splitMode', value: mode }); },
+    setExact(personId: string, amount: Paise) { log.dispatch('setting.set', { key: `splitExact:${personId}`, value: String(Math.max(-CONFIG.limits.moneyMaxPaise, Math.min(CONFIG.limits.moneyMaxPaise, Math.trunc(amount)))) }); },
     reopenDay() { log.dispatch('day.lock', { dayId: dayId(), locked: false, split: {} }); },
   };
 }

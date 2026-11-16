@@ -8,6 +8,7 @@ import { Money } from '../kit/Money';
 import { Section, StallPage } from '../stall/StallPage';
 import st from '../stall/Stall.module.css';
 import { MoneyEntry } from './MoneyEntry';
+import { ReceiptButton, useReceiptIds } from './Receipt';
 import s from './Money.module.css';
 
 function RefundsDue() {
@@ -35,6 +36,7 @@ function RefundsDue() {
 function Entries({ dayId }: { dayId: string }) {
   const entries = useApp((x) => x.folded.entries.filter((e) => e.dayId === dayId));
   const people = useApp((x) => x.folded.people);
+  const [photos, bump] = useReceiptIds();
   const by = (e: (typeof entries)[number]) => e.parts.map((p) => (p.source === 'person' ? people[p.personId ?? '']?.name ?? 'Someone' : p.source === 'upi' ? 'UPI' : 'Register')).join(' + ');
   return (
     <Section label="Today">
@@ -44,6 +46,7 @@ function Entries({ dayId }: { dayId: string }) {
           <span className={st.rowMain}><span className={st.rowT}>{e.label}{e.kind === 'donation' ? ' · donation' : ''}</span>
             <span className={st.rowS}>{`${istClock(e.at)} · ${e.dir === 'spent' ? 'paid by' : 'in'} ${by(e)}${e.voided ? ' · cancelled' : ''}`}</span></span>
           <span className={[st.amt, e.dir === 'spent' ? st.neg : st.pos].join(' ')}>{`${e.dir === 'spent' ? '−' : '+'}${formatInr(e.amount)}`}</span>
+          {e.voided ? null : <ReceiptButton entryId={e.id} has={photos.has(e.id)} onChange={bump} />}
         </div>
       ))}
     </Section>

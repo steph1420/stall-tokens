@@ -35,7 +35,7 @@ export const CONFIG = Object.freeze({
   stock: { lowAtDefault: 5, supplyCategory: 'Supplies', newMenuCategory: 'New' },
   // F-44 baked-in sync (Steve 19:33): a build can carry the bridge URL / key (VITE_SYNC_URL, VITE_SYNC_KEY); empty by default.
   sync: { bakedUrl: envStr('VITE_SYNC_URL'), bakedKey: envStr('VITE_SYNC_KEY'), pollMinMs: 4000, pollMaxMs: 60000, backoff: 2, pushBatch: 200, timeoutMs: 15000 },
-  timings: { toastMs: 2600, fakeDelayMs: 120, clockTickMs: 30000, printDelayMs: 300 },
+  timings: { toastMs: 2600, fakeDelayMs: 120, clockTickMs: 30000, printDelayMs: 300, remindLaterMs: 3600000 },
   // Open Orders header: dots up to this many orders, then "3 of 12" (Q-ORDERS-1).
   openDotsMax: 8,
   // swipePx: horizontal travel that turns a drag on the Station page into next / previous order (Q-STN-LOOK D).

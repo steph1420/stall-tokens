@@ -5,6 +5,7 @@ import { CONFIG } from '../../config';
 import { formatInr, parseRupees, type ClearReason, type MoneySource } from '../../contract';
 import { istClock, settle, useApp } from '../../store';
 import { Icon } from '../kit/Icon';
+import { remindLater, shareText } from '../kit/share';
 import { Sheet } from '../kit/Sheet';
 import kit from '../kit/kit.module.css';
 import s from './Settle.module.css';
@@ -46,6 +47,22 @@ function History({ personId }: { personId: string }) {
   );
 }
 
+/** F-47 reminders: send a nudge through the phone's share sheet, or a local reminder on this phone in an hour. */
+function Remind({ name, bal }: { name: string; bal: number }) {
+  const stall = useApp((x) => x.folded.settings.stallName ?? 'the stall');
+  const toast = useApp((x) => x.money.toast);
+  if (bal === 0) return null;
+  const msg = bal > 0 ? `Hi ${name}, ${stall} owes you ${formatInr(bal)}. We'll settle it soon.` : `Hi ${name}, a reminder: ${formatInr(-bal)} of ${stall} money is with you. Please hand it back when you can.`;
+  const nudge = () => { void shareText('Reminder', msg).then((r) => { if (r !== 'shared') toast(r === 'copied' ? 'Reminder copied' : 'Could not share'); }); };
+  const later = () => { void remindLater('Settle up', `${name} · ${formatInr(Math.abs(bal))}`, CONFIG.timings.remindLaterMs).then((ok) => { toast(ok ? 'Reminder set for 1 hour' : 'Notifications are off on this phone'); }); };
+  return (
+    <div className={s.two}>
+      <button type="button" className={kit.quiet} onClick={nudge}>Send reminder</button>
+      <button type="button" className={kit.quiet} onClick={later}>Remind me in 1 h</button>
+    </div>
+  );
+}
+
 export function PersonSheet({ personId, onClose }: { personId: string; onClose: () => void }) {
   const f = useApp((x) => x.folded);
   const a = useApp((x) => x.settle);
@@ -71,6 +88,7 @@ export function PersonSheet({ personId, onClose }: { personId: string; onClose: 
         <button type="button" className={s.tile} onClick={() => { setVi(vi + 1); }}><small>Via</small><b>{v?.label}</b></button>
         <div className={s.tile}><small>When</small><b>Today</b></div>
       </div>
+      <Remind name={p.name} bal={bal} />
       <History personId={personId} />
       <div className={s.foot}>
         <p className={s.hint}>Mark cleared clears the debt · no payment recorded</p>

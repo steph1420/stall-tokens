@@ -6,6 +6,7 @@ import { liveOrders, settle, useApp, type Split } from '../../store';
 import { Money } from '../kit/Money';
 import { StallPage } from '../stall/StallPage';
 import st from '../stall/Stall.module.css';
+import { FewestTransfers, ShareSettle, SplitType } from './Extras';
 import { PersonSheet } from './PersonSheet';
 import s from './Settle.module.css';
 
@@ -32,13 +33,14 @@ function SettleUp({ sp, open }: { sp: Split; open: (id: string) => void }) {
       {sp.others.length === 0 ? <p className={st.empty}>Nobody else to repay.</p> : null}
       {sp.others.map((o, i) => <Row key={o.person.id} p={o.person} i={i} amount={o.owed} sub={settle.balanceWhy(f, o.person.id).labels.join(', ') || 'Balance'} onPay={() => { open(o.person.id); }} />)}
       <div className={[s.step, sp.others.length ? s.dim : ''].join(' ')}><span className={s.n2}>2</span><b>Split between partners</b><small>after step 1</small></div>
-      {sp.partners.map((x, i) => <Row key={x.person.id} p={x.person} i={i + 3} amount={x.share} dim={sp.others.length > 0} sub={`${String(x.person.sharePct)}%${x.owed ? ` · incl. ${formatInr(x.owed)} paid` : ''}`} />)}
+      {sp.partners.map((x, i) => <Row key={x.person.id} p={x.person} i={i + 3} amount={x.share} dim={sp.others.length > 0} sub={`${sp.mode === 'exact' ? 'Exact' : `${String(x.person.sharePct)}%`}${x.owed ? ` · incl. ${formatInr(x.owed)} paid` : ''}`} />)}
+      <FewestTransfers sp={sp} />
+      <div className={s.shareRow}><ShareSettle sp={sp} /></div>
     </>
   );
 }
 
 function Partners({ sp, open }: { sp: Split; open: (id: string) => void }) {
-  const a = useApp((x) => x.settle);
   const people = useApp((x) => x.folded.people);
   const pending = sp.others.filter((o) => o.owed !== 0);
   return (
@@ -48,17 +50,27 @@ function Partners({ sp, open }: { sp: Split; open: (id: string) => void }) {
           <span className={st.rowMain}><b>{`${String(pending.length)} repayment${pending.length > 1 ? 's' : ''} still pending`}</b><small>{`${pending.map((o) => `${o.person.name} ${formatInr(o.owed)}`).join(', ')} · split may change`}</small></span>
           <button type="button" className={s.review} onClick={() => { open(pending[0]?.person.id ?? ''); }}>Review ›</button></div>
       ) : null}
-      <p className={s.inhand}>{`To split ${formatInr(sp.toSplit)}`}{sp.sharesOk ? '' : ' · shares must add up to 100%'}</p>
+      <SplitType sp={sp} />
+      <p className={s.inhand}>{`To split ${formatInr(sp.toSplit)}`}{sp.sharesOk || sp.mode === 'exact' ? '' : ' · shares must add up to 100%'}</p>
       {sp.partners.map((x, i) => (
         <div key={x.person.id} className={s.pcard}>
-          <Row p={x.person} i={i + 3} amount={x.share} sub={[`${String(x.person.sharePct)}%`, ...x.covering.map((c) => `incl. ${people[c.personId]?.name ?? 'someone'} ${formatInr(c.amount)}`)].join(' · ')} />
+          <Row p={x.person} i={i + 3} amount={x.share} sub={[sp.mode === 'exact' ? 'Exact' : `${String(x.person.sharePct)}%`, ...x.covering.map((c) => `incl. ${people[c.personId]?.name ?? 'someone'} ${formatInr(c.amount)}`)].join(' · ')} />
           {x.covering.map((c) => <p key={c.personId} className={s.cover}>{`🤝 Covering ${people[c.personId]?.name ?? 'someone'}'s ${formatInr(c.amount)} · added back`}</p>)}
-          <label className={s.share}>Share %<input inputMode="numeric" aria-label={`${x.person.name} share`} defaultValue={String(x.person.sharePct)} onBlur={(e) => { a.setPartner(x.person.id, true, Number(e.target.value) || 0); }} /></label>
+          <ShareInput sp={sp} id={x.person.id} name={x.person.name} pct={x.person.sharePct} />
         </div>
       ))}
       <AddPartner />
     </>
   );
+}
+
+function ShareInput({ sp, id, name, pct }: { sp: Split; id: string; name: string; pct: number }) {
+  const a = useApp((x) => x.settle);
+  const exact = useApp((x) => settle.exactOf(x.folded.settings, id));
+  if (sp.mode === 'exact') {
+    return <label className={s.share}>Exact ₹<input key="exact" inputMode="decimal" aria-label={`${name} exact amount`} defaultValue={String(exact / 100)} onBlur={(e) => { a.setExact(id, Math.round((Number(e.target.value) || 0) * 100)); }} /></label>;
+  }
+  return <label className={s.share}>Share %<input key="pct" inputMode="numeric" aria-label={`${name} share`} defaultValue={String(pct)} onBlur={(e) => { a.setPartner(id, true, Number(e.target.value) || 0); }} /></label>;
 }
 
 function AddPartner() {

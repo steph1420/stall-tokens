@@ -50,3 +50,10 @@
 .cov b { color: var(--dl-stall-warn-text); }
 .covOk { composes: cov; background: color-mix(in srgb, var(--dl-color-positive) 14%, transparent); }
 .covOk b { color: var(--dl-stall-pos-text); }
+/* F-47 receipt photos */
+.photoChip { position: relative; display: inline-grid; place-items: center; min-width: var(--dl-hit-min); min-height: var(--dl-hit-min); border-radius: var(--dl-radius-md); font-size: 1.125rem; background: var(--dl-color-surface); cursor: pointer; }
+.photoInput { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
+.photoView { position: fixed; inset: 0; z-index: var(--dl-z-sheet); display: flex; flex-direction: column; background: var(--dl-color-bg); }
+.photoImg { flex: 1; min-height: 0; width: 100%; object-fit: contain; }
+.photoBar { display: flex; justify-content: space-between; gap: 0.75rem; padding: 1rem; }
+.photoBtn { flex: 1; min-height: var(--dl-hit-comfortable); border-radius: var(--dl-radius-md); font-weight: 600; color: var(--dl-color-text); background: var(--dl-color-surface); }

@@ -59,3 +59,4 @@
 .reason { min-height: 2.75rem; border-radius: var(--dl-radius-md); text-align: left; padding: 0 0.875rem; font-size: 0.9375rem; font-weight: 600; color: var(--dl-color-text); background: var(--dl-color-surface); }
 .reasonOn { composes: reason; color: var(--dl-stall-info-text); background: color-mix(in srgb, var(--dl-color-info) 18%, var(--dl-color-surface)); }
 .clearGo { min-height: var(--dl-hit-comfortable); border-radius: var(--dl-radius-md); font-size: 1rem; font-weight: 700; color: var(--dl-stall-on-blue); background: var(--dl-stall-blue); }
+.shareRow { display: flex; justify-content: flex-end; padding: 0.75rem 0; }

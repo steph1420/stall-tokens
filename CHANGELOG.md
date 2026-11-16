@@ -2,6 +2,12 @@
 All notable changes to Stall Tokens. SemVer. Times IST.
 
 ## [Unreleased] — 2.0.0 (branch `feat/v2.0.0`)
+### Added (16 Nov 20:55, settle-up extras, F-47, Q-SETTLE-EXTRAS C)
+- Partners: split type Share % / Exact ₹ (shared settings `splitMode`, `splitExact:<personId>`); exact amounts must add up before Split and lock.
+- Settle up: Fewest transfers (simplify debts, greedy, at most n − 1 moves, the stall cash as one party) and Share receipt (plain text through the phone's share sheet, else copied).
+- Person sheet: Send reminder (share sheet) and Remind me in 1 h (local notification on this phone; no push server).
+- Money: 📷 receipt photo per entry (camera input, shrunk to about 1280 px JPEG), kept on this phone in IndexedDB; 🧾 opens it with Remove. Not synced, not in the Sheet.
+
 ### Added (16 Nov 20:40, Bluetooth slip printing, F-41)
 - Print token: where the browser has Web Bluetooth (Chrome on Android) the preview offers Bluetooth printer (ESC/POS, 32 columns, ASCII with "Rs", feed + cut; `store/rules/escpos.ts`, `data/adapters/btPrinter.ts`) or Print (58 mm); a printer error says why and leaves Print (58 mm). Without Web Bluetooth it prints with the browser straight away, as before.
 

@@ -32,7 +32,12 @@ export interface Split {
   readonly inHand: Paise; readonly toSplit: Paise; readonly others: readonly { person: Person; owed: Paise }[];
   readonly partners: readonly { person: Person; share: Paise; owed: Paise; covering: readonly { personId: string; amount: Paise }[] }[];
   readonly sharesOk: boolean;
+  /** F-47 split type (shared setting `splitMode`): by share % or exact rupee amounts (`splitExact:<personId>`, paise). */
+  readonly mode: SplitMode; readonly base: Paise; readonly exactLeft: Paise;
 }
+export type SplitMode = 'share' | 'exact';
+export const splitMode = (s: Readonly<Record<string, string>>): SplitMode => (s.splitMode === 'exact' ? 'exact' : 'share');
+export const exactOf = (s: Readonly<Record<string, string>>, id: string): Paise => Math.trunc(Number(s[`splitExact:${id}`] ?? 0)) || 0;
 /** Settle up for one day: step 1 repay others; step 2 split what is left between partners by share, each partner's own
  * balance added back (Q-NEXT-2 A). Tips stay out (D-MONEY). A loss day gives negative shares: partners pay in. */
 export function split(f: Folded, orders: readonly Order[], dayId: string): Split {
@@ -47,6 +52,36 @@ export function split(f: Folded, orders: readonly Order[], dayId: string): Split
   const owedPartners = ps.reduce((t, p) => t + (bal[p.id] ?? 0), 0);
   const base = inHand - owedOthers - owedPartners;
   const covering = (id: string) => live(f.settlements).filter((x) => x.kind === 'pay' && x.byPersonId === id).map((x) => ({ personId: x.personId, amount: x.amount }));
-  const partners = ps.map((p) => ({ person: p, owed: bal[p.id] ?? 0, covering: covering(p.id), share: Math.round((base * p.sharePct) / 100) + (bal[p.id] ?? 0) }));
-  return { inHand, toSplit: inHand - owedOthers, others, partners, sharesOk: ps.reduce((t, p) => t + p.sharePct, 0) === 100 };
+  const mode = splitMode(f.settings);
+  const part = (p: Person) => (mode === 'exact' ? exactOf(f.settings, p.id) : Math.round((base * p.sharePct) / 100));
+  const partners = ps.map((p) => ({ person: p, owed: bal[p.id] ?? 0, covering: covering(p.id), share: part(p) + (bal[p.id] ?? 0) }));
+  const exactLeft = base - ps.reduce((t, p) => t + exactOf(f.settings, p.id), 0);
+  const sharesOk = mode === 'exact' ? exactLeft === 0 : ps.reduce((t, p) => t + p.sharePct, 0) === 100;
+  return { inHand, toSplit: inHand - owedOthers, others, partners, sharesOk, mode, base, exactLeft };
+}
+
+/** F-47 Simplify debts: who pays whom so everyone ends square in the fewest transfers (greedy largest-first, which is
+ * at most n − 1 transfers). `nets`: + = should get money, − = should give. The stall's cash counts as one more party. */
+export function fewestTransfers(nets: Readonly<Record<string, Paise>>): { from: string; to: string; amount: Paise }[] {
+  const give = Object.entries(nets).filter(([, v]) => v < 0).map(([id, v]) => ({ id, v: -v }));
+  const get = Object.entries(nets).filter(([, v]) => v > 0).map(([id, v]) => ({ id, v }));
+  const out: { from: string; to: string; amount: Paise }[] = [];
+  const byV = (a: { v: number }, b: { v: number }) => b.v - a.v;
+  for (;;) {
+    give.sort(byV); get.sort(byV);
+    const g = give[0]; const r = get[0];
+    if (!g || !r || g.v === 0 || r.v === 0) return out;
+    const amt = Math.min(g.v, r.v);
+    out.push({ from: g.id, to: r.id, amount: amt });
+    g.v -= amt; r.v -= amt;
+  }
+}
+
+/** Nets for Settle up: each person's amount from the split, the stall cash in hand as the party "stall". */
+export function settleNets(sp: Split): Record<string, Paise> {
+  const nets: Record<string, Paise> = {};
+  for (const o of sp.others) nets[o.person.id] = o.owed;
+  for (const x of sp.partners) nets[x.person.id] = (nets[x.person.id] ?? 0) + x.share;
+  nets.stall = -Object.values(nets).reduce((t, v) => t + v, 0);
+  return nets;
 }
