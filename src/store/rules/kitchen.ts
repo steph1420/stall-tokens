@@ -1,0 +1,89 @@
+// F-19..F-22 Kitchen and station rules (pure). Q-PILLS-1 A counts, Q-KITCHEN-4 A handed lines stay,
+// Q-AUTOPREP next order to Preparing. Orders come in kitchen order: priority first, then oldest first.
+import type { Line, LineStatus, Order } from '../../contract';
+
+/** Lines a station still has to make (the pill counts, Q-PILLS-1 A). */
+export const TO_MAKE: ReadonlySet<LineStatus> = new Set<LineStatus>(['waiting', 'preparing', 'held', 'paused']);
+/** Lines a station is finished with: proposed done, confirmed ready, or handed over. */
+const FINISHED: ReadonlySet<LineStatus> = new Set<LineStatus>(['done?', 'ready', 'handed']);
+
+const live = (o: Order): Line[] => o.lines.filter((l) => l.qty > 0 && l.status !== 'draft');
+export const linesAt = (o: Order, station: string | null): Line[] => live(o).filter((l) => station === null || l.stationId === station);
+
+/** Orders the kitchen shows: sent, not deleted, with something not yet handed over. */
+export function kitchenOrders(orders: readonly Order[]): Order[] {
+  return orders
+    .filter((o) => !o.deleted && live(o).some((l) => l.status !== 'handed'))
+    .map((o, i) => ({ o, i }))
+    .sort((a, b) => Number(b.o.priority) - Number(a.o.priority) || a.i - b.i)
+    .map((x) => x.o);
+}
+
+/** Orders a station page shows: those with a line at this station not yet handed over. */
+export const stationOrders = (orders: readonly Order[], station: string): Order[] =>
+  kitchenOrders(orders).filter((o) => linesAt(o, station).some((l) => l.status !== 'handed'));
+
+export function toMake(orders: readonly Order[], station: string | null): number {
+  return orders.reduce((n, o) => n + linesAt(o, station).filter((l) => TO_MAKE.has(l.status)).length, 0);
+}
+
+/** One tap at a station moves a line on: Waiting → Preparing → Done?; On hold and Paused resume. */
+export function nextStatus(s: LineStatus): LineStatus | null {
+  switch (s) {
+    case 'waiting': case 'held': case 'paused': return 'preparing';
+    case 'preparing': return 'done?';
+    default: return null; // Done? waits for the Counter (Q-KITCHEN-3 A); Ready and Handed over are Counter steps
+  }
+}
+
+export const finishedAt = (o: Order, station: string): boolean => {
+  const ls = linesAt(o, station);
+  return ls.length > 0 && ls.every((l) => FINISHED.has(l.status));
+};
+
+/** Q-AUTOPREP: after `doneId` is finished at `station`, the next order's waiting lines there. */
+export function autoPrepLines(orders: readonly Order[], station: string, doneId: string): { order: Order; lines: Line[] } | null {
+  const list = stationOrders(orders, station).filter((o) => o.id !== doneId);
+  for (const o of list) {
+    const ls = linesAt(o, station);
+    if (ls.some((l) => l.status === 'preparing')) return null; // the station is already on its next order
+    const waiting = ls.filter((l) => l.status === 'waiting');
+    if (waiting.length) return { order: o, lines: waiting };
+  }
+  return null;
+}
+
+/** Card meta "1 of 2 handed over" (21-polish2/kitchen.html). */
+export function handedMeta(o: Order): string | null {
+  const ls = live(o);
+  const n = ls.filter((l) => l.status === 'handed').length;
+  return n > 0 && n < ls.length ? `${String(n)} of ${String(ls.length)} handed over` : null;
+}
+
+/** The order is paused when every line still to make is paused. */
+export const isPaused = (o: Order, station: string | null): boolean => {
+  const ls = linesAt(o, station).filter((l) => TO_MAKE.has(l.status));
+  return ls.length > 0 && ls.every((l) => l.status === 'paused');
+};
+
+export interface Overview { readonly items: readonly { name: string; qty: number }[]; readonly split: Readonly<Partial<Record<LineStatus, number>>> }
+/** Station Overview (Q-STN-LOOK D): item totals still to make and the status split, across orders. */
+export function overview(orders: readonly Order[], station: string): Overview {
+  const items = new Map<string, number>();
+  const split: Partial<Record<LineStatus, number>> = {};
+  for (const o of stationOrders(orders, station)) {
+    for (const l of linesAt(o, station)) {
+      split[l.status] = (split[l.status] ?? 0) + 1;
+      if (TO_MAKE.has(l.status)) items.set(l.name, (items.get(l.name) ?? 0) + l.qty);
+    }
+  }
+  return { items: [...items].map(([name, qty]) => ({ name, qty })).sort((a, b) => b.qty - a.qty || a.name.localeCompare(b.name)), split };
+}
+
+/** Counter side (Q-KITCHEN-3 A): what the Open orders row offers for this order. */
+export function counterStep(o: Order): 'confirm' | 'handover' | null {
+  const ls = live(o);
+  if (ls.some((l) => l.status === 'done?')) return 'confirm';
+  if (ls.some((l) => l.status === 'ready')) return 'handover';
+  return null;
+}

@@ -5,7 +5,7 @@ Every feature has a row before work starts. IDs appear in code (`// F-xx`) and i
 | --- | --- | --- | --- | --- | --- |
 | F-01 | Stall theme night + day, Appearance setting | 20-polish/polish.css, Q-DAY-1, ADR-0003 | building | `npm run contrast` (336 pairs); UI/e2e theme test not written yet | change |
 | F-02 | Op log, fold, version vectors, conflicts | plan §2, Q-HARM-10 | building | src/store/fold/fold.test.ts | change |
-| F-03 | Local data (IndexedDB) + fake transport + tab channel | plan §2, Q-HARM-1 | building | src/data/data.test.ts | change |
+| F-03 | Local data (IndexedDB) + fake transport + tab channel | plan §2, Q-HARM-1 | building | src/data/data.test.ts (incl. IndexedDB fallback) | change |
 | F-04 | Launch screen (Counter, Kitchen, Stations, quiet Stall section) | 21-polish2/launch.html, Q-KITCHEN-1, Q-LAUNCH-1 B, D-NAV | building | none yet (UI tests deferred to the verify run) | change |
 | F-05 | Counter header, order strip, Open orders list | 20-polish/*.html header, 21-polish2/orders-list.html | building | none yet (UI tests deferred to the verify run) | change |
 | F-06 | Menu grid: tap to add, −/+, item note, fixed price, stock badges, sold out | 20-polish/menu.html, 12-stock/menu-plain.html, Q-POLISH-SET1, Q-STOCK-SET | building | src/store/counter.test.ts (store); UI none yet | change |
@@ -21,10 +21,10 @@ Every feature has a row before work starts. IDs appear in code (`// F-xx`) and i
 | F-16 | Count notes (₹5–500, More notes), cash received, change | payment.html | building | pay.test.ts | change |
 | F-17 | Tip chips None/₹10/₹20/Other, separate pot | 21-polish2/tips.html, D-TIP, D-MONEY | building | pay.test.ts | planned |
 | F-18 | Edit a placed order: collect the extra or refund | spec edit rules | building | pay.test.ts, e2e | planned |
-| F-19 | Kitchen: station pills, status icons, Done? proposal | 21-polish2/kitchen.html, Q-PILLS-1, Q-ICON, Q-OPEN-1 | planned | | change |
-| F-20 | Counter confirms Done? in Open orders | Q-KITCHEN-3 A | planned | | planned |
-| F-21 | Station page, three looks, swipe between orders, Overview | 21-polish2/station.html, Q-STN-LOOK D, Q-BACK-1 A | planned | | planned |
-| F-22 | Auto-prep next order at a station (setting) | Q-AUTOPREP | planned | | planned |
+| F-19 | Kitchen: station pills, status icons, Done? proposal | 21-polish2/kitchen.html, Q-PILLS-1, Q-ICON, Q-OPEN-1 | building | src/store/kitchen.test.ts, src/ui/kitchen/KitchenScreen.test.tsx | change |
+| F-20 | Counter confirms Done? in Open orders | Q-KITCHEN-3 A | building | src/store/kitchen.test.ts | planned |
+| F-21 | Station page, three looks, swipe between orders, Overview | 21-polish2/station.html, Q-STN-LOOK D, Q-BACK-1 A | building | src/store/kitchen.test.ts, src/ui/kitchen/KitchenScreen.test.tsx | planned |
+| F-22 | Auto-prep next order at a station (setting) | Q-AUTOPREP | building | src/store/kitchen.test.ts | planned |
 | F-23 | Money: Spent / Received entry with keypad | 21-polish2/money.html, received.html, Q-MONEY-V8, Q-RECV | planned | | planned |
 | F-24 | Paid by / Received in sheet with Mixed | paidby.html, paidby-mixed.html, Q-PAIDBY, Q-MIXED-1 | planned | | planned |
 | F-25 | Donation kind on Received | Q-VOUCH-1 | planned | | planned |

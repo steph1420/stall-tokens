@@ -30,6 +30,16 @@
   --dl-stall-swatch-5: #34d399;
   --dl-stall-swatch-6: #fb923c;
   --dl-stall-swatch-7: #6a8bab;
+  /* Kitchen status colours (Q-ICON, 21-polish2/kitchen.html): the same in night and day; every icon carries a text label. */
+  --dl-stall-st-waiting: #5AC8FA;
+  --dl-stall-st-preparing: #FF9F0A;
+  --dl-stall-st-done: #FFD60A;
+  --dl-stall-st-ready: #30D158;
+  --dl-stall-st-held: #BF5AF2;
+  --dl-stall-st-handed: #00D4AA;
+  --dl-stall-st-paused: #AEAEB2;
+  --dl-stall-st-priority: #FF453A;
+  --dl-stall-pill-h: 4.5rem;
 }
 
 :root, [data-theme="stall-night"] {

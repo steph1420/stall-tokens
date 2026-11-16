@@ -1,6 +1,13 @@
-# v2.0.0 build status (2026-11-16 16:20 IST) — untested WIP
+# v2.0.0 build status (2026-11-16 17:20 IST) — counter + kitchen + station built; untested beyond unit/UI tests
 
 Stopped early on Steve's request (quota). Nothing deployed; main untouched.
+
+## Kitchen + Station (2026-11-16 17:20 IST, Pos; Steve "continue")
+- Built: Kitchen (F-19), Counter Done? row + Hand over (F-20), Station page with three looks and Overview (F-21), auto-prep (F-22); Launch opens Kitchen and each station; `order.priority` op.
+- Gaps closed: ₹0 orders ("Nothing to collect" + To kitchen); IndexedDB missing or blocked now runs in memory with a calm banner.
+- Tests: `src/store/kitchen.test.ts` (2), `src/ui/kitchen/KitchenScreen.test.tsx` (2), fallback test in `src/data/data.test.ts`. 55 tests pass. No e2e or break-it run yet (D-TESTS lean).
+- Check-in shots (not in the repo): `/workspace/pos-shots/k0*-{night,day}.png`.
+- Deviations from the mockups (for Steve): Kitchen has a Back chevron to the start screen; Station header has an Overview button (the look picker and auto-prep switch live in its sheet until Settings exists); Hand over for Ready orders sits in Open orders; Priority is set by holding the token on a card; Paused is shown when set but nothing sets it yet.
 
 ## Standards audit vs agent-common 06 v2 (2026-11-16 17:20 IST, Pos). `npm run check` green after the fixes: pins, leak scan, build output, feature IDs, typecheck, lint, stylelint, depcruise, contrast 336/336, 50 tests, build.
 Read: CODING_SYSTEM_ROLLOUT, 01-09, 06 v2, STYLE_GUIDE, CONTRIBUTING, checks/, templates/, ADR-0001 (agent-common `a6160a3`). Verdict: largely up to standard (layers, tokens + CSS Modules, no Tailwind, framer-motion only in `src/motion`, storage prefix `stall-tokens.v2`, strict TS, exact pins, ADRs, feature IDs). Small gaps fixed:
@@ -24,8 +31,7 @@ Open (not fixed, need Steve or a later bundle): no UI component tests and no e2e
 
 ## Left
 - Verify + break-it run (e2e at 390/360, night/day), docs/VERIFY_LOG.md, docs/CROSSCHECK.md, check-in screenshots.
-- docs/SHEET_SETUP.md; Sheet transport; token slip component (F-42); Kitchen, stations and remaining screens.
-- IndexedDB-unavailable fallback (shows an error screen now); ₹0 orders on the payment screen.
+- docs/SHEET_SETUP.md; Sheet transport; token slip component (F-42); money, settlement, stock, float, history, settings.
 - PWA PNG icons (SVG only now); agent-common plan note.
 
 ## How to continue (for the next agent)
@@ -35,13 +41,11 @@ Open (not fixed, need Steve or a later bundle): no UI component tests and no e2e
 4. Visual truth: agent-common `handovers/pos/assets/stall-mockups-locked/20-polish` and `21-polish2`, night and day, with tokens in `polish.css`. Side-by-side pairs are in `21-polish2/pairs/`.
 5. Code map: `src/contract` (op log and money types), `src/data` (IndexedDB adapters and the sync engine with a pluggable transport; the fake transport is used now), `src/store` (fold, rules, counter and catalog actions, testkit), `src/tokens` (night and day tokens), and `src/ui/counter/{menu,billing,payment}` as the model for new screens (one folder each, with a `*.module.css` and a `*Screen.tsx`).
 6. Next, in order:
-   - Kitchen and station screens.
    - Money, with Paid by including Mixed, and Received.
    - Settlement: Settle up, Partners and Mark cleared.
    - Stock, with the paste parser rules in DECISIONS Q-STOCK-SET.
    - Float, History and Settings, with Appearance set to Night or Day.
    - Sheet transport and `docs/SHEET_SETUP.md`, which covers Steve's 5-minute Apps Script steps.
    - Token slip component (F-42, about 58 mm wide, printable).
-   - The known gaps listed above.
    - Verify and break-it run, then `docs/VERIFY_LOG.md`, then the go-live step with Steve: v2 goes straight to the main address, because v1 was never used.
 7. Quota: Steve is low on quota. Keep runs lean, and ask him before the full test run.

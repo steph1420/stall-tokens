@@ -25,7 +25,8 @@ Rules are checked by `.dependency-cruiser.cjs` and ESLint (no `fetch`/storage gl
 | Op log (the only truth for shared data) | `data/adapters/localIdb.ts` (persisted), mirrored in memory by `store/index.ts` | store `dispatch` only (local ops) and `store/sync` intake (remote ops) | store |
 | Shared state (menu, orders, payments, money, people, stock, days, settings) | `store/fold/` = `fold(log)` | nobody: always derived | ui via `useApp` |
 | Device prefs (deviceId, theme, serving name, token range, haptics, passcode) | `data/adapters/deviceStore.ts` | store actions | store |
-| UI place (screen, current order, each order's last page, open sheet) | `store/ui.ts` | store actions | ui |
+| UI place (screen, current order, each order's last page, open sheet, Kitchen pill, Station place + opener) | `store/ui.ts` | store actions | ui |
+| Storage mode (IndexedDB or memory-only fallback) | `data/adapters/fallback.ts`, surfaced as `memoryOnly` by `store/core.ts` | data adapter | ui (calm banner) |
 | Sync status (pending count, last pull, errors) | `data/sync/engine.ts` | engine | store → ui (sync pill) |
 | Conflicts | `store/fold/` (recorded during the fold) | nobody: derived | Settings › Sync › Review |
 
@@ -66,9 +67,15 @@ The op log does not know how ops travel. The sync engine (`data/sync/engine.ts`)
 | Menu | `ui/counter/menu/MenuScreen.tsx` | tap card = +1; press-and-hold card = stock panel; −/+; pencil = note |
 | Billing | `ui/counter/billing/BillingScreen.tsx` | −/+, tap qty = number strip; tap totals = Discount / Round-off sheet; hold Delete = delete |
 | Payment | `ui/counter/payment/PaymentScreen.tsx` | tap Cash/UPI = numpad; drag slider (₹10 snap); tip chips; vertical scroll to Count notes |
-| Sheets (note, item, discount, payee, numpad) | `ui/kit/Sheet.tsx` + each sheet | tap scrim or Done to close |
+| Kitchen (F-19) | `ui/kitchen/KitchenScreen.tsx` (+ `KitchenCard.tsx`) | pills: horizontal scroll, tap = filter; line: tap = next status, hold = On hold; hold the token = Priority; list: vertical scroll |
+| Station (F-21) | `ui/station/StationScreen.tsx` | order tabs: horizontal scroll, tap = show; body: swipe left/right = next/previous order (`CONFIG.gesture.swipePx`), vertical scroll; line: tap = next status, hold = On hold |
+| Open orders Done? row (F-20) | `ui/counter/CounterShell.tsx` | Send back / Confirm; Hand over for Ready |
+| Sheets (note, item, discount, payee, numpad, station Overview) | `ui/kit/Sheet.tsx` + each sheet | tap scrim or Done to close |
 
 Page changes use the header tabs and Back/Next buttons only; no page swipe, so the strip's horizontal scroll and the menu's vertical scroll never fight. Holds use `HOLD.durationMs`; motion springs come from the motion tokens; reduced motion = short fade.
+
+### 5.1 Kitchen status flow (F-19..F-22)
+Station tap: Waiting → Preparing → Done?; On hold / Paused → Preparing. Counter (Open orders): Done? → Ready (Confirm) or → Preparing (Send back); Ready → Handed over. Handed-over lines stay on the card, muted (Q-KITCHEN-4 A). When an order is finished at a station, the next order's waiting lines there go to Preparing (Q-AUTOPREP, device pref `autoPrep`, default On). Priority is an order flag (`order.priority` op); priority orders sort first. Rules: `store/rules/kitchen.ts`; actions: `store/kitchen.ts`. Status colours: `--dl-stall-st-*`; the Priority bob is `motion/` `Bob` (`LOOPS` in `motion/tokens.ts`).
 
 ## 6. Display scales and test viewports
 | Scale | Viewports |

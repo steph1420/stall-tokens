@@ -2,7 +2,7 @@
 // Springs come from the motion tokens. Reduced motion falls back to a short fade, no travel. Transform and opacity only.
 import type { ReactNode } from 'react';
 import { AnimatePresence, motion, useReducedMotion, type Transition } from 'framer-motion';
-import { DURATION, SPRINGS } from './tokens';
+import { DURATION, LOOPS, SPRINGS } from './tokens';
 
 export type SpringName = keyof typeof SPRINGS;
 const MS_PER_S = 1000;
@@ -31,4 +31,16 @@ export function RiseIn({ children, className }: { children: ReactNode; className
 
 export function Presence({ children }: { children: ReactNode }) {
   return <AnimatePresence initial={false}>{children}</AnimatePresence>;
+}
+
+const BOB: Transition = { duration: LOOPS.priorityBob.periodMs / MS_PER_S, repeat: Infinity, ease: 'easeInOut' };
+/** Q-ICON: the Priority chevron bobs up and down. Reduced motion: still. */
+export function Bob({ children, className }: { children: ReactNode; className?: string | undefined }) {
+  const reduce = useReducedMotion();
+  if (reduce) return <span className={className}>{children}</span>;
+  return (
+    <motion.span className={className} animate={{ y: ['0rem', `${String(LOOPS.priorityBob.liftRem)}rem`, '0rem'] }} transition={BOB}>
+      {children}
+    </motion.span>
+  );
 }

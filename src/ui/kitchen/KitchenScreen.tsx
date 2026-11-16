@@ -1,0 +1,47 @@
+// F-19 Kitchen (21-polish2/kitchen.html, 04-kitchen/kitchen-v7): station pills with to-make counts in one
+// scrolling row (Q-PILLS-1 A); "Open <station>" only when a pill is picked (Q-OPEN-1 A). Interaction owner (§5).
+import { kitchen, liveOrders, useApp } from '../../store';
+import { Icon } from '../kit/Icon';
+import { KitchenCard } from './KitchenCard';
+import { STATIONS, stationIcon, stationVar } from './stations';
+import s from './Kitchen.module.css';
+
+function Pill({ name, count, on, onPick }: { name: string | null; count: number; on: boolean; onPick: () => void }) {
+  const cls = [s.pill, on ? s.pillOn : '', count === 0 ? s.pillZero : '', name === null ? s.pillAll : ''].join(' ');
+  return (
+    <button type="button" className={cls} style={name ? stationVar(name) : undefined} aria-pressed={on} onClick={onPick}>
+      <Icon name={name ? stationIcon(name) : 'all'} className={s.pillIcon} />
+      <span className={s.pillTx}><span>{name ?? 'All'}</span><b>{count}</b></span>
+    </button>
+  );
+}
+
+export function KitchenScreen() {
+  const folded = useApp((st) => st.folded);
+  const filter = useApp((st) => st.ui.kitchenFilter);
+  const stallName = useApp((st) => st.folded.settings.stallName ?? 'Fair stall');
+  const k = useApp((st) => st.kitchen);
+  const go = useApp((st) => st.go);
+  const all = liveOrders(folded);
+  const list = kitchen.kitchenOrders(all).filter((o) => filter === null || kitchen.linesAt(o, filter).length > 0);
+  return (
+    <div className={s.phone}>
+      <header className={s.chrome}>
+        <div className={s.hdr}>
+          <div className={s.kicker}>{stallName}</div>
+          <button type="button" className={s.back} aria-label="Back to start" onClick={() => { go('launch'); }}><Icon name="chevLeft" /></button>
+          <h1 className={s.title}>Kitchen</h1>
+          {filter ? <button type="button" className={s.open} onClick={() => { k.openStation(filter, 'kitchen'); }}>Open {filter}<Icon name="open" className={s.openIc} /></button> : null}
+        </div>
+        <div className={s.pills} role="group" aria-label="Station filter">
+          <Pill name={null} count={kitchen.toMake(all, null)} on={filter === null} onPick={() => { k.filterKitchen(null); }} />
+          {STATIONS.map((n) => <Pill key={n} name={n} count={kitchen.toMake(all, n)} on={filter === n} onPick={() => { k.filterKitchen(n); }} />)}
+        </div>
+      </header>
+      <main className={s.klist}>
+        {list.length === 0 ? <p className={s.empty}>Nothing to make right now</p> : null}
+        {list.map((o) => <KitchenCard key={o.id} o={o} station={filter} only={filter !== null} />)}
+      </main>
+    </div>
+  );
+}

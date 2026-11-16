@@ -49,3 +49,16 @@
 .orowSum { margin-top: 0.125rem; font-size: 0.75rem; color: var(--dl-color-text-faint); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding: 0 0.875rem 0.5rem 0; }
 .orowAmt { font-weight: var(--dl-stall-num-weight); font-size: 1.25rem; letter-spacing: -0.03em; color: var(--dl-color-text-display); font-variant-numeric: tabular-nums; }
 .orowAmtDue { composes: orowAmt; color: var(--dl-stall-warn-text); }
+/* Q-KITCHEN-3 A: Done? row expands amber with Send back / Confirm (21-polish2/kitchen.html .abtn). */
+.ogroup { border-bottom: var(--dl-stall-hair) solid color-mix(in srgb, var(--dl-color-hairline) 70%, transparent); }
+.ogroup:last-child { border-bottom: 0; }
+.ogroup .orow, .ogroupAmber .orow { border-bottom: 0; }
+.ogroupAmber {
+  composes: ogroup; border-radius: var(--dl-radius-sm); padding-bottom: 0.625rem;
+  background: color-mix(in srgb, var(--dl-color-warning) 10%, transparent); box-shadow: 0 0 1.125rem color-mix(in srgb, var(--dl-color-warning) 16%, transparent);
+}
+.ogroupAmber .orowLine span { color: var(--dl-stall-warn-text); }
+.oact { display: flex; align-items: center; gap: 0.5rem; padding: 0 0.875rem 0.625rem; }
+.abtn { flex: 1; height: 2.75rem; border-radius: 0.875rem; display: grid; place-items: center; font-family: var(--dl-stall-font-display); font-size: 1rem; font-weight: 500; }
+.abtnBack { composes: abtn; color: var(--dl-color-text); background: color-mix(in srgb, var(--dl-color-surface) 88%, transparent); box-shadow: inset 0 0 0 var(--dl-stall-hair) var(--dl-color-hairline), var(--dl-stall-card-edge); }
+.abtnGo { composes: abtn; font-weight: 600; color: var(--dl-stall-on-cta); background: var(--dl-stall-cta); box-shadow: var(--dl-stall-cta-shadow); }

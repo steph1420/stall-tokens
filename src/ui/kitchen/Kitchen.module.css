@@ -1,0 +1,95 @@
+/* Kitchen (21-polish2/kitchen.html + polish2.css v4 pills). Sizes from the mockup in rem (16 px = 1 rem). */
+.phone { composes: phone from "../counter/Counter.module.css"; }
+.chrome { composes: chrome from "../counter/Counter.module.css"; }
+.hdr { display: grid; grid-template-columns: auto 1fr auto; grid-template-rows: 1rem 2.25rem; column-gap: 0.5rem; row-gap: 0.25rem; align-items: center; padding: 0.25rem 1rem 0 0.75rem; }
+.kicker { grid-column: 1 / span 3; grid-row: 1; padding-left: 0.5rem; font-size: 0.6875rem; line-height: 1rem; letter-spacing: 0.16em; text-transform: uppercase; color: var(--dl-color-text-faint); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.back { grid-column: 1; grid-row: 2; width: 2.25rem; height: 2.25rem; display: grid; place-items: center; color: var(--dl-color-accent); }
+.back svg { width: 1.375rem; height: 1.375rem; display: block; }
+.title { grid-column: 2; grid-row: 2; margin: 0; font-family: var(--dl-stall-font-display); font-size: 1.0625rem; font-weight: 500; letter-spacing: -0.01em; color: var(--dl-color-text-display); }
+.open {
+  grid-column: 3; grid-row: 2; height: 2rem; padding: 0 0.625rem 0 0.75rem; border-radius: var(--dl-radius-pill);
+  display: inline-flex; align-items: center; gap: 0.25rem; font-size: 0.8125rem; font-weight: 500; line-height: 1;
+  color: var(--dl-color-accent); background: color-mix(in srgb, var(--dl-color-accent) 10%, transparent);
+}
+.openIc svg { width: 0.875rem; height: 0.875rem; display: block; }
+
+/* Station pills (Q-PILLS-1 A): one horizontally scrolling row, soft right fade. */
+.pills {
+  display: flex; align-items: stretch; gap: 0.625rem; overflow-x: auto; scrollbar-width: none; margin: 0.5rem 0 0.375rem; padding: 0.125rem 1.75rem 0.375rem 1rem;
+  mask-image: linear-gradient(90deg, var(--dl-stall-qr-ink) 0, var(--dl-stall-qr-ink) calc(100% - 2.25rem), transparent 100%);
+}
+.pills::-webkit-scrollbar { display: none; }
+.pill {
+  --c: var(--dl-color-accent);
+  flex: none; height: var(--dl-stall-pill-h); min-width: 6rem; padding: 0 1.125rem 0 0.875rem; gap: 0.75rem; border-radius: 1.375rem;
+  display: flex; align-items: center; font-size: 1rem; color: var(--dl-color-text-muted);
+  background: color-mix(in srgb, var(--c) 12%, transparent);
+}
+.pillAll { --c: var(--dl-color-accent); }
+.pillIcon svg { width: 1.75rem; height: 1.75rem; display: block; stroke: color-mix(in srgb, var(--c) 75%, transparent); opacity: 0.8; }
+.pillTx { display: flex; flex-direction: column; gap: 0.375rem; align-items: flex-start; line-height: 1; }
+.pillTx span { font-weight: 500; }
+.pillTx b { font-size: 0.9375rem; font-weight: 500; color: var(--c); font-variant-numeric: tabular-nums; }
+.pillZero .pillTx b { opacity: 0.45; }
+.pillOn { background: color-mix(in srgb, var(--c) 30%, transparent); color: var(--dl-color-text-display); }
+.pillOn .pillIcon svg { opacity: 1; stroke: var(--c); }
+.pillOn .pillTx b { color: var(--dl-color-text-display); }
+:global([data-theme="stall-day"]) .pill:not(.pillOn) .pillTx b { color: color-mix(in srgb, var(--c) 50%, var(--dl-color-text-display)); }
+
+/* Order cards */
+.klist { flex: 1; min-height: 0; overflow-y: auto; padding: 0.5rem 1rem 1rem; display: flex; flex-direction: column; gap: 0.5rem; }
+.empty { margin: 3rem 0 0; text-align: center; color: var(--dl-color-text-faint); }
+.kcard {
+  position: relative; flex: none; padding: 0.875rem 1rem 0.75rem; border-radius: var(--dl-card-radius);
+  background: var(--dl-card-bg); backdrop-filter: blur(var(--dl-blur-card)) saturate(160%);
+  box-shadow: inset 0 0 0 var(--dl-stall-hair) var(--dl-card-border), var(--dl-stall-card-edge), var(--dl-stall-card-lift);
+  overflow: hidden; isolation: isolate;
+}
+.kcard::before { content: ""; position: absolute; inset: 0; border-radius: inherit; background: var(--dl-color-sheen); pointer-events: none; z-index: 1; }
+.isPriority {
+  background: color-mix(in srgb, var(--dl-color-accent) 10%, var(--dl-color-surface));
+  box-shadow: inset 0 0 0 var(--dl-stall-hair) var(--dl-card-border), var(--dl-stall-card-edge), 0 0 1rem color-mix(in srgb, var(--dl-color-accent) 14%, transparent);
+}
+.isPaused { opacity: 0.5; }
+.kh { position: relative; z-index: 2; display: flex; align-items: baseline; justify-content: space-between; gap: 0.625rem; margin-bottom: 0.375rem; }
+.token {
+  font-family: var(--dl-stall-font-display); font-weight: var(--dl-stall-num-weight); font-size: 2rem; line-height: 1; letter-spacing: -0.04em;
+  color: var(--dl-color-text-display); font-variant-numeric: tabular-nums; text-shadow: 0 0 1rem color-mix(in srgb, var(--dl-color-accent) 18%, transparent);
+  user-select: none; -webkit-user-select: none; -webkit-touch-callout: none;
+}
+.hash { font-size: 0.62em; margin-right: 0.0625rem; opacity: 0.8; }
+.meta { font-size: 0.8125rem; color: var(--dl-color-text-muted); text-align: right; }
+
+.kline {
+  --c: var(--dl-color-accent);
+  position: relative; z-index: 2; display: flex; align-items: center; gap: 0.5rem; padding: 0.5rem 0.25rem 0.5rem 0.875rem; border-radius: 0.625rem;
+  user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; touch-action: manipulation; cursor: pointer;
+}
+.kline + .kline { margin-top: 0.125rem; }
+.bar {
+  position: absolute; left: 0; top: 0.5rem; bottom: 0.5rem; width: var(--dl-stall-accent-bar); border-radius: var(--dl-radius-pill);
+  background: var(--c); box-shadow: 0 0 0.5rem color-mix(in srgb, var(--c) 36%, transparent);
+}
+.main { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.name { font-family: var(--dl-stall-font-display); font-size: 1rem; line-height: 1.25rem; font-weight: 500; letter-spacing: -0.02em; color: var(--dl-color-text); }
+.note { margin-top: 0.0625rem; font-size: 0.75rem; line-height: 1rem; font-style: italic; color: var(--dl-color-text-muted); }
+.state { flex: none; display: flex; align-items: center; line-height: 1.625rem; }
+.isHanded .main, .isHanded .bar { opacity: 0.45; }
+.isDone { background: color-mix(in srgb, var(--dl-color-warning) 12%, transparent); box-shadow: 0 0 0.875rem color-mix(in srgb, var(--dl-color-warning) 10%, transparent); }
+.isOther { cursor: default; }
+.isOther .main, .isOther .bar, .isOther .state { opacity: 0.5; }
+
+/* Status marks (Q-ICON) */
+.st { --st: var(--dl-color-text-muted); display: inline-flex; align-items: center; gap: 0.375rem; color: var(--st); }
+.stIcon svg { width: 1.625rem; height: 1.625rem; display: block; filter: drop-shadow(0 0 0.375rem color-mix(in srgb, var(--st) 35%, transparent)); }
+.stIconSm svg { width: 1.375rem; height: 1.375rem; display: block; filter: drop-shadow(0 0 0.375rem color-mix(in srgb, var(--st) 35%, transparent)); }
+.stBob { display: inline-block; }
+.stL { font-size: 0.6875rem; color: var(--dl-color-text-muted); }
+.stWaiting { --st: var(--dl-stall-st-waiting); }
+.stPreparing { --st: var(--dl-stall-st-preparing); }
+.stDone { --st: var(--dl-stall-st-done); }
+.stReady { --st: var(--dl-stall-st-ready); }
+.stHeld { --st: var(--dl-stall-st-held); }
+.stHanded { --st: var(--dl-stall-st-handed); }
+.stPaused { --st: var(--dl-stall-st-paused); }
+.stPriority { --st: var(--dl-stall-st-priority); }

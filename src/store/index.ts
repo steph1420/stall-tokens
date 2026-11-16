@@ -7,10 +7,13 @@ import { createBrowserDataSource, createSyncEngine, type DataSource, type Device
 import { catalogActions } from './catalog';
 import { createLog, initialCore, type Core, type CoreState } from './core';
 import { counterActions } from './counter';
+import { kitchenActions } from './kitchen';
 import type { Screen, Sheet } from './ui';
 
-export type { Screen, Sheet } from './ui';
+export type { Screen, Sheet, StationPlace } from './ui';
+export * as kitchen from './rules/kitchen';
 export type { Folded } from './fold/state';
+export type { DevicePrefs } from '../data';
 export type { OrderStatus, Page } from './rules/status';
 export * as bill from './rules/bill';
 export * as pay from './rules/pay';
@@ -22,6 +25,7 @@ export { liveOrders } from './fold/fold';
 export interface AppState extends CoreState {
   readonly counter: ReturnType<typeof counterActions>;
   readonly catalog: ReturnType<typeof catalogActions>;
+  readonly kitchen: ReturnType<typeof kitchenActions>;
   readonly go: (screen: Screen) => void;
   readonly openSheet: (sheet: Sheet | null) => void;
   readonly setPrefs: (patch: Partial<DevicePrefs>) => void;
@@ -48,6 +52,7 @@ export function createAppStore(ds: DataSource, opts: StoreOptions = {}): AppStor
       ...initialCore(prefs),
       counter: counterActions(core, l),
       catalog: catalogActions(core, l),
+      kitchen: kitchenActions(core, l),
       go(screen) { set((s) => ({ ui: { ...s.ui, screen, sheet: null, olist: false } })); },
       openSheet(sheet) { set((s) => ({ ui: { ...s.ui, sheet } })); },
       setPrefs(patch) { const next = { ...get().prefs, ...patch }; ds.device.write(next); set({ prefs: next }); },

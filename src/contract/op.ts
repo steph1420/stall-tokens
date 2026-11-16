@@ -31,6 +31,8 @@ export interface Bodies {
   'order.roundoff': { orderId: string; amount: Paise; forTotal: Paise };
   'order.send': { orderId: string };
   'order.delete': { orderId: string };
+  /** F-19 Priority flag (Q-ICON). Additive kind (contract stays v2: older ops never carry it). */
+  'order.priority': { orderId: string; on: boolean };
   'payment.add': PaymentBody;
   'refund.add': { refundId: string; orderId: string; amount: Paise; source: PaySource };
   'payee.set': { payeeId: string; name: string; upiId: string; removed: boolean };
@@ -39,7 +41,7 @@ export interface Bodies {
 export type OpKind = keyof Bodies;
 export const OP_KINDS = [
   'item.set', 'stock.adjust', 'day.start', 'order.create', 'line.add', 'line.qty', 'line.note', 'line.status',
-  'order.note', 'order.discount', 'order.roundoff', 'order.send', 'order.delete', 'payment.add', 'refund.add',
+  'order.note', 'order.discount', 'order.roundoff', 'order.send', 'order.delete', 'order.priority', 'payment.add', 'refund.add',
   'payee.set', 'setting.set',
 ] as const satisfies readonly OpKind[];
 
@@ -92,6 +94,7 @@ const S: Record<OpKind, Record<string, FieldType>> = {
   'order.roundoff': { orderId: 's', amount: 'n', forTotal: 'n' },
   'order.send': { orderId: 's' },
   'order.delete': { orderId: 's' },
+  'order.priority': { orderId: 's', on: 'b' },
   'payment.add': { paymentId: 's', orderId: 's', cash: 'n', upi: 'n', upiPayeeId: 'n?', tip: 'n', waived: 'n', waivedBy: 's', waivedNote: 's', cashGiven: 'n', notes: 'o' },
   'refund.add': { refundId: 's', orderId: 's', amount: 'n', source: 's' },
   'payee.set': { payeeId: 's', name: 's', upiId: 's', removed: 'b' },

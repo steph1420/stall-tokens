@@ -19,7 +19,7 @@ export interface Order {
   readonly id: string; readonly dayId: string; readonly token: number; readonly servedBy: string; readonly createdAt: number;
   readonly lines: readonly Line[]; readonly note: string; readonly discount: Discount | null;
   readonly roundOff: { readonly amount: Paise; readonly forTotal: Paise } | null;
-  readonly sent: boolean; readonly deleted: boolean; readonly payments: readonly Payment[]; readonly refunds: readonly Refund[];
+  readonly sent: boolean; readonly deleted: boolean; readonly priority: boolean; readonly payments: readonly Payment[]; readonly refunds: readonly Refund[];
   readonly revision: number;
 }
 export interface Payee { readonly id: string; readonly name: string; readonly upiId: string }

@@ -3,9 +3,11 @@ import { useEffect, useState } from 'react';
 import { CONFIG } from '../config';
 import { useApp } from '../store';
 import { CounterShell } from './counter/CounterShell';
-import { SaveBanner, Toast } from './kit/Toast';
+import { MemoryBanner, SaveBanner, Toast } from './kit/Toast';
 import { UpdateBanner } from './kit/Update';
+import { KitchenScreen } from './kitchen/KitchenScreen';
 import { LaunchScreen } from './launch/LaunchScreen';
+import { StationScreen } from './station/StationScreen';
 import k from './kit/kit.module.css';
 
 export function App() {
@@ -20,9 +22,10 @@ export function App() {
   if (!ready) return null;
   return (
     <>
-      {screen === 'launch' ? <LaunchScreen /> : <CounterShell />}
+      {screen === 'launch' ? <LaunchScreen /> : screen === 'kitchen' ? <KitchenScreen /> : screen === 'station' ? <StationScreen /> : <CounterShell />}
       <Toast />
       <SaveBanner />
+      <MemoryBanner />
       {import.meta.env.PROD ? <UpdateBanner /> : null}
     </>
   );

@@ -7,6 +7,13 @@ All notable changes to Stall Tokens. SemVer. Times IST.
 - Docs first: `docs/ARCHITECTURE.md`, `FEATURES.md`, `docs/adr/ADR-0003-stall-accent.md`.
 ### Changed
 - v1 single-file app moved to `legacy/v1/index.html` (kept byte for byte; rollback tag `v1.0.0`, branch `backup/pre-v2.0.0`).
+### Added (16 Nov, Kitchen + Station)
+- Kitchen screen (F-19): station pills with to-make counts, status icons with labels, Priority bob (motion/), handed-over lines muted, "Open <station>" only when a pill is picked.
+- Station page (F-21): one order per screen, order tabs, swipe, three looks (Full card default, Item cards, Ticket), Overview sheet; Back returns to the opener.
+- Counter Open orders: Done? amber row with Send back / Confirm, and Hand over for Ready orders (F-20). Auto-prep of the next order (F-22).
+- `order.priority` op (additive, contract v2). Launch opens Kitchen and each station.
+- Known gaps closed: ₹0 orders show "Nothing to collect" with To kitchen; no usable IndexedDB now runs in memory with a calm banner.
+- CI runs on `feat/**` with the feature-ID step (Q-CI-1 A).
 ### Audit (16 Nov, vs agent-common 06 v2)
 - Re-copied the build-output check (agent-common `ab6431f`); added the feature-ID check to `npm run check` (CI workflow change waits on a `workflow`-scoped login).
 - Logged the two silent catch/retry spots; moved a slider threshold to config and an inline style to CSS Modules (no visual change).

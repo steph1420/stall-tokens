@@ -2,7 +2,8 @@
 // Interaction owner for the shared header (ARCHITECTURE §5).
 import { useEffect, useRef } from 'react';
 import { CONFIG } from '../../config';
-import { bill, formatToken, isOpen, liveOrders, orderStatus, useApp, type Page } from '../../store';
+import type { Order } from '../../contract';
+import { bill, formatToken, isOpen, kitchen, liveOrders, orderStatus, useApp, type Page } from '../../store';
 import { Icon } from '../kit/Icon';
 import { Money } from '../kit/Money';
 import { BillingScreen } from './billing/BillingScreen';
@@ -42,6 +43,24 @@ function Strip() {
   );
 }
 
+/** F-20 Q-KITCHEN-3 A: a Done? order opens as an amber row with Send back / Confirm; a Ready order offers Hand over. */
+function KitchenStep({ o }: { o: Order }) {
+  const k = useApp((st) => st.kitchen);
+  const step = kitchen.counterStep(o);
+  if (step === 'confirm') {
+    return (
+      <div className={s.oact}>
+        <button type="button" className={s.abtnBack} onClick={() => { k.sendBack(o.id); }}>Send back</button>
+        <button type="button" className={s.abtnGo} onClick={() => { k.confirmDone(o.id); }}>Confirm</button>
+      </div>
+    );
+  }
+  if (step === 'handover') {
+    return <div className={s.oact}><button type="button" className={s.abtnGo} onClick={() => { k.handOver(o.id); }}>Hand over</button></div>;
+  }
+  return null;
+}
+
 function OpenOrders() {
   const rows = useOpenOrders();
   const cur = useApp((st) => st.ui.orderId);
@@ -53,13 +72,16 @@ function OpenOrders() {
         <div className={s.olistH}>Open orders</div>
         {rows.length === 0 ? <div className={s.orowSum}>No open orders</div> : null}
         {rows.map(({ o, status }) => (
-          <button type="button" key={o.id} className={o.id === cur ? s.orowCur : s.orow} onClick={() => { c.selectOrder(o.id); }}>
+          <div key={o.id} className={kitchen.counterStep(o) === 'confirm' ? s.ogroupAmber : s.ogroup}>
+          <button type="button" className={o.id === cur ? s.orowCur : s.orow} onClick={() => { c.selectOrder(o.id); }}>
             <span className={s.orowMain}>
-              <span className={s.orowLine}><b>{formatToken(o.token, CONFIG.tokens.pad)}</b><span>{status}</span></span>
+              <span className={s.orowLine}><b>{formatToken(o.token, CONFIG.tokens.pad)}</b><span>{kitchen.counterStep(o) === 'confirm' ? 'Done?' : status}</span></span>
               <span className={s.orowSum}>{o.lines.some((l) => l.qty > 0) ? o.lines.filter((l) => l.qty > 0).map((l) => `${String(l.qty)}× ${l.name}`).join(', ') : 'No items yet'}</span>
             </span>
             <Money p={bill.total(o)} className={bill.due(o) > 0 && o.sent ? s.orowAmtDue : s.orowAmt} />
           </button>
+          <KitchenStep o={o} />
+          </div>
         ))}
       </div>
     </>
