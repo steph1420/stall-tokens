@@ -20,6 +20,7 @@ export function moneyActions(core: Core, log: Log) {
       const err = checkEntry(Math.trunc(d.amount), parts);
       if (err) return err;
       if (d.amount > CONFIG.limits.moneyMaxPaise) return 'That amount is too big';
+      if (st().folded.locks[dayId()]?.locked) return 'Day is locked · reopen it in Settle up';
       log.dispatch('entry.add', { ...d, amount: Math.trunc(d.amount), parts, label: clean(d.label, CONFIG.limits.nameMaxChars), note: clean(d.note, CONFIG.limits.noteMaxChars), entryId: core.env.makeId(), dayId: dayId() });
       return null;
     },

@@ -1,5 +1,5 @@
 // Derived state shapes (the fold's output). Screens read these through the store.
-import type { ItemFields, LineStatus, MoneyPart, PaySource } from './op';
+import type { ClearReason, ItemFields, LineStatus, MoneyPart, MoneySource, PaySource } from './op';
 import type { Paise } from './money';
 
 export interface Item extends ItemFields { readonly id: string; readonly sold: number; readonly oversold: boolean }
@@ -36,3 +36,11 @@ export interface Entry {
 }
 /** F-27 A person in the money book; partners carry a share per fair (Q-SETTLE-GAPS). Names are typed in the app only. */
 export interface Person { readonly id: string; readonly name: string; readonly isPartner: boolean; readonly sharePct: number }
+/** F-26..F-28 A repayment (Pay, partial allowed) or a Mark cleared; `undone` keeps the record (reversal, Q-SETTLE-GAPS). */
+export interface Settlement {
+  readonly id: string; readonly kind: 'pay' | 'clear'; readonly dayId: string; readonly personId: string; readonly amount: Paise;
+  readonly via: MoneySource | null; readonly byPersonId: string | null; readonly reason: ClearReason | null; readonly note: string;
+  readonly at: number; readonly undone: boolean;
+}
+/** F-29 Lock day after the partner split; reopen to edit. */
+export interface DayLock { readonly locked: boolean; readonly split: Readonly<Record<string, Paise>>; readonly at: number }

@@ -1,5 +1,5 @@
 // F-02 Folded state: everything shared is derived from the op log; nothing here is written by screens.
-import type { Conflict, Day, Entry, Item, Order, Payee, Person, VV } from '../../contract';
+import type { Conflict, Day, DayLock, Entry, Item, Order, Payee, Person, Settlement, VV } from '../../contract';
 
 export interface LastWrite { readonly writer: string; readonly seq: number; readonly opId: string }
 export interface Folded {
@@ -11,6 +11,8 @@ export interface Folded {
   readonly settings: Readonly<Record<string, string>>;
   readonly people: Readonly<Record<string, Person>>;
   readonly entries: readonly Entry[];
+  readonly settlements: readonly Settlement[];
+  readonly locks: Readonly<Record<string, DayLock>>;
   readonly conflicts: readonly Conflict[];
   readonly seen: VV; // highest seq per writer (the local version vector)
   readonly gaps: Readonly<Record<string, number>>; // writer -> count of missing seqs
@@ -20,6 +22,6 @@ export interface Folded {
 }
 
 export const emptyFolded = (): Folded => ({
-  items: {}, orders: {}, orderIds: [], days: [], payees: {}, settings: {}, people: {}, entries: [], conflicts: [],
+  items: {}, orders: {}, orderIds: [], days: [], payees: {}, settings: {}, people: {}, entries: [], settlements: [], locks: {}, conflicts: [],
   seen: {}, gaps: {}, lamport: 0, applied: new Set(), lastWrite: {},
 });

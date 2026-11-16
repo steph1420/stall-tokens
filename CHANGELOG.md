@@ -2,6 +2,8 @@
 All notable changes to Stall Tokens. SemVer. Times IST.
 
 ## [Unreleased] — 2.0.0 (branch `feat/v2.0.0`)
+### Added (16 Nov 19:00, Settlement)
+- Settlement (F-26..F-29): Settle up (Stall in hand, 1 Repay others with Pay, 2 Split between partners dimmed until step 1 is done, Repay all) and Partners (pending repayments warning with Review, To split, shares %, "Covering …'s ₹… · added back", Add a partner, Split anyway / Split and lock the day, Reopen). Person sheet: amount (partial ok), Via / When tiles, history with Undo, Mark cleared + Pay; Mark cleared asks Gifted / Paid directly / Written off / Shared cost + note. Ops `settle.pay`, `settle.clear`, `settle.undo`, `day.lock` (additive). A locked day refuses money changes. 2 store tests.
 ### Added (16 Nov 18:50, Money)
 - Money (F-23..F-25): Stall screen with today's totals (sales cash / UPI, spent, received incl. donations, tips as own pot, register by the book), Refunds due from cancelled paid orders with Cash back / UPI back, and today's entries. Entry screen per Money v8 / Received v1: Spent | Received, For / Paid by (From / Received in) tiles, amount, keypad, Save. Paid by sheet: Register, UPI, Personal (people + Add a name), Mixed (amount per part, covered bar). Ops `person.set`, `entry.add`, `entry.void` (additive). Stall section on launch and in the Counter ⋯ sheet (D-NAV). 2 store tests.
 ### Added (16 Nov 18:40, New Orders / Open Orders)

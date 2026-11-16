@@ -28,10 +28,10 @@ Every feature has a row before work starts. IDs appear in code (`// F-xx`) and i
 | F-23 | Money: home (today's totals, Refunds due from cancels, entries) + Spent / Received entry with keypad | 21-polish2/money.html, received.html, Q-MONEY-V8, Q-RECV, Q-CANCEL-1 A, D-MONEY-HOME | building | src/store/money.test.ts | planned |
 | F-24 | Paid by / Received in sheet with Mixed | paidby.html, paidby-mixed.html, Q-PAIDBY, Q-MIXED-1 | building | src/store/money.test.ts | planned |
 | F-25 | Donation kind on Received | Q-VOUCH-1 | building | src/store/money.test.ts | planned |
-| F-26 | Settle up (repay others, partner split, Repay all) | settle.html, Q-NEXT-2 A, Q-PART-1 C | planned | | planned |
-| F-27 | Partners: shares per fair, pending warning, Split anyway | partners.html, Q-SETTLE-GAPS | planned | | planned |
-| F-28 | Person sheet: Pay (partial), Mark cleared with reasons + note, undo | settlesheet.html, clearnote.html | planned | | planned |
-| F-29 | Lock day / reopen, carry-over, loss day | Q-SETTLE-GAPS | planned | | planned |
+| F-26 | Settle up (repay others, partner split, Repay all) | settle.html, Q-NEXT-2 A, Q-PART-1 C | building | src/store/settle.test.ts | planned |
+| F-27 | Partners: shares per fair, pending warning, Split anyway | partners.html, Q-SETTLE-GAPS | building | src/store/settle.test.ts | planned |
+| F-28 | Person sheet: Pay (partial), Mark cleared with reasons + note, undo | settlesheet.html, clearnote.html | building | src/store/settle.test.ts | planned |
+| F-29 | Lock day / reopen, carry-over, loss day | Q-SETTLE-GAPS | building | src/store/settle.test.ts | planned |
 | F-30 | Stock screen with navrail categories, Low / Sold out filters | 21-polish2/stock.html, Q-STOCK-SET | planned | | planned |
 | F-31 | Stock paste sheet (parser + one Spent entry) | 21-polish2/stockpaste.html, Q-PASTE-1 A, Q-STOCK-SET | planned | | planned |
 | F-32 | Open the stall (float count) | 21-polish2/float.html | planned | | planned |

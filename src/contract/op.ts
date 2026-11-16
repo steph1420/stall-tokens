@@ -55,12 +55,18 @@ export interface Bodies {
   'person.set': { personId: string; name: string; isPartner: boolean; sharePct: number; removed: boolean };
   'entry.add': EntryBody;
   'entry.void': { entryId: string; reason: string };
+  /** F-26..F-29 Settlement (Q-NEXT-2 A, Q-SETTLE-GAPS). Amounts are signed: + = the stall pays the person. */
+  'settle.pay': { payId: string; dayId: string; personId: string; amount: Paise; via: MoneySource; byPersonId: string | null };
+  'settle.clear': { clearId: string; dayId: string; personId: string; amount: Paise; reason: ClearReason; note: string };
+  'settle.undo': { targetId: string; reason: string };
+  'day.lock': { dayId: string; locked: boolean; split: Record<string, number> };
 }
+export type ClearReason = 'gifted' | 'paid-directly' | 'written-off' | 'shared-cost';
 export type OpKind = keyof Bodies;
 export const OP_KINDS = [
   'item.set', 'stock.adjust', 'day.start', 'order.create', 'line.add', 'line.qty', 'line.note', 'line.status', 'line.finish',
   'order.note', 'order.discount', 'order.roundoff', 'order.send', 'order.delete', 'order.priority', 'order.cancel', 'order.client', 'payment.add', 'refund.add',
-  'payee.set', 'setting.set', 'person.set', 'entry.add', 'entry.void',
+  'payee.set', 'setting.set', 'person.set', 'entry.add', 'entry.void', 'settle.pay', 'settle.clear', 'settle.undo', 'day.lock',
 ] as const satisfies readonly OpKind[];
 
 /** Version vector: highest seq seen per writer. */
@@ -123,6 +129,10 @@ const S: Record<OpKind, Record<string, FieldType>> = {
   'person.set': { personId: 's', name: 's', isPartner: 'b', sharePct: 'n', removed: 'b' },
   'entry.add': { entryId: 's', dayId: 's', dir: 's', amount: 'n', label: 's', kind: 's', parts: 'a', note: 's', personId: 'n?' },
   'entry.void': { entryId: 's', reason: 's' },
+  'settle.pay': { payId: 's', dayId: 's', personId: 's', amount: 'n', via: 's', byPersonId: 'n?' },
+  'settle.clear': { clearId: 's', dayId: 's', personId: 's', amount: 'n', reason: 's', note: 's' },
+  'settle.undo': { targetId: 's', reason: 's' },
+  'day.lock': { dayId: 's', locked: 'b', split: 'o' },
 };
 const okField = (t: FieldType, x: unknown): boolean =>
   t === 's' ? typeof x === 'string'

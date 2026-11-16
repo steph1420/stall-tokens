@@ -10,6 +10,7 @@ import { counterActions } from './counter';
 import { kitchenActions } from './kitchen';
 import { openActions } from './open';
 import { moneyActions } from './money';
+import { settleActions } from './settle';
 import { liveOrders as live } from './fold/fold';
 import { pauseMoves } from './rules/kitchen';
 import type { Screen, Sheet, StallScreen } from './ui';
@@ -17,6 +18,8 @@ import type { Screen, Sheet, StallScreen } from './ui';
 export type { CounterTab, Screen, Sheet, StallScreen, StationPlace } from './ui';
 export type { EntryDraft } from './money';
 export * as money from './rules/money';
+export * as settle from './rules/settle';
+export type { Split } from './rules/settle';
 export * as kitchen from './rules/kitchen';
 export type { Folded } from './fold/state';
 export type { DevicePrefs } from '../data';
@@ -35,6 +38,7 @@ export interface AppState extends CoreState {
   readonly kitchen: ReturnType<typeof kitchenActions>;
   readonly open: ReturnType<typeof openActions>;
   readonly money: ReturnType<typeof moneyActions>;
+  readonly settle: ReturnType<typeof settleActions>;
   /** D-NAV: open a Stall screen; Back returns to the launch screen or the Counter. */
   readonly openStall: (screen: StallScreen) => void;
   readonly closeStall: () => void;
@@ -48,6 +52,16 @@ export interface AppState extends CoreState {
 export type AppStore = StoreApi<AppState>;
 
 export interface StoreOptions { makeId?: () => string; now?: () => number; loadId?: string }
+
+function navActions(core: Core) {
+  const up = (f: (u: CoreState['ui']) => Partial<CoreState['ui']>) => { core.set((s) => ({ ui: { ...s.ui, ...f(s.ui) } })); };
+  return {
+    go(screen: Screen) { up(() => ({ screen, sheet: null })); },
+    openStall(screen: StallScreen) { up((u) => ({ screen, sheet: null, stallFrom: u.screen === 'counter' ? 'counter' : 'launch' })); },
+    closeStall() { up((u) => ({ screen: u.stallFrom, sheet: null })); },
+    openSheet(sheet: Sheet | null) { up(() => ({ sheet })); },
+  };
+}
 
 export function createAppStore(ds: DataSource, opts: StoreOptions = {}): AppStore {
   const makeId = opts.makeId ?? (() => crypto.randomUUID());
@@ -68,10 +82,8 @@ export function createAppStore(ds: DataSource, opts: StoreOptions = {}): AppStor
       kitchen: kitchenActions(core, l),
       open: openActions(core, l),
       money: moneyActions(core, l),
-      go(screen) { set((s) => ({ ui: { ...s.ui, screen, sheet: null } })); },
-      openStall(screen) { set((s) => ({ ui: { ...s.ui, screen, sheet: null, stallFrom: s.ui.screen === 'counter' ? 'counter' : 'launch' } })); },
-      closeStall() { set((s) => ({ ui: { ...s.ui, screen: s.ui.stallFrom, sheet: null } })); },
-      openSheet(sheet) { set((s) => ({ ui: { ...s.ui, sheet } })); },
+      settle: settleActions(core, l),
+      ...navActions(core),
       setPrefs(patch) { const next = { ...get().prefs, ...patch }; ds.device.write(next); set({ prefs: next }); },
       retrySave() { l.retrySave(); },
       async start() {
