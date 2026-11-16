@@ -7,7 +7,8 @@ Stopped early on Steve's request (quota). Nothing deployed; main untouched.
 - Gaps closed: ₹0 orders ("Nothing to collect" + To kitchen); IndexedDB missing or blocked now runs in memory with a calm banner.
 - Tests: `src/store/kitchen.test.ts` (2), `src/ui/kitchen/KitchenScreen.test.tsx` (2), fallback test in `src/data/data.test.ts`. 55 tests pass. No e2e or break-it run yet (D-TESTS lean).
 - Check-in shots (not in the repo): `/workspace/pos-shots/k0*-{night,day}.png`.
-- Deviations from the mockups (for Steve): Kitchen has a Back chevron to the start screen; Station header has an Overview button (the look picker and auto-prep switch live in its sheet until Settings exists); Hand over for Ready orders sits in Open orders; Priority is set by holding the token on a card; Paused is shown when set but nothing sets it yet.
+- Deviations from the mockups (for Steve): Kitchen has a Back chevron to the start screen; Station header has an Overview button (the look picker and auto-prep switch live in its sheet until Settings exists).
+- Kitchen locks (Steve 16 Nov 17:23 IST) built: Q-HANDOVER-1 C (Counter and station), Q-PRIORITY-1 C (hold the order number, and a Billing switch), Q-PAUSE-1 A (automatic, as ops), Q-COUNT-1 kept (Done? not counted). 57 tests pass. Shots: `/workspace/pos-shots/k08-billing-priority`, `k09-kitchen-paused`, `k10-station-handover` (`-night`/`-day`).
 
 ## Standards audit vs agent-common 06 v2 (2026-11-16 17:20 IST, Pos). `npm run check` green after the fixes: pins, leak scan, build output, feature IDs, typecheck, lint, stylelint, depcruise, contrast 336/336, 50 tests, build.
 Read: CODING_SYSTEM_ROLLOUT, 01-09, 06 v2, STYLE_GUIDE, CONTRIBUTING, checks/, templates/, ADR-0001 (agent-common `a6160a3`). Verdict: largely up to standard (layers, tokens + CSS Modules, no Tailwind, framer-motion only in `src/motion`, storage prefix `stall-tokens.v2`, strict TS, exact pins, ADRs, feature IDs). Small gaps fixed:

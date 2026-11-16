@@ -93,3 +93,4 @@
 .stHanded { --st: var(--dl-stall-st-handed); }
 .stPaused { --st: var(--dl-stall-st-paused); }
 .stPriority { --st: var(--dl-stall-st-priority); }
+.hint { font-size: 0.6875rem; color: var(--dl-color-text-faint); }

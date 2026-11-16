@@ -109,9 +109,24 @@ function Actions({ o }: { o: Order }) {
   );
 }
 
+function MetaRow({ o }: { o: Order }) {
+  const servingName = useApp((st) => st.prefs.servingName);
+  const k = useApp((st) => st.kitchen);
+  const openSheet = useApp((st) => st.openSheet);
+  return (
+    <div className={s.meta}>
+      <span>Token <b>{formatToken(o.token, CONFIG.tokens.pad)}</b></span>
+      {/* F-19 Q-PRIORITY-1 C: the Counter can mark Priority too (the kitchen holds the order number). */}
+      <button type="button" role="switch" aria-checked={o.priority} className={o.priority ? s.prioOn : s.prio} onClick={() => { k.togglePriority(o.id); }}>
+        <Icon name="stPriority" className={s.prioIc} />Priority
+      </button>
+      <button type="button" className={s.serving} onClick={() => { openSheet({ kind: 'serving' }); }}>Serving <b>{o.servedBy || servingName || 'Add name'}</b></button>
+    </div>
+  );
+}
+
 export function BillingScreen() {
   const o = useApp((st) => (st.ui.orderId ? st.folded.orders[st.ui.orderId] : undefined));
-  const servingName = useApp((st) => st.prefs.servingName);
   const c = useApp((st) => st.counter);
   const openSheet = useApp((st) => st.openSheet);
   const [sel, setSel] = useState<string | null>(null);
@@ -120,10 +135,7 @@ export function BillingScreen() {
   return (
     <>
       <main className={s.stage}>
-        <div className={s.meta}>
-          <span>Token <b>{formatToken(o.token, CONFIG.tokens.pad)}</b></span>
-          <button type="button" className={s.serving} onClick={() => { openSheet({ kind: 'serving' }); }}>Serving <b>{o.servedBy || servingName || 'Add name'}</b></button>
-        </div>
+        <MetaRow o={o} />
         {lines.length === 0 ? (
           <div className={s.empty}>No items yet. <button type="button" className={s.link} onClick={() => { c.setPage('menu'); }}>Add from the menu</button></div>
         ) : (

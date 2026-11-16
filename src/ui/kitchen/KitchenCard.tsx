@@ -41,7 +41,8 @@ function LineRow({ o, l, other }: { o: Order; l: Line; other: boolean }) {
 }
 
 /** `station` = the station this screen works for (other lines muted); `only` = show just that station's lines. */
-export function KitchenCard({ o, station, only }: { o: Order; station: string | null; only: boolean }) {
+/** `hint` shows the quiet "Hold # for Priority" cue (first card only, so the list stays calm). */
+export function KitchenCard({ o, station, only, hint = false }: { o: Order; station: string | null; only: boolean; hint?: boolean }) {
   const k = useApp((st) => st.kitchen);
   const hold = usePress(() => undefined, () => { k.togglePriority(o.id); });
   const lines = kitchen.linesAt(o, only ? station : null);
@@ -53,7 +54,7 @@ export function KitchenCard({ o, station, only }: { o: Order; station: string | 
       <div className={s.kh}>
         <span role="button" tabIndex={0} {...hold} aria-label="Hold to mark Priority"><Token o={o} /></span>
         <span className={s.meta}>
-          {o.priority ? <StatusMark mark="priority" /> : paused ? <StatusMark mark="paused" /> : meta}
+          {o.priority ? <StatusMark mark="priority" /> : paused ? <StatusMark mark="paused" /> : meta ?? (hint ? <span className={s.hint}>Hold # for Priority</span> : null)}
         </span>
       </div>
       {lines.map((l) => <LineRow key={l.lineId} o={o} l={l} other={station !== null && l.stationId !== station} />)}

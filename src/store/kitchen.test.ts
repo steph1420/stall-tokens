@@ -72,4 +72,37 @@ describe('kitchen and station (F-19..F-22)', () => {
     expect(s().ui.screen).toBe('kitchen');
     expect(kitchen.overview(liveOrders(s().folded), 'Beverages').items).toEqual([{ name: 'Tea', qty: 1 }]);
   });
+
+  it('Priority pauses other Preparing lines at its stations and resumes them when done (Q-PAUSE-1 A)', async () => {
+    const { s, send, order, statuses } = await ready();
+    const a = send('Tea', 'Samosa'); // Beverages + Cutlets
+    const b = send('Coffee'); // Beverages
+    const tea = order(a).lines[0]?.lineId ?? '';
+    const samosa = order(a).lines[1]?.lineId ?? '';
+    s().kitchen.advance(a, tea); s().kitchen.advance(a, samosa); // both Preparing
+    s().kitchen.togglePriority(b);
+    expect(statuses(a)).toEqual(['Tea:paused', 'Samosa:preparing']); // only the station B needs
+    expect(kitchen.pauseMoves(liveOrders(s().folded))).toEqual([]); // settled: nothing more to write
+    expect(s().kitchen.advance(a, tea)).toBe(false); // a tap cannot beat the pause
+    expect(statuses(a)[0]).toBe('Tea:paused');
+    const coffee = order(b).lines[0]?.lineId ?? '';
+    s().kitchen.advance(b, coffee); s().kitchen.advance(b, coffee); // Priority order Done? at Beverages
+    expect(statuses(a)).toEqual(['Tea:preparing', 'Samosa:preparing']);
+  });
+
+  it('a station can hand over a Ready line with one more tap (Q-HANDOVER-1 C); Priority off resumes too', async () => {
+    const { s, send, order, statuses } = await ready();
+    const a = send('Tea');
+    const b = send('Coffee');
+    const tea = order(a).lines[0]?.lineId ?? '';
+    s().kitchen.advance(a, tea);
+    s().kitchen.togglePriority(b);
+    expect(statuses(a)).toEqual(['Tea:paused']);
+    s().kitchen.togglePriority(b);
+    expect(statuses(a)).toEqual(['Tea:preparing']);
+    s().kitchen.advance(a, tea); s().kitchen.confirmDone(a);
+    expect(s().kitchen.advance(a, tea)).toBe(true);
+    expect(statuses(a)).toEqual(['Tea:handed']);
+    expect(s().kitchen.advance(a, tea)).toBe(false);
+  });
 });

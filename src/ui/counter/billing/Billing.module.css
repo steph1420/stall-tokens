@@ -81,3 +81,8 @@
 .kitchen { composes: abtn; flex: 1 1 5.625rem; color: var(--dl-stall-on-go); background: var(--dl-stall-go); }
 .pay { composes: abtn; flex: 1.4 1 7.5rem; font-size: 1rem; font-weight: 600; color: var(--dl-stall-on-cta); background: var(--dl-stall-cta); box-shadow: var(--dl-stall-cta-shadow); }
 .hint { margin: 0; text-align: center; font-size: 0.75rem; line-height: 0.875rem; color: var(--dl-color-text-faint); }
+
+/* Q-PRIORITY-1 C: quiet Priority switch in the token row; red only when on (status colour token). */
+.prio { min-height: var(--dl-hit-min); display: inline-flex; align-items: center; gap: 0.25rem; padding: 0 0.625rem; border-radius: var(--dl-radius-pill); font-size: 0.8125rem; color: var(--dl-color-text-faint); }
+.prioIc svg { width: 1rem; height: 1rem; display: block; }
+.prioOn { composes: prio; color: var(--dl-stall-st-priority); background: color-mix(in srgb, var(--dl-stall-st-priority) 14%, transparent); }

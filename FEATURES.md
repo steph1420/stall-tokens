@@ -21,9 +21,9 @@ Every feature has a row before work starts. IDs appear in code (`// F-xx`) and i
 | F-16 | Count notes (₹5–500, More notes), cash received, change | payment.html | building | pay.test.ts | change |
 | F-17 | Tip chips None/₹10/₹20/Other, separate pot | 21-polish2/tips.html, D-TIP, D-MONEY | building | pay.test.ts | planned |
 | F-18 | Edit a placed order: collect the extra or refund | spec edit rules | building | pay.test.ts, e2e | planned |
-| F-19 | Kitchen: station pills, status icons, Done? proposal | 21-polish2/kitchen.html, Q-PILLS-1, Q-ICON, Q-OPEN-1 | building | src/store/kitchen.test.ts, src/ui/kitchen/KitchenScreen.test.tsx | change |
+| F-19 | Kitchen: station pills, status icons, Done? proposal, Priority (hold # or Billing switch) with automatic pause | 21-polish2/kitchen.html, Q-PILLS-1, Q-ICON, Q-OPEN-1 | building | src/store/kitchen.test.ts, src/ui/kitchen/KitchenScreen.test.tsx | change |
 | F-20 | Counter confirms Done? in Open orders | Q-KITCHEN-3 A | building | src/store/kitchen.test.ts | planned |
-| F-21 | Station page, three looks, swipe between orders, Overview | 21-polish2/station.html, Q-STN-LOOK D, Q-BACK-1 A | building | src/store/kitchen.test.ts, src/ui/kitchen/KitchenScreen.test.tsx | planned |
+| F-21 | Station page, three looks, swipe between orders, Overview, hand over a Ready line | 21-polish2/station.html, Q-STN-LOOK D, Q-BACK-1 A | building | src/store/kitchen.test.ts, src/ui/kitchen/KitchenScreen.test.tsx | planned |
 | F-22 | Auto-prep next order at a station (setting) | Q-AUTOPREP | building | src/store/kitchen.test.ts | planned |
 | F-23 | Money: Spent / Received entry with keypad | 21-polish2/money.html, received.html, Q-MONEY-V8, Q-RECV | planned | | planned |
 | F-24 | Paid by / Received in sheet with Mixed | paidby.html, paidby-mixed.html, Q-PAIDBY, Q-MIXED-1 | planned | | planned |

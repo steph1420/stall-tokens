@@ -3,7 +3,7 @@
 import type { LineStatus, Order } from '../contract';
 import type { Core, Log } from './core';
 import { liveOrders } from './fold/fold';
-import { autoPrepLines, finishedAt, nextStatus, stationOrders } from './rules/kitchen';
+import { autoPrepLines, finishedAt, neededStations, nextStatus, stationOrders } from './rules/kitchen';
 import type { StationPlace, UiState } from './ui';
 
 function makeCtx(core: Core, log: Log) {
@@ -24,7 +24,8 @@ function makeCtx(core: Core, log: Log) {
     if (!next) return;
     for (const l of next.lines) log.dispatch('line.status', { orderId: next.order.id, lineId: l.lineId, status: 'preparing' });
   };
-  return { st, ui, order, setLines, autoPrep, log };
+  const toast = (text: string) => { core.set((s) => ({ ui: { ...s.ui, toast: { text, id: (s.ui.toast?.id ?? 0) + 1 } } })); };
+  return { st, ui, order, setLines, autoPrep, log, toast };
 }
 type Ctx = ReturnType<typeof makeCtx>;
 
@@ -51,13 +52,17 @@ function navActions({ st, ui }: Ctx) {
   };
 }
 
-function statusActions({ order, setLines, autoPrep, log }: Ctx) {
+function statusActions({ st, order, setLines, autoPrep, log, toast }: Ctx) {
   return {
     /** One tap on a station's own line (Waiting → Preparing → Done?). Returns false when nothing moves. */
     advance(orderId: string, lineId: string): boolean {
       const o = order(orderId);
       const l = o?.lines.find((x) => x.lineId === lineId);
       if (!o || !l || l.status === 'draft') return false;
+      if (l.status === 'paused' && !o.priority && neededStations(liveOrders(st().folded)).has(l.stationId)) {
+        toast('Paused for a Priority order'); // Q-PAUSE-1 A: resumes by itself when the Priority order is done here
+        return false;
+      }
       const to = nextStatus(l.status);
       if (!to) return false;
       log.dispatch('line.status', { orderId, lineId, status: to });

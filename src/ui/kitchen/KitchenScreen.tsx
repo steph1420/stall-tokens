@@ -40,7 +40,7 @@ export function KitchenScreen() {
       </header>
       <main className={s.klist}>
         {list.length === 0 ? <p className={s.empty}>Nothing to make right now</p> : null}
-        {list.map((o) => <KitchenCard key={o.id} o={o} station={filter} only={filter !== null} />)}
+        {list.map((o, i) => <KitchenCard key={o.id} o={o} station={filter} only={filter !== null} hint={i === 0 && !list.some((x) => x.priority)} />)}
       </main>
     </div>
   );

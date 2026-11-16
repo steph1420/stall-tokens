@@ -53,27 +53,38 @@ function makePersist(core: Core) {
   };
 }
 
-export function createLog(core: Core, writer: string) {
+/** Ops whose result can change which stations a Priority order needs (Q-PAUSE-1 A). */
+const FOLLOW_KINDS: ReadonlySet<OpKind> = new Set<OpKind>(['line.status', 'line.qty', 'order.priority', 'order.send', 'order.delete', 'payment.add']);
+/** Derived status ops to write after a local op (pure; see store/rules/kitchen.ts pauseMoves). */
+export type Follow = (f: Folded) => readonly Bodies['line.status'][];
+
+export function createLog(core: Core, writer: string, follow: Follow | null = null) {
   let log: Op[] = [];
   let seq = 0;
 
   const persist = makePersist(core);
+  const put = <K extends OpKind>(kind: K, body: Bodies[K]): Op => {
+    const f = core.get().folded;
+    seq += 1;
+    const op = { v: CONTRACT_VERSION, opId: `${writer}:${String(seq)}`, writer, seq, lamport: f.lamport + 1, vv: f.seen, wallAt: core.env.now(), kind, body } as Op;
+    log.push(op);
+    core.set({ folded: applyOp(f, op) });
+    persist([op]);
+    core.env.ds.channel.post([op]);
+    core.env.engine.enqueue([op]);
+    return op;
+  };
 
   return {
     load(ops: Op[]) {
       log = [...ops].sort(compareOps);
       core.set({ folded: fold(log), ready: true, memoryOnly: core.env.ds.ops.persistent?.() === false });
     },
-    /** Make, apply and save one local op. */
+    /** Make, apply and save one local op, then any derived pause / resume ops it causes (written as real ops, so
+     * every device folds the same log; repeats from two devices set the same status and change nothing). */
     dispatch<K extends OpKind>(kind: K, body: Bodies[K]): Op {
-      const f = core.get().folded;
-      seq += 1;
-      const op = { v: CONTRACT_VERSION, opId: `${writer}:${String(seq)}`, writer, seq, lamport: f.lamport + 1, vv: f.seen, wallAt: core.env.now(), kind, body } as Op;
-      log.push(op);
-      core.set({ folded: applyOp(f, op) });
-      persist([op]);
-      core.env.ds.channel.post([op]);
-      core.env.engine.enqueue([op]);
+      const op = put(kind, body);
+      if (follow && FOLLOW_KINDS.has(kind)) for (const m of follow(core.get().folded)) put('line.status', m);
       return op;
     },
     /** Ops from other tabs or devices. Re-folds when they land in the past. */

@@ -27,12 +27,14 @@ export function toMake(orders: readonly Order[], station: string | null): number
   return orders.reduce((n, o) => n + linesAt(o, station).filter((l) => TO_MAKE.has(l.status)).length, 0);
 }
 
-/** One tap at a station moves a line on: Waiting → Preparing → Done?; On hold and Paused resume. */
+/** One tap at a station moves a line on: Waiting → Preparing → Done?; On hold and Paused resume;
+ * Ready → Handed over (Q-HANDOVER-1 C: the station may hand over too). */
 export function nextStatus(s: LineStatus): LineStatus | null {
   switch (s) {
     case 'waiting': case 'held': case 'paused': return 'preparing';
     case 'preparing': return 'done?';
-    default: return null; // Done? waits for the Counter (Q-KITCHEN-3 A); Ready and Handed over are Counter steps
+    case 'ready': return 'handed';
+    default: return null; // Done? waits for the Counter (Q-KITCHEN-3 A)
   }
 }
 
@@ -86,4 +88,30 @@ export function counterStep(o: Order): 'confirm' | 'handover' | null {
   if (ls.some((l) => l.status === 'done?')) return 'confirm';
   if (ls.some((l) => l.status === 'ready')) return 'handover';
   return null;
+}
+
+export interface StatusMove { readonly orderId: string; readonly lineId: string; readonly status: LineStatus }
+/**
+ * Q-PAUSE-1 A, derived as ops: a station a Priority order still needs pauses the other orders' Preparing lines;
+ * once no Priority order needs it, those Paused lines go back to Preparing. A Priority order's own Paused lines resume.
+ * Pure and order-independent: the same orders always give the same moves, and applying them gives no further moves.
+ */
+/** Stations a Priority order still needs. */
+export function neededStations(orders: readonly Order[]): Set<string> {
+  const lines = kitchenOrders(orders).filter((o) => o.priority).flatMap((o) => linesAt(o, null));
+  return new Set(lines.filter((l) => TO_MAKE.has(l.status)).map((l) => l.stationId));
+}
+
+export function pauseMoves(orders: readonly Order[]): StatusMove[] {
+  const shown = kitchenOrders(orders);
+  const needed = neededStations(orders);
+  const moves: StatusMove[] = [];
+  for (const o of shown) {
+    for (const l of linesAt(o, null)) {
+      const busy = needed.has(l.stationId) && !o.priority;
+      if (busy && l.status === 'preparing') moves.push({ orderId: o.id, lineId: l.lineId, status: 'paused' });
+      if (!busy && l.status === 'paused') moves.push({ orderId: o.id, lineId: l.lineId, status: 'preparing' });
+    }
+  }
+  return moves;
 }

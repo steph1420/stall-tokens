@@ -8,6 +8,8 @@ import { catalogActions } from './catalog';
 import { createLog, initialCore, type Core, type CoreState } from './core';
 import { counterActions } from './counter';
 import { kitchenActions } from './kitchen';
+import { liveOrders as live } from './fold/fold';
+import { pauseMoves } from './rules/kitchen';
 import type { Screen, Sheet } from './ui';
 
 export type { Screen, Sheet, StationPlace } from './ui';
@@ -46,7 +48,8 @@ export function createAppStore(ds: DataSource, opts: StoreOptions = {}): AppStor
   const engine = createSyncEngine(ds.transports, (id) => store.getState().folded.applied.has(id), now);
   const store = createZustand<AppState>()((set, get) => {
     const core: Core = { get, set: (p) => { set(p as Partial<AppState>); }, env: { ds, engine, makeId, now } };
-    log = createLog(core, writer);
+    // Q-PAUSE-1 A: Priority pauses / resumes other orders' lines through real ops (rules/kitchen.ts pauseMoves).
+    log = createLog(core, writer, (f) => pauseMoves(live(f)));
     const l = log;
     return {
       ...initialCore(prefs),
