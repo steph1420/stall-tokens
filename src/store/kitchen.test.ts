@@ -1,7 +1,7 @@
 // F-19..F-22 kitchen and station store flow.
 import { describe, expect, it } from 'vitest';
 import { DEMO_MENU } from '../mock/fixtures';
-import { isOpen, kitchen, liveOrders } from '.';
+import { bill, isOpen, kitchen, liveOrders } from '.';
 import { makeTestStore } from './testkit';
 
 async function ready() {
@@ -105,7 +105,7 @@ describe('kitchen and station (F-19..F-22)', () => {
     expect(statuses(a)).toEqual(['Tea:handed']);
     expect(s().kitchen.advance(a, tea)).toBe(false);
   });
-  it('the Counter marks any line finished: straight to Ready, Marked by counter, Priority done resumes (Q-COUNTER-FINISH)', async () => {
+  it('the Counter marks any line finished (Ready, Marked by counter); the order completes when every line is, by anyone (Q-COUNTER-FINISH)', async () => {
     const { s, send, order, statuses } = await ready();
     const a = send('Tea');
     const b = send('Coffee', 'Samosa');
@@ -125,5 +125,34 @@ describe('kitchen and station (F-19..F-22)', () => {
     expect(order(a).lines[0]?.byCounter).toBe(true);
     expect(s().kitchen.finishLine(a, tea)).toBe(false);
     expect(order(b).lines[1]?.byCounter).toBe(false);
+    // Completion counts every line, whoever marked it: Counter-marked Coffee + station-handed Samosa.
+    const orders = () => kitchen.kitchenOrders(liveOrders(s().folded)).map((o) => o.id);
+    expect(orders()).toEqual([b]);
+    const samosa = order(b).lines[1]?.lineId ?? '';
+    s().kitchen.advance(b, samosa); s().kitchen.advance(b, samosa); s().kitchen.confirmDone(b);
+    expect(orders()).toEqual([b]); // Samosa Ready, not yet handed over
+    s().kitchen.advance(b, samosa);
+    expect(kitchen.orderComplete(order(b))).toBe(true);
+    expect(orders()).toEqual([]);
+  });
+  it('cancelling a paid Priority order releases the pause and records the refund due (Q-CANCEL-1 A)', async () => {
+    const { s, send, order, statuses } = await ready();
+    const a = send('Tea');
+    const b = send('Coffee');
+    const tea = order(a).lines[0]?.lineId ?? '';
+    const coffee = order(b).lines[0]?.lineId ?? '';
+    s().kitchen.advance(a, tea); s().kitchen.advance(b, coffee);
+    s().kitchen.togglePriority(b);
+    expect(statuses(a)).toEqual(['Tea:paused']);
+    const paid = bill.total(order(b));
+    expect(s().counter.pay({ cash: paid, upi: 0, upiPayeeId: null, tip: 0, waived: 0, waivedBy: '', waivedNote: '', cashGiven: paid, notes: {} })).toBeNull();
+    expect(s().counter.cancelOrder(b, ' Wrong item ')).toBe(true);
+    expect(order(b).cancel).toMatchObject({ reason: 'Wrong item', refundDue: paid });
+    expect(statuses(a)).toEqual(['Tea:preparing']); // pause released
+    expect(kitchen.kitchenOrders(liveOrders(s().folded)).map((o) => o.id)).toEqual([a]);
+    expect(isOpen(order(b))).toBe(false);
+    expect(s().counter.cancelOrder(b, '')).toBe(false); // once only
+    expect(s().kitchen.finishLine(b, coffee)).toBe(false); // a cancelled order takes no more kitchen ops
+    expect(statuses(b)).toEqual(['Coffee:preparing']);
   });
 });

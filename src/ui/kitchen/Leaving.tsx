@@ -1,8 +1,9 @@
-// F-19 / F-21 Q-OVERLAY: an order that leaves the Kitchen/Station list because it is fully handed over (Completed) or
-// removed by the Counter (Cancelled, today `order.delete`) keeps its card for a moment under a calm overlay,
+// F-19 / F-21 Q-OVERLAY: an order that leaves the Kitchen/Station list because every line is complete, whoever marked it (Completed) or
+// cancelled by the Counter (`order.cancel`, or `order.delete` before the kitchen starts) keeps its card for a moment under a calm overlay,
 // then drops off as before. View-only memory: nothing is written to the log.
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import type { Order } from '../../contract';
+import { kitchen } from '../../store';
 import { Icon } from '../kit/Icon';
 import s from './Kitchen.module.css';
 
@@ -12,9 +13,8 @@ export interface Gone { readonly o: Order; readonly why: Why; readonly at: numbe
 const HOLD_MS = 2500;
 
 function reason(cur: Order | undefined): Why | null {
-  if (!cur) return 'cancelled';
-  const sent = cur.lines.filter((l) => l.qty > 0 && l.status !== 'draft');
-  return sent.length > 0 && sent.every((l) => l.status === 'handed') ? 'completed' : null;
+  if (!cur || cur.cancel) return 'cancelled';
+  return kitchen.orderComplete(cur) ? 'completed' : null;
 }
 
 /** Orders that just left `list`, kept for HOLD_MS with why they left. */

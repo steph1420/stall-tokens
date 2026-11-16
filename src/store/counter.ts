@@ -5,7 +5,7 @@ import type { Core, Log } from './core';
 import { liveOrders } from './fold/fold';
 import { due, preRound, total } from './rules/bill';
 import { checkPayment } from './rules/pay';
-import type { Page } from './rules/status';
+import { isOpen, type Page } from './rules/status';
 import { nextToken } from './rules/tokens';
 import type { UiState } from './ui';
 
@@ -20,7 +20,7 @@ function makeCtx(core: Core, log: Log) {
   const current = (): Order | null => {
     const id = st().ui.orderId;
     const o = id ? st().folded.orders[id] : undefined;
-    return o && !o.deleted ? o : null;
+    return o && !o.deleted && !o.cancel ? o : null;
   };
   const currentDay = (): string => {
     const days = st().folded.days;
@@ -189,9 +189,25 @@ function flowActions(x: Ctx) {
   return self;
 }
 
+/** Q-CANCEL-1 A: cancel an order at any status, with an optional reason. Paid money is recorded as refund due. */
+function cancelActions(x: Ctx) {
+  const { log, st, toast, ui } = x;
+  return {
+    cancelOrder(orderId: string, reason: string): boolean {
+      const o = st().folded.orders[orderId];
+      if (!o || o.deleted || o.cancel) return false;
+      log.dispatch('order.cancel', { orderId, reason: reason.slice(0, CONFIG.limits.noteMaxChars) });
+      const due = st().folded.orders[orderId]?.cancel?.refundDue ?? 0;
+      toast(due > 0 ? 'Order cancelled · refund due' : 'Order cancelled');
+      if (st().ui.orderId === orderId) ui({ orderId: liveOrders(st().folded).filter((y) => isOpen(y)).pop()?.id ?? null });
+      return true;
+    },
+  };
+}
+
 export function counterActions(core: Core, log: Log) {
   const x = makeCtx(core, log);
   const nav = navActions(x);
-  return { ...nav, ...lineActions(x, nav), ...billActions(x), ...flowActions(x), totalOf: (o: Order) => total(o), available: x.available, toast: x.toast };
+  return { ...nav, ...lineActions(x, nav), ...billActions(x), ...flowActions(x), ...cancelActions(x), totalOf: (o: Order) => total(o), available: x.available, toast: x.toast };
 }
 export type CounterActions = ReturnType<typeof counterActions>;

@@ -9,7 +9,7 @@ import type { StationPlace, UiState } from './ui';
 function makeCtx(core: Core, log: Log) {
   const st = () => core.get();
   const ui = (patch: Partial<UiState>) => { core.set((s) => ({ ui: { ...s.ui, ...patch } })); };
-  const order = (id: string): Order | null => { const o = st().folded.orders[id]; return o && !o.deleted ? o : null; };
+  const order = (id: string): Order | null => { const o = st().folded.orders[id]; return o && !o.deleted && !o.cancel ? o : null; };
   const setLines = (o: Order, from: (s: LineStatus) => boolean, to: LineStatus): number => {
     const ls = o.lines.filter((l) => l.qty > 0 && l.status !== 'draft' && from(l.status));
     for (const l of ls) log.dispatch('line.status', { orderId: o.id, lineId: l.lineId, status: to });

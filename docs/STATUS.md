@@ -8,7 +8,7 @@ Stopped early on Steve's request (quota). Nothing deployed; main untouched.
 - Tests: `src/store/kitchen.test.ts` (2), `src/ui/kitchen/KitchenScreen.test.tsx` (2), fallback test in `src/data/data.test.ts`. 55 tests pass. No e2e or break-it run yet (D-TESTS lean).
 - Check-in shots (not in the repo): `/workspace/pos-shots/k0*-{night,day}.png`.
 - Deviations from the mockups (for Steve): Kitchen has a Back chevron to the start screen; Station header has an Overview button (the look picker and auto-prep switch live in its sheet until Settings exists).
-- Kitchen locks (Steve 16 Nov 17:23 IST) built: Q-HANDOVER-1 C (Counter and station), Q-PRIORITY-1 C (hold the order number, and a Billing switch), Q-PAUSE-1 A (automatic, as ops), Q-COUNT-1 A (Done? not counted), Q-COUNTER-FINISH (Mark ready from Open orders, `line.finish` op, "Marked by counter"), Q-OVERLAY (Completed / Cancelled veil, view-only; a Cancel op for started orders is pending). 59 tests pass. Shots: `/workspace/pos-shots/k08-billing-priority`, `k09-kitchen-paused`, `k10-station-handover` (`-night`/`-day`).
+- Kitchen locks (Steve 16 Nov 17:23 IST) built: Q-HANDOVER-1 C (Counter and station), Q-PRIORITY-1 C (hold the order number, and a Billing switch), Q-PAUSE-1 A (automatic, as ops), Q-COUNT-1 A (Done? not counted), Q-COUNTER-FINISH (Mark ready from Open orders, `line.finish` op, "Marked by counter"), Q-OVERLAY (Completed / Cancelled veil, view-only), Q-CANCEL-1 A (`order.cancel`, refund due flagged for Money; refund UI not built), Q-MARK-1 B (expanded Open orders cards, Mark ready per line). 61 tests pass. Shots: `/workspace/pos-shots/k08-billing-priority`, `k09-kitchen-paused`, `k10-station-handover` (`-night`/`-day`).
 
 ## Standards audit vs agent-common 06 v2 (2026-11-16 17:20 IST, Pos). `npm run check` green after the fixes: pins, leak scan, build output, feature IDs, typecheck, lint, stylelint, depcruise, contrast 336/336, 50 tests, build.
 Read: CODING_SYSTEM_ROLLOUT, 01-09, 06 v2, STYLE_GUIDE, CONTRIBUTING, checks/, templates/, ADR-0001 (agent-common `a6160a3`). Verdict: largely up to standard (layers, tokens + CSS Modules, no Tailwind, framer-motion only in `src/motion`, storage prefix `stall-tokens.v2`, strict TS, exact pins, ADRs, feature IDs). Small gaps fixed:
@@ -48,5 +48,8 @@ Open (not fixed, need Steve or a later bundle): no UI component tests and no e2e
    - Float, History and Settings, with Appearance set to Night or Day.
    - Sheet transport and `docs/SHEET_SETUP.md`, which covers Steve's 5-minute Apps Script steps.
    - Token slip component (F-42, about 58 mm wide, printable).
+   - Money: show cancelled orders with refund due (`order.cancel` `refundDue`) and a way to settle them (Q-CANCEL-1 A; no refund UI yet).
+   - When the plan is complete: a thorough loophole review of the whole plan (Steve 16 Nov 17:45 IST).
+   - When the app is built, before go-live and alongside the verify + break-it run: a thorough walk-through test of every function, listing missing features/functions (Steve 16 Nov 17:45 IST).
    - Verify and break-it run, then `docs/VERIFY_LOG.md`, then the go-live step with Steve: v2 goes straight to the main address, because v1 was never used.
 7. Quota: Steve is low on quota. Keep runs lean, and ask him before the full test run.

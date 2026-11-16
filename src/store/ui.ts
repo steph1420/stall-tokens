@@ -16,7 +16,7 @@ export type Sheet =
   | { kind: 'serving' }
   | { kind: 'more' }
   | { kind: 'overview' }
-  | { kind: 'finish'; orderId: string };
+  | { kind: 'cancel'; orderId: string };
 
 export interface UiState {
   readonly screen: Screen;

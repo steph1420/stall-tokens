@@ -19,4 +19,4 @@ export function orderStatus(o: Order, page: Page | undefined): OrderStatus {
 }
 
 /** An order stays open until it is handed over and nothing is owed either way. */
-export const isOpen = (o: Order): boolean => !o.deleted && !(orderStatus(o, undefined) === 'Done');
+export const isOpen = (o: Order): boolean => !o.deleted && !o.cancel && !(orderStatus(o, undefined) === 'Done');

@@ -6,10 +6,10 @@ import type { Folded } from './state';
 import { lww } from './lww';
 
 type OrderKind = 'order.create' | 'line.add' | 'line.qty' | 'line.note' | 'line.status' | 'line.finish' | 'order.note'
-  | 'order.discount' | 'order.roundoff' | 'order.send' | 'order.delete' | 'order.priority' | 'payment.add' | 'refund.add';
+  | 'order.discount' | 'order.roundoff' | 'order.send' | 'order.delete' | 'order.priority' | 'order.cancel' | 'payment.add' | 'refund.add';
 const ORDER_KINDS: ReadonlySet<string> = new Set<OrderKind>([
   'order.create', 'line.add', 'line.qty', 'line.note', 'line.status', 'line.finish', 'order.note', 'order.discount',
-  'order.roundoff', 'order.send', 'order.delete', 'order.priority', 'payment.add', 'refund.add',
+  'order.roundoff', 'order.send', 'order.delete', 'order.priority', 'order.cancel', 'payment.add', 'refund.add',
 ]);
 export const isOrderOp = (op: Op): op is Op<OrderKind> => ORDER_KINDS.has(op.kind);
 
@@ -40,7 +40,7 @@ function create(s: Folded, op: Op<'order.create'>): Folded {
   if (s.orders[op.body.orderId]) return s;
   const o: Order = {
     id: op.body.orderId, dayId: op.body.dayId, token: Math.trunc(op.body.token), servedBy: op.body.servedBy, createdAt: op.wallAt,
-    lines: [], note: '', discount: null, roundOff: null, sent: false, deleted: false, priority: false, payments: [], refunds: [], revision: 0,
+    lines: [], note: '', discount: null, roundOff: null, sent: false, deleted: false, priority: false, cancel: null, payments: [], refunds: [], revision: 0,
   };
   return { ...withOrder(s, o), orderIds: [...s.orderIds, o.id] };
 }
@@ -69,6 +69,16 @@ function mapLine(s: Folded, o: Order, lineId: string, f: (l: Line) => Line): Fol
   return withOrder(s, { ...o, lines: o.lines.map((l) => (l.lineId === lineId ? f(l) : l)) });
 }
 
+/** Q-CANCEL-1 A: lines not started give their stock back; started ones were made. Paid money is flagged as refund due. */
+const NOT_STARTED: ReadonlySet<string> = new Set(['draft', 'waiting', 'held', 'paused']);
+function cancel(s: Folded, o: Order, op: Op<'order.cancel'>): Folded {
+  let items = s.items;
+  for (const l of o.lines) if (NOT_STARTED.has(l.status)) items = moveStock(items, l.itemId, -l.committed);
+  const lines = o.lines.map((l) => (NOT_STARTED.has(l.status) ? { ...l, committed: 0 } : l));
+  const refundDue = o.payments.reduce((t, p) => t + p.cash + p.upi, 0) - o.refunds.reduce((t, r) => t + r.amount, 0);
+  return withOrder({ ...s, items }, { ...o, lines, cancel: { reason: op.body.reason.trim(), at: op.wallAt, by: op.writer, refundDue: Math.max(0, refundDue) } });
+}
+
 function remove(s: Folded, o: Order): Folded {
   let items = s.items;
   for (const l of o.lines) items = moveStock(items, l.itemId, -l.committed);
@@ -86,6 +96,7 @@ export function applyOrderOp(s: Folded, op: Op<OrderKind>): Folded {
   if (op.kind === 'order.create') return create(s, op);
   const o = s.orders[op.body.orderId];
   if (!o || o.deleted) return s; // ops for unknown or deleted orders are kept in the log but change nothing
+  if (o.cancel && op.kind !== 'refund.add') return s; // a cancelled order only takes refunds
   switch (op.kind) {
     case 'line.add': return addLine(s, o, op.body);
     case 'line.qty': return setQty(s, o, op.body.lineId, op.body.qty);
@@ -105,6 +116,7 @@ export function applyOrderOp(s: Folded, op: Op<OrderKind>): Folded {
     }
     case 'order.send': { const r = commit(s, o); return withOrder(r.state, r.order); }
     case 'order.delete': return remove(s, o);
+    case 'order.cancel': return cancel(s, o, op);
     case 'order.priority': return withOrder(lww(s, `order:${o.id}`, 'priority', op).state, { ...o, priority: op.body.on });
     case 'payment.add': {
       if (o.payments.some((p) => p.paymentId === op.body.paymentId)) return s;

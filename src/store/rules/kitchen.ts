@@ -10,18 +10,23 @@ const FINISHED: ReadonlySet<LineStatus> = new Set<LineStatus>(['done?', 'ready',
 const live = (o: Order): Line[] => o.lines.filter((l) => l.qty > 0 && l.status !== 'draft');
 export const linesAt = (o: Order, station: string | null): Line[] => live(o).filter((l) => station === null || l.stationId === station);
 
-/** Orders the kitchen shows: sent, not deleted, with something not yet handed over. */
+/** A line kitchen views count as completed, whoever marked it: handed over, or marked by the Counter (Q-COUNTER-FINISH). */
+export const lineComplete = (l: Line): boolean => l.status === 'handed' || (l.status === 'ready' && l.byCounter);
+/** Completed for kitchen views once every sent line is complete (Q-OVERLAY veil, then it drops off). */
+export const orderComplete = (o: Order): boolean => live(o).length > 0 && live(o).every(lineComplete);
+
+/** Orders the kitchen shows: sent, not deleted or cancelled, not yet completed. */
 export function kitchenOrders(orders: readonly Order[]): Order[] {
   return orders
-    .filter((o) => !o.deleted && live(o).some((l) => l.status !== 'handed'))
+    .filter((o) => !o.deleted && !o.cancel && live(o).some((l) => !lineComplete(l)))
     .map((o, i) => ({ o, i }))
     .sort((a, b) => Number(b.o.priority) - Number(a.o.priority) || a.i - b.i)
     .map((x) => x.o);
 }
 
-/** Orders a station page shows: those with a line at this station not yet handed over. */
+/** Orders a station page shows: those with a line at this station not yet completed. */
 export const stationOrders = (orders: readonly Order[], station: string): Order[] =>
-  kitchenOrders(orders).filter((o) => linesAt(o, station).some((l) => l.status !== 'handed'));
+  kitchenOrders(orders).filter((o) => linesAt(o, station).some((l) => !lineComplete(l)));
 
 export function toMake(orders: readonly Order[], station: string | null): number {
   return orders.reduce((n, o) => n + linesAt(o, station).filter((l) => TO_MAKE.has(l.status)).length, 0);

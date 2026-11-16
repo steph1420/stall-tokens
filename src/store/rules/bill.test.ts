@@ -5,7 +5,7 @@ import { discountAmount, discountCapped, due, paid, roundOffAmount, roundOffChoi
 const line = (price: number, qty: number) => ({ lineId: String(price) + String(qty), itemId: 'i', name: 'x', price, category: '', stationId: '', qty, note: '', status: 'draft' as const, committed: 0, byCounter: false });
 const order = (p: Partial<Order> = {}): Order => ({
   id: 'o', dayId: 'd', token: 47, servedBy: '', createdAt: 0, lines: [line(3000, 2), line(2500, 1), line(1500, 1)], note: '',
-  discount: null, roundOff: null, sent: false, deleted: false, priority: false, payments: [], refunds: [], revision: 0, ...p,
+  discount: null, roundOff: null, sent: false, deleted: false, priority: false, cancel: null, payments: [], refunds: [], revision: 0, ...p,
 });
 const payment = (cash: number, upi: number, tip = 0, waived = 0) => ({ paymentId: 'p' + String(cash), cash, upi, upiPayeeId: null, tip, waived, waivedBy: '', waivedNote: '', cashGiven: 0, notes: {}, at: 0, writer: 'w' });
 

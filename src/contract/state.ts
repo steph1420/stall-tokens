@@ -15,12 +15,14 @@ export interface Payment {
   readonly waived: Paise; readonly waivedBy: string; readonly waivedNote: string; readonly cashGiven: Paise;
   readonly notes: Readonly<Record<string, number>>; readonly at: number; readonly writer: string;
 }
+/** Q-CANCEL-1 A: a cancelled order keeps its record; `refundDue` is what was paid at cancel time (Money settles it later). */
+export interface Cancel { readonly reason: string; readonly at: number; readonly by: string; readonly refundDue: Paise }
 export interface Refund { readonly refundId: string; readonly amount: Paise; readonly source: PaySource; readonly at: number }
 export interface Order {
   readonly id: string; readonly dayId: string; readonly token: number; readonly servedBy: string; readonly createdAt: number;
   readonly lines: readonly Line[]; readonly note: string; readonly discount: Discount | null;
   readonly roundOff: { readonly amount: Paise; readonly forTotal: Paise } | null;
-  readonly sent: boolean; readonly deleted: boolean; readonly priority: boolean; readonly payments: readonly Payment[]; readonly refunds: readonly Refund[];
+  readonly sent: boolean; readonly deleted: boolean; readonly priority: boolean; readonly cancel: Cancel | null; readonly payments: readonly Payment[]; readonly refunds: readonly Refund[];
   readonly revision: number;
 }
 export interface Payee { readonly id: string; readonly name: string; readonly upiId: string }

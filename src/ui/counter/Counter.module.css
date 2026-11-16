@@ -64,3 +64,16 @@
 .abtnGo { composes: abtn; font-weight: 600; color: var(--dl-stall-on-cta); background: var(--dl-stall-cta); box-shadow: var(--dl-stall-cta-shadow); }
 /* Q-COUNTER-FINISH: quiet text button, so the row stays calm. */
 .oquiet { min-height: var(--dl-hit-min); padding: 0 0.75rem; border-radius: var(--dl-radius-pill); font-size: 0.8125rem; font-weight: 500; color: var(--dl-color-accent); background: color-mix(in srgb, var(--dl-color-accent) 10%, transparent); }
+/* Q-MARK-1 B: expanded Open orders card; lines on soft rows, no outlines. */
+.orowWrap { display: flex; align-items: stretch; }
+.orowWrap .orow, .orowWrap .orowCur { flex: 1; min-width: 0; }
+.oexpBtn { flex: none; width: var(--dl-hit-min); display: grid; place-items: center; color: var(--dl-color-text-faint); }
+.oexpBtn svg { width: 0.75rem; height: 0.75rem; transition: transform var(--dl-dur-fast, 0.15s) ease; }
+.oexpBtnOn { composes: oexpBtn; color: var(--dl-color-accent); }
+.oexpBtnOn svg { transform: rotate(180deg); }
+.oexp { display: flex; flex-direction: column; gap: 0.25rem; padding: 0 0.875rem 0.625rem; }
+.oline { display: flex; align-items: center; gap: 0.5rem; min-height: var(--dl-hit-min); padding: 0.25rem 0.25rem 0.25rem 0.75rem; border-radius: var(--dl-radius-sm); background: color-mix(in srgb, var(--dl-color-surface) 55%, transparent); }
+.olineName { flex: 1; min-width: 0; display: flex; flex-direction: column; font-size: 0.9375rem; color: var(--dl-color-text); }
+.olineName small { font-size: 0.75rem; color: var(--dl-color-text-muted); }
+.ocancel { align-self: flex-start; min-height: var(--dl-hit-min); padding: 0 0.75rem; font-size: 0.8125rem; font-weight: 500; color: var(--dl-stall-danger-text); }
+.refundNote { margin: 0.5rem 0.25rem 0.875rem; font-size: 0.875rem; color: var(--dl-stall-warn-text); }

@@ -40,14 +40,13 @@ describe('Kitchen and Station screens', () => {
     act(() => { fireEvent.pointerDown(tea, { clientX: 5, clientY: 5 }); fireEvent.pointerUp(tea); });
     expect(screen.getAllByText('Preparing').length).toBeGreaterThan(0);
   });
-  it('a fully handed-over order shows Completed for a moment, then drops off (Q-OVERLAY)', async () => {
+  it('an order whose lines are all complete shows Completed for a moment, then drops off (Q-OVERLAY)', async () => {
     const store = await seeded();
     render(<StoreProvider store={store}><KitchenScreen /></StoreProvider>);
     vi.useFakeTimers();
     const o = Object.values(store.getState().folded.orders)[0];
     act(() => { for (const l of o?.lines ?? []) store.getState().kitchen.finishLine(o?.id ?? '', l.lineId); });
-    expect(screen.getAllByText('Marked by counter').length).toBe(2);
-    act(() => { store.getState().kitchen.handOver(o?.id ?? ''); });
+    expect(screen.getAllByText('Marked by counter').length).toBe(2); // every line complete: veil over the last view
     expect(screen.getByRole('status').textContent).toBe('Completed');
     act(() => { vi.advanceTimersByTime(3000); });
     expect(screen.queryByText('Completed')).toBeNull();
