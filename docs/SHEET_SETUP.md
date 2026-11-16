@@ -2,7 +2,7 @@
 
 The app works fully offline on every phone. The Sheet bridge is how phones see each other's orders and money, the cloud copy of the op log, and (schema v2) a place Steve can read and edit the stall's information by hand.
 
-## The Sheet (made 16 Nov 2026 19:40 IST; schema v2 since 16 Nov 21:30 IST)
+## The Sheet (made 16 Nov 2026 19:40 IST; schema v2 since 16 Nov 20:25 IST)
 "Stall Tokens — Data (v2)" in Steve's Drive (search Drive for the name; the link is kept out of the repo by the leak scan).
 
 ### Visible, editable info tabs (master data and current state)
