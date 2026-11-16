@@ -160,3 +160,18 @@ Beta build settings (both options):
 
 ## 11. Progress note
 - **16 Nov, 23:45 IST:** FEATURES.md, this plan, DECISIONS (agent-common) and roughs s111+ are done. **Build not started** (Steve's 23:00 IST sequence change). Next: Pos resumes with the LFPS-SOW and Lippy feedback and Steve's answers to FEATURES §30, then P0 (needs Q-BETA-PATH) or P1.
+
+## 12. Resumable checklist (tick and push as each item lands)
+- [x] D1 `docs/FEATURES.md` (5c443a9)
+- [x] D2 this plan
+- [x] D3 DECISIONS in agent-common (locks + PK-1…PK-10 + Prioritise + Q-CHANNEL A)
+- [x] D4 first mockup pairs (s111+; see report)
+- [ ] D5 feedback from LFPS-SOW / Lippy folded in; Steve answers FEATURES §30
+- [ ] P0 channel plumbing (needs Q-BETA-PATH)
+- [ ] P1 data + rules + unit tests
+- [ ] P2 Counter
+- [ ] P3 Kitchen + Station
+- [ ] P4 History / Money / Close day / Day notes / Stock
+- [ ] P5 Settings + Data (backup, snapshots, reset)
+- [ ] P6 Code.gs 2.1.0 (compaction dry-run first, TEST copy)
+- [ ] P7 Beta release + draft PR to main
