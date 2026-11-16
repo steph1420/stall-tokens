@@ -120,3 +120,31 @@ export function pauseMoves(orders: readonly Order[]): StatusMove[] {
   }
   return moves;
 }
+
+/** Q-ORDERS-1 Open Orders: the same orders the kitchen shows (sent, not cancelled, not yet all delivered). */
+export const openOrders = kitchenOrders;
+
+/** D-OPEN-TAP (Pos): the Counter's hidden tap / card tap moves a line on: Waiting, On hold or Paused → Preparing →
+ * Ready → Handed over; a station's proposed Ready (Done?) is confirmed to Ready. Handed over stays. */
+export function counterNext(s: LineStatus): LineStatus | null {
+  switch (s) {
+    case 'waiting': case 'held': case 'paused': return 'preparing';
+    case 'preparing': case 'done?': return 'ready';
+    case 'ready': return 'handed';
+    default: return null;
+  }
+}
+
+/** Open Orders Overview: item totals still to make and the status split across every station. */
+export function overviewAll(orders: readonly Order[]): Overview {
+  const items = new Map<string, number>();
+  const split: Partial<Record<LineStatus, number>> = {};
+  for (const o of kitchenOrders(orders)) {
+    for (const l of linesAt(o, null)) {
+      if (lineComplete(l)) continue;
+      split[l.status] = (split[l.status] ?? 0) + 1;
+      if (TO_MAKE.has(l.status)) items.set(l.name, (items.get(l.name) ?? 0) + l.qty);
+    }
+  }
+  return { items: [...items].map(([name, qty]) => ({ name, qty })).sort((a, b) => b.qty - a.qty || a.name.localeCompare(b.name)), split };
+}

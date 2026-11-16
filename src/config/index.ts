@@ -30,7 +30,9 @@ export const CONFIG = Object.freeze({
   swatchCount: 8, // item colours are swatch indexes into --dl-stall-swatch-N (tokens)
   stock: { lowAtDefault: 5 },
   sync: { pollMinMs: 4000, pollMaxMs: 60000, backoff: 2, pushBatch: 200, timeoutMs: 15000 },
-  timings: { toastMs: 2600, fakeDelayMs: 120 },
+  timings: { toastMs: 2600, fakeDelayMs: 120, clockTickMs: 30000 },
+  // Open Orders header: dots up to this many orders, then "3 of 12" (Q-ORDERS-1).
+  openDotsMax: 8,
   // swipePx: horizontal travel that turns a drag on the Station page into next / previous order (Q-STN-LOOK D).
   gesture: { moveCancelPx: 10, swipePx: 56 },
 } as const);

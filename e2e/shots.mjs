@@ -39,9 +39,9 @@ for (const theme of ['night', 'day']) {
   await shot('10-paid');
   await p.getByRole('button', { name: /New order/ }).first().click();
   await p.getByRole('button', { name: /^Tea, add one/ }).click();
-  await p.getByRole('tab', { selected: true }).click();
+  await p.getByRole('tab', { name: /Open Orders/ }).click();
   await shot('11-open-orders');
-  await p.getByRole('button', { name: 'Close open orders' }).click();
+  await p.getByRole('tab', { name: /New Orders/ }).click();
   const tea = p.getByRole('button', { name: /^Tea, add one/ });
   const bx = await tea.boundingBox(); await p.mouse.move(bx.x + bx.width / 2, bx.y + bx.height / 2); await p.mouse.down(); await p.waitForTimeout(900); await p.mouse.up();
   await shot('12-stock-panel');

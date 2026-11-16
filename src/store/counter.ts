@@ -54,16 +54,15 @@ function navActions(x: Ctx) {
       const token = nextToken(Object.values(st().folded.orders), dayId, range); // deleted orders keep their numbers
       const orderId = core.env.makeId();
       log.dispatch('order.create', { orderId, dayId, token, servedBy: st().prefs.servingName });
-      core.set((s) => ({ ui: { ...s.ui, orderId, olist: false, pages: { ...s.ui.pages, [orderId]: 'menu' } } }));
+      core.set((s) => ({ ui: { ...s.ui, orderId, counterTab: 'new', pages: { ...s.ui.pages, [orderId]: 'menu' } } }));
       return orderId;
     },
-    selectOrder(orderId: string) { ui({ orderId, olist: false }); },
+    selectOrder(orderId: string) { ui({ orderId }); },
     setPage(page: Page) {
       const o = current() ?? ensure();
       if (!o) return;
-      core.set((s) => ({ ui: { ...s.ui, olist: false, pages: { ...s.ui.pages, [o.id]: page } } }));
+      core.set((s) => ({ ui: { ...s.ui, pages: { ...s.ui.pages, [o.id]: page } } }));
     },
-    toggleOrders(open?: boolean) { ui({ olist: open ?? !st().ui.olist }); },
   };
   return self;
 }

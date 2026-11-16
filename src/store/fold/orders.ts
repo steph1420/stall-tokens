@@ -6,10 +6,10 @@ import type { Folded } from './state';
 import { lww } from './lww';
 
 type OrderKind = 'order.create' | 'line.add' | 'line.qty' | 'line.note' | 'line.status' | 'line.finish' | 'order.note'
-  | 'order.discount' | 'order.roundoff' | 'order.send' | 'order.delete' | 'order.priority' | 'order.cancel' | 'payment.add' | 'refund.add';
+  | 'order.discount' | 'order.roundoff' | 'order.send' | 'order.delete' | 'order.priority' | 'order.cancel' | 'order.client' | 'payment.add' | 'refund.add';
 const ORDER_KINDS: ReadonlySet<string> = new Set<OrderKind>([
   'order.create', 'line.add', 'line.qty', 'line.note', 'line.status', 'line.finish', 'order.note', 'order.discount',
-  'order.roundoff', 'order.send', 'order.delete', 'order.priority', 'order.cancel', 'payment.add', 'refund.add',
+  'order.roundoff', 'order.send', 'order.delete', 'order.priority', 'order.cancel', 'order.client', 'payment.add', 'refund.add',
 ]);
 export const isOrderOp = (op: Op): op is Op<OrderKind> => ORDER_KINDS.has(op.kind);
 
@@ -40,7 +40,7 @@ function create(s: Folded, op: Op<'order.create'>): Folded {
   if (s.orders[op.body.orderId]) return s;
   const o: Order = {
     id: op.body.orderId, dayId: op.body.dayId, token: Math.trunc(op.body.token), servedBy: op.body.servedBy, createdAt: op.wallAt,
-    lines: [], note: '', discount: null, roundOff: null, sent: false, deleted: false, priority: false, cancel: null, payments: [], refunds: [], revision: 0,
+    lines: [], note: '', discount: null, roundOff: null, sent: false, deleted: false, priority: false, client: '', cancel: null, payments: [], refunds: [], revision: 0,
   };
   return { ...withOrder(s, o), orderIds: [...s.orderIds, o.id] };
 }
@@ -117,6 +117,7 @@ export function applyOrderOp(s: Folded, op: Op<OrderKind>): Folded {
     case 'order.send': { const r = commit(s, o); return withOrder(r.state, r.order); }
     case 'order.delete': return remove(s, o);
     case 'order.cancel': return cancel(s, o, op);
+    case 'order.client': return withOrder(lww(s, `order:${o.id}`, 'client', op).state, { ...o, client: op.body.name });
     case 'order.priority': return withOrder(lww(s, `order:${o.id}`, 'priority', op).state, { ...o, priority: op.body.on });
     case 'payment.add': {
       if (o.payments.some((p) => p.paymentId === op.body.paymentId)) return s;

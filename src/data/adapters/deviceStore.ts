@@ -5,7 +5,7 @@ import type { DevicePrefs, DeviceStore } from '../types';
 export const PREFS_KEY = `${CONFIG.storage.prefix}.device`;
 
 export const defaultPrefs = (makeId: () => string): DevicePrefs => ({
-  deviceId: makeId(), theme: 'night', servingName: '', rangeIndex: 0, haptics: 'normal', autoPrep: true, stationLook: 'full',
+  deviceId: makeId(), theme: 'night', servingName: '', rangeIndex: 0, haptics: 'normal', autoPrep: true, stationLook: 'full', openLook: 'lines',
 });
 
 function merge(base: DevicePrefs, raw: unknown): DevicePrefs {
@@ -20,6 +20,7 @@ function merge(base: DevicePrefs, raw: unknown): DevicePrefs {
     haptics: pick('haptics', (v) => v === 'off' || v === 'light' || v === 'normal' || v === 'strong'),
     autoPrep: pick('autoPrep', (v) => typeof v === 'boolean'),
     stationLook: pick('stationLook', (v) => v === 'full' || v === 'items' || v === 'ticket'),
+    openLook: pick('openLook', (v) => v === 'lines' || v === 'cards'),
   };
 }
 

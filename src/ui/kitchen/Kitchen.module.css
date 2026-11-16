@@ -97,11 +97,11 @@
 /* Q-COUNTER-FINISH: finished by the Counter, muted with the Ready icon. */
 .isCounter .main, .isCounter .bar { opacity: 0.5; }
 /* Q-OVERLAY (revised 17:50): rounded frosted veil at the card radius with a centred circle badge; no outlines. */
-.leaving { position: relative; flex: none; border-radius: var(--dl-card-radius); }
+.leaving { position: relative; flex: none; border-radius: var(--leave-r, var(--dl-card-radius)); }
 .veil {
   --veil-c: var(--dl-stall-veil-done);
   position: absolute; inset: 0; z-index: 3; display: grid; place-items: center; overflow: hidden;
-  border-radius: var(--dl-card-radius);
+  border-radius: var(--leave-r, var(--dl-card-radius));
   background: color-mix(in srgb, var(--veil-c) 8%, color-mix(in srgb, var(--dl-color-surface-solid) 70%, transparent));
   backdrop-filter: blur(0.375rem) saturate(140%);
 }

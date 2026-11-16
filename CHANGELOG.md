@@ -2,6 +2,9 @@
 All notable changes to Stall Tokens. SemVer. Times IST.
 
 ## [Unreleased] — 2.0.0 (branch `feat/v2.0.0`)
+### Added (16 Nov 18:40, New Orders / Open Orders)
+- Counter top tabs New Orders | Open Orders (Q-ORDERS-1). New Orders keeps Menu / Billing / Payment with a single current-order line (chips row and the Open orders drop-down removed, Q-ORDERS-2 A).
+- Open Orders (F-43): cyan band + Overview, one big squircle per order (swipe the header for previous / next, tap for the order sheet: client name, Priority, items, total, note, Edit in Billing, Cancel order), Lines / Cards, Mark ready, Ready + Confirm, Confirm all, hidden tap-to-change status, bar Cancel order + Handover. `order.client` op (additive). 2 UI tests.
 ### Added
 - v2 rebuilt from `steph1420/app-starter` v0.1.0 (`0746f7b`; checks from agent-common `88c9672`): React 19, Vite 6, TypeScript strict, Driftline tokens + CSS Modules, Zustand, op-log sync with a pluggable transport.
 - Docs first: `docs/ARCHITECTURE.md`, `FEATURES.md`, `docs/adr/ADR-0003-stall-accent.md`.

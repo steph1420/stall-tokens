@@ -33,6 +33,8 @@ export interface DevicePrefs {
   haptics: 'off' | 'light' | 'normal' | 'strong';
   autoPrep: boolean;
   stationLook: 'full' | 'items' | 'ticket';
+  /** Q-ORDERS-5: Open Orders body look. */
+  openLook: 'lines' | 'cards';
 }
 
 /** Per-device settings (not synced on purpose). */

@@ -6,7 +6,7 @@ import { liveOrders } from './fold/fold';
 import { autoPrepLines, finishedAt, neededStations, nextStatus, stationOrders } from './rules/kitchen';
 import type { StationPlace, UiState } from './ui';
 
-function makeCtx(core: Core, log: Log) {
+export function makeCtx(core: Core, log: Log) {
   const st = () => core.get();
   const ui = (patch: Partial<UiState>) => { core.set((s) => ({ ui: { ...s.ui, ...patch } })); };
   const order = (id: string): Order | null => { const o = st().folded.orders[id]; return o && !o.deleted && !o.cancel ? o : null; };
@@ -27,7 +27,7 @@ function makeCtx(core: Core, log: Log) {
   const toast = (text: string) => { core.set((s) => ({ ui: { ...s.ui, toast: { text, id: (s.ui.toast?.id ?? 0) + 1 } } })); };
   return { st, ui, order, setLines, autoPrep, log, toast };
 }
-type Ctx = ReturnType<typeof makeCtx>;
+export type Ctx = ReturnType<typeof makeCtx>;
 
 function navActions({ st, ui }: Ctx) {
   return {
