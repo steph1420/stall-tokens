@@ -8,6 +8,7 @@ All notable changes to Stall Tokens. SemVer. Times IST.
 ### Changed
 - v1 single-file app moved to `legacy/v1/index.html` (kept byte for byte; rollback tag `v1.0.0`, branch `backup/pre-v2.0.0`).
 ### Added (16 Nov 17:30, Kitchen locks)
+- Leaving veil revised (Q-OVERLAY, Steve 17:50): rounded frosted veil at the card radius with a centred circle badge, green check "Completed" / red × "Cancelled", gentle scale-in from `motion/` `PopIn` (reduced motion: fade).
 - Cancel order (Q-CANCEL-1 A): `order.cancel` op at any status, confirm sheet with optional reason; paid money recorded as refund due for Money (no refund UI); Cancelled veil on Kitchen/Station; a cancelled Priority order releases the pause. Store + UI test.
 - Open orders cards expand to their lines, each with its own inline Mark ready (Q-MARK-1 B); the per-order Mark ready sheet is gone.
 - Leaving veil (Q-OVERLAY): orders whose lines are all complete (handed over, or marked by the Counter, by anyone) show "Completed" (bag icon), deleted ones "Cancelled" (red-tinted, muted) on Kitchen/Station cards for ~2.5 s, then drop off. View-only. A Cancel op for started orders is still pending.

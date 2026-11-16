@@ -3,6 +3,8 @@ import type { ReactElement } from 'react';
 
 const P = { fill: 'none', stroke: 'currentColor', strokeLinecap: 'round', strokeLinejoin: 'round' } as const;
 const ICONS = {
+  check: <svg viewBox="0 0 24 24" {...P} strokeWidth="2.6"><path d="M5.5 12.5 10 17l8.5-9.5" /></svg>,
+  cross: <svg viewBox="0 0 24 24" {...P} strokeWidth="2.6"><path d="M7 7l10 10M17 7 7 17" /></svg>,
   plus: <svg viewBox="0 0 16 16" {...P} strokeWidth="1.5"><path d="M8 3v10M3 8h10" /></svg>,
   plusBig: <svg viewBox="0 0 22 22" {...P} strokeWidth="1.4"><path d="M11 4.5v13M4.5 11h13" /></svg>,
   more: <svg viewBox="0 0 16 16" fill="currentColor"><circle cx="3.5" cy="8" r="1.3" /><circle cx="8" cy="8" r="1.3" /><circle cx="12.5" cy="8" r="1.3" /></svg>,

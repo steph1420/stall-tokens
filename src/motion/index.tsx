@@ -44,3 +44,14 @@ export function Bob({ children, className }: { children: ReactNode; className?: 
     </motion.span>
   );
 }
+
+const POP = { hidden: { opacity: 0, scale: 0.8 }, shown: { opacity: 1, scale: 1 } } as const;
+/** Q-OVERLAY: a badge that scales in gently (reduced motion: short fade, no scale). */
+export function PopIn({ children, className }: { children: ReactNode; className?: string | undefined }) {
+  const reduce = useReducedMotion();
+  return (
+    <motion.div className={className} variants={reduce ? variants.fade : POP} initial="hidden" animate="shown" transition={pick('gentle', reduce)}>
+      {children}
+    </motion.div>
+  );
+}

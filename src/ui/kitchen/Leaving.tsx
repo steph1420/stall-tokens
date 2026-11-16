@@ -4,6 +4,7 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import type { Order } from '../../contract';
 import { kitchen } from '../../store';
+import { PopIn } from '../../motion';
 import { Icon } from '../kit/Icon';
 import s from './Kitchen.module.css';
 
@@ -53,8 +54,10 @@ export function LeavingCard({ why, children }: { why: Why | undefined; children:
     <div className={s.leaving} inert>
       {children}
       <div className={[s.veil, why === 'cancelled' ? s.veilCancel : ''].join(' ')} role="status">
-        {why === 'completed' ? <Icon name="stHanded" className={s.veilIc} /> : null}
-        <span>{why === 'completed' ? 'Completed' : 'Cancelled'}</span>
+        <PopIn className={s.veilBadge}>
+          <span className={s.veilDot} aria-hidden="true"><Icon name={why === 'completed' ? 'check' : 'cross'} className={s.veilIc} /></span>
+          <span className={s.veilTx}>{why === 'completed' ? 'Completed' : 'Cancelled'}</span>
+        </PopIn>
       </div>
     </div>
   );

@@ -16,6 +16,9 @@
   --dl-stall-white: #ffffff;
   --dl-stall-qr-ink: #000000;
   --dl-stall-go: #30D158;
+  --dl-stall-veil-done: #30D158; /* Q-OVERLAY badge, same in night and day */
+  --dl-stall-veil-cancel: #FF453A;
+  --dl-stall-on-veil: #ffffff;
   --dl-stall-on-go: #042016;
   --dl-stall-on-danger: #ffffff;
   --dl-stall-stock: #388cf8;
