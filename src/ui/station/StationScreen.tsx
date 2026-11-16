@@ -4,13 +4,14 @@
 import { useRef } from 'react';
 import { CONFIG } from '../../config';
 import type { Order } from '../../contract';
-import { kitchen, liveOrders, useApp } from '../../store';
+import { kitchen, liveOrders, useApp, type Folded, type StationPlace } from '../../store';
 import { Icon } from '../kit/Icon';
 import { KitchenCard } from '../kitchen/KitchenCard';
 import { StatusMark, type Mark } from '../kitchen/StatusMark';
 import { stationIcon, stationVar } from '../kitchen/stations';
 import k from '../kitchen/Kitchen.module.css';
 import { ItemCards, Ticket } from './Looks';
+import { LeavingCard, useLeaving } from '../kitchen/Leaving';
 import { Overview } from './Overview';
 import s from './Station.module.css';
 
@@ -57,6 +58,14 @@ function OrderTabs({ list, station, current }: { list: readonly Order[]; station
   );
 }
 
+/** The order the station shows now; when it leaves, Q-OVERLAY keeps it a moment. */
+function useShown(place: StationPlace | null, folded: Folded): Order[] {
+  if (!place) return [];
+  const list = kitchen.stationOrders(liveOrders(folded), place.id);
+  const o = list.find((x) => x.id === place.orderId) ?? list[0];
+  return o ? [o] : [];
+}
+
 export function StationScreen() {
   const place = useApp((st) => st.ui.station);
   const folded = useApp((st) => st.folded);
@@ -66,10 +75,13 @@ export function StationScreen() {
   const a = useApp((st) => st.kitchen);
   const openSheet = useApp((st) => st.openSheet);
   const swipe = useSwipe((d) => { a.stepStationOrder(d); });
+  const gone = useLeaving(useShown(place, folded), folded.orders);
   if (!place) return null;
   const station = place.id;
   const list = kitchen.stationOrders(liveOrders(folded), station);
-  const o = list.find((x) => x.id === place.orderId) ?? list[0];
+  const live = list.find((x) => x.id === place.orderId) ?? list[0];
+  const left = gone.find((g) => !live || g.o.id !== live.id);
+  const o = left?.o ?? live;
   return (
     <div className={k.phone} style={stationVar(station)}>
       <header className={k.chrome}>
@@ -83,9 +95,9 @@ export function StationScreen() {
       </header>
       <main className={s.body} {...swipe}>
         {!o ? <p className={k.empty}>Nothing to make at {station}</p>
-          : look === 'items' ? <ItemCards o={o} station={station} />
+          : <LeavingCard key={o.id} why={left?.why}>{look === 'items' ? <ItemCards o={o} station={station} />
             : look === 'ticket' ? <Ticket o={o} station={station} />
-              : <KitchenCard o={o} station={station} only={false} />}
+              : <KitchenCard o={o} station={station} only={false} />}</LeavingCard>}
       </main>
       {sheet === 'overview' ? <Overview station={station} /> : null}
     </div>

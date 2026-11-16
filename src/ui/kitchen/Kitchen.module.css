@@ -96,3 +96,15 @@
 .hint { font-size: 0.6875rem; color: var(--dl-color-text-faint); }
 /* Q-COUNTER-FINISH: finished by the Counter, muted with the Ready icon. */
 .isCounter .main, .isCounter .bar { opacity: 0.5; }
+/* Q-OVERLAY: calm veil on an order that is leaving; no outline, tinted glass only. */
+.leaving { position: relative; flex: none; border-radius: var(--dl-card-radius); }
+.veil {
+  position: absolute; inset: 0; z-index: 3; display: flex; align-items: center; justify-content: center; gap: 0.5rem;
+  border-radius: var(--dl-card-radius); font-size: 1.0625rem; font-weight: 600; color: var(--dl-stall-st-handed);
+  background: color-mix(in srgb, var(--dl-color-surface-solid) 72%, transparent); backdrop-filter: blur(0.1875rem);
+}
+.veilCancel {
+  color: var(--dl-stall-danger-text);
+  background: color-mix(in srgb, var(--dl-color-danger) 14%, color-mix(in srgb, var(--dl-color-surface-solid) 76%, transparent));
+}
+.veilIc { width: 1.375rem; height: 1.375rem; }

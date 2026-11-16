@@ -3,6 +3,7 @@
 import { kitchen, liveOrders, useApp } from '../../store';
 import { Icon } from '../kit/Icon';
 import { KitchenCard } from './KitchenCard';
+import { LeavingCard, useLeaving, withGone, type Why } from './Leaving';
 import { STATIONS, stationIcon, stationVar } from './stations';
 import s from './Kitchen.module.css';
 
@@ -24,6 +25,7 @@ export function KitchenScreen() {
   const go = useApp((st) => st.go);
   const all = liveOrders(folded);
   const list = kitchen.kitchenOrders(all).filter((o) => filter === null || kitchen.linesAt(o, filter).length > 0);
+  const shown = withGone<{ o: (typeof list)[number]; gone?: Why }>(list, useLeaving(list, folded.orders));
   return (
     <div className={s.phone}>
       <header className={s.chrome}>
@@ -39,8 +41,8 @@ export function KitchenScreen() {
         </div>
       </header>
       <main className={s.klist}>
-        {list.length === 0 ? <p className={s.empty}>Nothing to make right now</p> : null}
-        {list.map((o, i) => <KitchenCard key={o.id} o={o} station={filter} only={filter !== null} hint={i === 0 && !list.some((x) => x.priority)} />)}
+        {shown.length === 0 ? <p className={s.empty}>Nothing to make right now</p> : null}
+        {shown.map(({ o, gone }, i) => <LeavingCard key={o.id} why={gone}><KitchenCard o={o} station={filter} only={filter !== null} hint={i === 0 && !gone && !list.some((x) => x.priority)} /></LeavingCard>)}
       </main>
     </div>
   );

@@ -1,13 +1,13 @@
 // F-19 / F-21 UI: pills and counts, "Open <station>" only when a pill is picked (Q-OPEN-1 A), station tap flow.
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { DEMO_MENU } from '../../mock/fixtures';
 import { StoreProvider } from '../../store';
 import { makeTestStore } from '../../store/testkit';
 import { StationScreen } from '../station/StationScreen';
 import { KitchenScreen } from './KitchenScreen';
 
-afterEach(cleanup);
+afterEach(() => { cleanup(); vi.useRealTimers(); });
 
 async function seeded() {
   const { store } = makeTestStore();
@@ -39,5 +39,18 @@ describe('Kitchen and Station screens', () => {
     expect(screen.getByText('1× Samosa')).toBeTruthy();
     act(() => { fireEvent.pointerDown(tea, { clientX: 5, clientY: 5 }); fireEvent.pointerUp(tea); });
     expect(screen.getAllByText('Preparing').length).toBeGreaterThan(0);
+  });
+  it('a fully handed-over order shows Completed for a moment, then drops off (Q-OVERLAY)', async () => {
+    const store = await seeded();
+    render(<StoreProvider store={store}><KitchenScreen /></StoreProvider>);
+    vi.useFakeTimers();
+    const o = Object.values(store.getState().folded.orders)[0];
+    act(() => { for (const l of o?.lines ?? []) store.getState().kitchen.finishLine(o?.id ?? '', l.lineId); });
+    expect(screen.getAllByText('Marked by counter').length).toBe(2);
+    act(() => { store.getState().kitchen.handOver(o?.id ?? ''); });
+    expect(screen.getByRole('status').textContent).toBe('Completed');
+    act(() => { vi.advanceTimersByTime(3000); });
+    expect(screen.queryByText('Completed')).toBeNull();
+    expect(screen.getByText('Nothing to make right now')).toBeTruthy();
   });
 });
