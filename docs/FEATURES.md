@@ -75,21 +75,16 @@ Steve asked (16 Nov) for only the strongest gaps to lead. Each one ships behind 
 4. **History search** (§24): by token number, name or item. Why: "the boy in the red shirt's order from 6 pm" has to be findable.
 
 ### Later — Pos ideas (not in 2.1.0 unless Steve picks one)
-- Sync dot
-- Sync dot
-- **Search** (magnifier in the sort row)
+- Menu search (magnifier in the sort row)
 - Empty menu
-- Name
-- Remove
-- Client name
+- Duplicate-name warning on items
+- Hold to remove a menu item
+- Client name field on New order (optional; never asked for, Q-UNPAID-NAME B)
 - Print failed
-- **Filter chips**
+- History filter chips
 - "Register by the book" help
-- **Close day** (new screen)
-- Day summary
-- **Display** › Appearance Night / Day / **Auto** (follows the phone)
-- Data › **Snapshots**
-- **App** › **Install as app**
+- Appearance Auto (follows the phone)
+- Install as app row
 - The other rows marked "Later — Pos idea" below stay documented for reference but are **not built** in 2.1.0.
 
 ### Mockups (redo, 16 Nov 23:55 IST): `handovers/pos/assets/roughs-2.1.0/s119…s126`
@@ -106,7 +101,7 @@ Steve asked (16 Nov) for only the strongest gaps to lead. Each one ships behind 
 | Station tiles | One tile per **active station from data** (PK-6). Shows the station's colour and icon and opens its Station page. | No stations yet: a "Set up stations" link to Settings › Stations. Renaming a station keeps its id (PK-6, W-34). | fix 2.1.0 (W-34) |
 | Stall list (Money, Settle up, Stock, History, Open the stall, Settings) | Opens each Stall screen. | No bullets; "Open the stall" fits on one line (W-04). The last row has no border. | fix 2.1.0 (W-04) |
 | Close the day row | Opens Close day (§21). Shown once a day has started. | — | **Pos gap, top 4 (default off)**: a stall day needs an end, not just a start (unpaid, refunds and cash checked before going home) |
-| Sync dot | Top right. Shows nothing when synced, a cloud with a slash when offline, and a brief saving ring then a tick after each sync (Lippy kit). A tap opens Settings › Sync. | Only shown when sync is set up. | Later — Pos idea: phones in a fair lose signal; staff must know if their orders have reached the Sheet |
+| Sync dot | Top right. Shows nothing when synced, a cloud with a slash when offline, and a brief saving ring then a tick after each sync (Lippy kit). A tap opens Settings › Sync. | Only shown when sync is set up. | kept — Steve: Sync as a dot only: phones in a fair lose signal; staff must know if their orders have reached the Sheet |
 | Device resume | A device last used as Kitchen or a Station reopens there (screen place is a §0.1 exception). Counter devices still see Launch (PK-5 A, changes Q-LAUNCH-1 B for kitchen devices only). | A sign-in-link role still wins (F-44). | new 2.1.0 (PK-5) |
 | Channel tag | On Beta builds only, a small "Beta" word under the stall name. | Stable shows nothing. | new 2.1.0 (Q-CHANNEL A) |
 
@@ -122,7 +117,7 @@ Steve asked (16 Nov) for only the strongest gaps to lead. Each one ships behind 
 | **Big + New ticket** | A large round button at the bottom right of the Menu page, above the Billing bar (Q-SPLIT A "big + button at bottom of New Order"). Same rule as the header +. | Hidden on Billing and Payment so it never covers Confirm. | new 2.1.0 (Q-SPLIT A) |
 | Resume after reload | Only the *pointer* to the order on screen stays on the device (§0.1); the draft itself is in the synced log. After a reload or an Android kill, the Counter opens the same draft (W-12). | If that order was paid, cancelled or discarded on another device, it opens the newest draft or Menu. | fix 2.1.0 (W-12) |
 | Back button | Billing/Payment → Menu → Launch. Sheets close first. Leaving with a non-empty draft keeps the draft (it's never lost). | — | fix 2.1.0 (W-13) |
-| Sync dot | Same as §1. | — | Later — Pos idea (as §1) |
+| Sync dot | Same as §1. | — | kept — Steve: Sync as a dot only (as §1) |
 
 ## 3. Menu (F-06)
 | Element | What it does | States / edge cases | Status |
@@ -321,8 +316,8 @@ Unchanged in 2.1.0 (existing). The Close day screen (§21) links to it.
 | Element | What it does | States / edge cases | Status |
 | --- | --- | --- | --- |
 | Open the stall | Float keypad, Start day. | **Day rollover:** on the first order of a new IST date while the old day is still open, ask "Start today (tokens from #001) or keep yesterday's day?" (W-22). The "Last fair closed with" wording is only used when a day was really closed. | fix 2.1.0 (W-22) |
-| **Close day** (new screen) | A checklist with five steps. 1) **Unpaid** orders (n, ₹): take payment / complete. 2) **Refunds due**. 3) **Cash count**: count notes (the Payment tiles) vs Register by the book, showing the difference ("₹20 short"). 4) **Day notes** (§22). 5) **Settle up**, then Lock day (F-29). | Every step can be skipped with a reason, but it's shown in the day summary. | Later — Pos idea: the report found no close-day checklist (§4); cash short/over is the most common stall dispute |
-| Day summary | Totals, by item (top sellers), by payment type, refunds, write-offs. Shared with **hold to share** (LFPS-SOW kit). | — | Later — Pos idea: the partners ask "how did we do" every evening |
+| **Close day** (new screen) | A checklist with five steps. 1) **Unpaid** orders (n, ₹): take payment / complete. 2) **Refunds due**. 3) **Cash count**: count notes (the Payment tiles) vs Register by the book, showing the difference ("₹20 short"). 4) **Day notes** (§22). 5) **Settle up**, then Lock day (F-29). | Every step can be skipped with a reason, but it's shown in the day summary. | **Pos gap, top 4 (default off)**: the report found no close-day checklist (§4); cash short/over is the most common stall dispute |
+| Day summary | Totals, by item (top sellers), by payment type, refunds, write-offs. Shared with **hold to share** (LFPS-SOW kit). | — | **Pos gap, top 4 (default off)**: the partners ask "how did we do" every evening |
 
 ## 22. Day notes (new, Q-SPLIT A)
 | Element | What it does | Status |
@@ -348,7 +343,7 @@ Unchanged in 2.1.0 (existing). The Close day screen (§21) links to it.
 | Sync › Waiting to sync n | Lists unsynced ops by kind. | **Pos gap, top 4 (default off)**: before a reset or a phone swap, staff must see what hasn't reached the Sheet |
 | **Data** › **Back up now** | Exports `stall-tokens-backup-<IST date>-<device>.json`, containing the whole op log as known here (drafts included), plus the per-device settings in §0.1 ( contract version, op count, SHA-256). Share sheet / Downloads (P-7 A). | new 2.1.0 (Q-SPLIT A Backup) |
 | Data › **Restore from a file** | Pick a file. Shows "ops new / already here", then Import, which runs through the normal fold. Duplicate opIds are ignored and nothing is overwritten (Q-HARM-10). **A backup of the current state is made first** (LFPS-SOW kit). | new 2.1.0 |
-| Data › **Snapshots** | Automatic local snapshots before every destructive step (restore, reset, migrate) and every `snapshotEveryMin` (15) during a day, keeping the last 20. Restore one = import (it never deletes). | Later — Pos idea (LFPS-SOW Q-BAK-1 pattern): a lost phone log mid-fair is unrecoverable without it |
+| Data › **Snapshots** | Automatic local snapshots before every destructive step (restore, reset, migrate) and every `snapshotEveryMin` (15) during a day, keeping the last 20. Restore one = import (it never deletes). | kept — Steve: pinned pre-risk snapshots + "Go back to this snapshot" (LFPS-SOW Q-BAK-1 pattern): a lost phone log mid-fair is unrecoverable without it |
 | Data › **Reset app** | Step 1: shows unsynced ops ("12 changes not yet in the Sheet"). Step 2: Back up first (default on). Step 3: Sync now if possible. Step 4: **Hold to reset**. Wipes this channel's IndexedDB, prefs and receipts; keeps the device id (P-8 A). | new 2.1.0 (Q-SPLIT A Reset) |
 | Data › Storage | Used space and "Keep data safe" (`navigator.storage.persist()`). | **Pos gap, top 4 (default off)**: Android can evict a PWA's storage under pressure unless it's persisted |
 | **App** › **Install as app** | Calls the install prompt, or shows fallback steps (Lippy kit). | Later — Pos idea |
