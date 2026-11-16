@@ -1,8 +1,8 @@
-# CI gate (06 rule 5). Every step must pass. No deploy: this repo is private and only a starter.
+# CI gate (06 rule 5). Every step must pass. No deploy step: go-live is a separate step with Steve's OK.
 name: CI
 on:
   push:
-    branches: [main]
+    branches: [main, 'feat/**']
   pull_request:
 permissions:
   contents: read
@@ -22,6 +22,8 @@ jobs:
         run: node checks/leak-scan.mjs
       - name: Build output not tracked
         run: node checks/check-build-output.mjs
+      - name: Feature IDs match FEATURES.md
+        run: node scripts/check-feature-ids.mjs
       - name: Install
         run: npm ci
       - name: Tokens match tokens.json
