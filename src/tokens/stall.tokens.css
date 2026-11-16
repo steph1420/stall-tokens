@@ -64,6 +64,8 @@
   --dl-stall-on-blue: #ffffff;
   --dl-stall-paste-bg: #fff4c2;
   --dl-stall-paste-text: #2a2210;
+  --dl-stall-paper: #ffffff;
+  --dl-stall-paper-ink: #000000;
   --dl-stall-del-bg: color-mix(in srgb, #FF453A 74%, #3a1018);
   --dl-stall-sheet: rgba(11,22,40,.96);
   --dl-stall-pop: 0 10px 28px rgba(0,0,0,.45);
@@ -98,6 +100,8 @@
   --dl-stall-on-blue: #ffffff;
   --dl-stall-paste-bg: #fff4c2;
   --dl-stall-paste-text: #2a2210;
+  --dl-stall-paper: #ffffff;
+  --dl-stall-paper-ink: #000000;
   --dl-stall-del-bg: #d70015;
   --dl-stall-sheet: rgba(255,255,255,.97);
   --dl-stall-pop: 0 10px 28px rgba(10,40,80,.18);

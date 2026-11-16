@@ -109,3 +109,4 @@
 
 /* Full-width Done in the Waived sheet (was an inline style). */
 .ctaFull { width: 100%; }
+.printBtn { margin-top: 1rem; min-height: var(--dl-hit-min); padding: 0 1rem; border-radius: var(--dl-radius-pill); font-size: 0.9375rem; font-weight: 600; color: var(--dl-stall-info-text); background: var(--dl-color-surface); }

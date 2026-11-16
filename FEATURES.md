@@ -44,5 +44,5 @@ Every feature has a row before work starts. IDs appear in code (`// F-xx`) and i
 | F-39 | v1 data import | D-MIGRATE | dropped (Steve 16 Nov 15:48 IST: v1 never used) | | drop |
 | F-40 | Bluetooth / local-peer sync transport | Steve 16 Nov 15:48 IST | deferred (backlog) | | |
 | F-41 | Bluetooth printing | paused by Steve | deferred | | |
-| F-42 | Token slip (about 58 mm wide, printable) | docs/STATUS.md plan, D-TOKEN | planned | | planned |
+| F-42 | Token slip (about 58 mm wide, printable) | docs/STATUS.md plan, D-TOKEN | building | src/ui/slip/TokenSlip.test.tsx | planned |
 | F-43 | Open Orders tab: cyan band + Overview, one big squircle per order (header swipe / tap = order sheet with client name, Priority, Edit in Billing, Cancel), Lines / Cards looks, Confirm / Confirm all, hidden tap-to-change status, bar Cancel order + Handover | pos-work 22-orders-tabs rough v3, Q-ORDERS-1, Q-ORDERS-3..6, Q-COMPLETE-1 A, D-OPEN-TAP | building | src/ui/counter/open/OpenOrdersScreen.test.tsx | planned |

@@ -10,6 +10,7 @@ Stopped early on Steve's request (quota). Nothing deployed; main untouched.
 - Stock (F-30, F-31): Stock screen + Paste stock sheet; parser per Q-STOCK-SET; one Spent entry per paste; new pasted things are supply items (D-STOCK-SUPPLY). Tests: `src/store/rules/stock.test.ts` (2), `src/store/stock.test.ts` (1). Shots: `s5*`.
 - Open the stall (F-32), History (F-33), Settings (F-34) with the D-ACCESS passcode gate. Tests: `src/ui/stall/StallScreens.test.tsx` (2). Shots: `s6*`.
 - Sheet bridge (F-35): client transport + `apps-script/Code.gs` + `docs/SHEET_SETUP.md` + Settings > Sync. Not deployed and no Google resources made (needs Steve: Q-SHEET-DEPLOY). Tests: `src/data/sheetTransport.test.ts` (2). Shot: `s65-settings-sync`.
+- Token slip (F-42): `ui/slip/TokenSlip.tsx`, Print token on the paid screen (D-SLIP). Test: `src/ui/slip/TokenSlip.test.tsx` (1). Shot: `s70-token-slip`.
 ## Kitchen + Station (2026-11-16 17:20 IST, Pos; Steve "continue")
 - Built: Kitchen (F-19), Counter Done? row + Hand over (F-20), Station page with three looks and Overview (F-21), auto-prep (F-22); Launch opens Kitchen and each station; `order.priority` op.
 - Gaps closed: ₹0 orders ("Nothing to collect" + To kitchen); IndexedDB missing or blocked now runs in memory with a calm banner.

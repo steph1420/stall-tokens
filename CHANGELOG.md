@@ -2,6 +2,8 @@
 All notable changes to Stall Tokens. SemVer. Times IST.
 
 ## [Unreleased] — 2.0.0 (branch `feat/v2.0.0`)
+### Added (16 Nov 20:10, Token slip)
+- Token slip (F-42): 58 mm printable slip; Print token on the paid screen opens the print dialog. 1 UI test.
 ### Added (16 Nov 20:00, Sheet bridge)
 - Sheet bridge transport (F-35): client `createSheetTransport` on the pluggable Transport, `apps-script/Code.gs` (append-only op log in a Sheet tab, stall key check), `docs/SHEET_SETUP.md`, Settings > Sync (URL + stall key, status). Not deployed; needs Steve's TEST Sheet. 2 tests with a fake web app.
 ### Added (16 Nov 19:45, Open the stall / History / Settings)

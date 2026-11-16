@@ -9,6 +9,7 @@ import { Money } from '../../kit/Money';
 import { Qr } from '../../kit/Qr';
 import { Sheet } from '../../kit/Sheet';
 import k from '../../kit/kit.module.css';
+import { TokenSlipPrint } from '../../slip/TokenSlip';
 import { Numpad } from './Numpad';
 import { CountNotes, TipRow, Waived } from './parts';
 import s from './Payment.module.css';
@@ -46,6 +47,7 @@ function Slider({ split, covered, onSlide }: { split: pay.Split; covered: Paise;
 
 function Settled({ o }: { o: Order }) {
   const c = useApp((st) => st.counter);
+  const [print, setPrint] = useState(false);
   return (
     <>
       <main className={s.stage}>
@@ -53,7 +55,9 @@ function Settled({ o }: { o: Order }) {
           <div className={s.dueLab}>{formatToken(o.token, CONFIG.tokens.pad)} · {bill.due(o) < 0 ? 'Refund owed' : 'Paid'}</div>
           <Money p={bill.due(o) < 0 ? -bill.due(o) : bill.paid(o) + bill.tips(o)} className={s.dueAmt} />
           {bill.tips(o) > 0 ? <div className={s.tipNote}>incl. <Money p={bill.tips(o)} /> tip</div> : null}
+          <button type="button" className={s.printBtn} onClick={() => { setPrint(true); }}>Print token</button>
         </div>
+        {print ? <TokenSlipPrint o={o} onDone={() => { setPrint(false); }} /> : null}
       </main>
       <footer className={s.bar}>
         <button type="button" className={s.back} onClick={() => { c.setPage('billing'); }}><Icon name="backSmall" className={s.ic} />Back</button>
