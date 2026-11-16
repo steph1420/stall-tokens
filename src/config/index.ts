@@ -1,4 +1,7 @@
 // The one config module (06 rule 3): every timing, limit, key and range lives here, never inline.
+/** Build-time env (absent when vite.config.ts itself loads this file). */
+const envStr = (k: string): string => { const v = (import.meta as { env?: Record<string, unknown> }).env?.[k]; return typeof v === 'string' ? v : ''; };
+
 export const CONFIG = Object.freeze({
   app: { codename: 'stall-tokens', name: 'Stall Tokens', version: '2.0.0-dev.1' },
   ports: { dev: 5173, preview: 4173 },
@@ -29,7 +32,8 @@ export const CONFIG = Object.freeze({
   stations: ['Tortillas', 'Momos', 'Desserts', 'Sandwiches', 'Cutlets', 'Beverages'] as const,
   swatchCount: 8, // item colours are swatch indexes into --dl-stall-swatch-N (tokens)
   stock: { lowAtDefault: 5, supplyCategory: 'Supplies' },
-  sync: { pollMinMs: 4000, pollMaxMs: 60000, backoff: 2, pushBatch: 200, timeoutMs: 15000 },
+  // F-44 baked-in sync (Steve 19:33): a build can carry the bridge URL / key (VITE_SYNC_URL, VITE_SYNC_KEY); empty by default.
+  sync: { bakedUrl: envStr('VITE_SYNC_URL'), bakedKey: envStr('VITE_SYNC_KEY'), pollMinMs: 4000, pollMaxMs: 60000, backoff: 2, pushBatch: 200, timeoutMs: 15000 },
   timings: { toastMs: 2600, fakeDelayMs: 120, clockTickMs: 30000, printDelayMs: 300 },
   // Open Orders header: dots up to this many orders, then "3 of 12" (Q-ORDERS-1).
   openDotsMax: 8,

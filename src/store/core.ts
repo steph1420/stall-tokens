@@ -30,8 +30,15 @@ export interface Core {
   env: Env;
 }
 
+/** F-44: a phone set up by a sign-in link opens on its role's screen. */
+function uiForRole(role: string): CoreState['ui'] {
+  if (role === 'counter' || role === 'kitchen') return { ...initialUi, screen: role };
+  if (role.startsWith('station:')) return { ...initialUi, screen: 'station', station: { id: role.slice(8), from: 'launch', orderId: null } };
+  return initialUi;
+}
+
 export const initialCore = (prefs: DevicePrefs): CoreState => ({
-  ready: false, folded: emptyFolded(), prefs, ui: initialUi, saveError: null, unsaved: [],
+  ready: false, folded: emptyFolded(), prefs, ui: uiForRole(prefs.role), saveError: null, unsaved: [],
   sync: { pending: 0, lastOkAt: null, error: null, online: false }, memoryOnly: false,
 });
 

@@ -12,6 +12,7 @@ describe('Stall screens (F-32 F-34)', () => {
   it('sets a passcode, then needs it again after leaving', async () => {
     const { store } = makeTestStore();
     await store.getState().start();
+    store.getState().setPrefs({ passcodeOff: false });
     store.getState().openStall('money');
     const v = render(<StoreProvider store={store}><StallScreens screen="money" /></StoreProvider>);
     expect(screen.getByText('Set a passcode')).toBeTruthy();

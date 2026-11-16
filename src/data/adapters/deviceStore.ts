@@ -5,7 +5,7 @@ import type { DevicePrefs, DeviceStore } from '../types';
 export const PREFS_KEY = `${CONFIG.storage.prefix}.device`;
 
 export const defaultPrefs = (makeId: () => string): DevicePrefs => ({
-  deviceId: makeId(), theme: 'night', servingName: '', rangeIndex: 0, haptics: 'normal', autoPrep: true, stationLook: 'full', openLook: 'lines', passcode: '', passcodeOff: false, syncUrl: '', syncKey: '',
+  deviceId: makeId(), theme: 'night', servingName: '', rangeIndex: 0, haptics: 'normal', autoPrep: true, stationLook: 'full', openLook: 'lines', passcode: '', passcodeOff: true, syncUrl: CONFIG.sync.bakedUrl, syncKey: CONFIG.sync.bakedKey, role: '',
 });
 
 function merge(base: DevicePrefs, raw: unknown): DevicePrefs {
@@ -25,6 +25,7 @@ function merge(base: DevicePrefs, raw: unknown): DevicePrefs {
     passcodeOff: pick('passcodeOff', (v) => typeof v === 'boolean'),
     syncUrl: pick('syncUrl', (v) => typeof v === 'string'),
     syncKey: pick('syncKey', (v) => typeof v === 'string'),
+    role: pick('role', (v) => typeof v === 'string' && (v === '' || /^(counter|kitchen|launch|station:\S{1,40})$/.test(v))),
   };
 }
 

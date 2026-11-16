@@ -81,3 +81,4 @@
 .syncForm { display: flex; flex-direction: column; gap: 0.625rem; }
 .syncForm > * { width: 100%; }
 .syncHint { margin: 0; font-size: 0.875rem; color: var(--dl-color-text-muted); }
+.two2 { display: grid; grid-template-columns: 1fr 1fr; gap: 0.625rem; }

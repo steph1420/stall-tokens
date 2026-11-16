@@ -3,7 +3,7 @@ import type { Page } from './rules/status';
 
 export type Screen = 'launch' | 'counter' | 'kitchen' | 'station' | StallScreen;
 /** D-NAV: the quiet Stall section (launch + Counter ⋯). */
-export type StallScreen = 'money' | 'settle' | 'stock' | 'history' | 'settings' | 'float';
+export type StallScreen = 'money' | 'settle' | 'stock' | 'history' | 'settings' | 'float' | 'developer';
 /** Q-ORDERS-1: the Counter's two top tabs. */
 export type CounterTab = 'new' | 'open';
 /** Station page place (Q-BACK-1 A: Back returns to where it was opened from). */

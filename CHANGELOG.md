@@ -2,6 +2,11 @@
 All notable changes to Stall Tokens. SemVer. Times IST.
 
 ## [Unreleased] — 2.0.0 (branch `feat/v2.0.0`)
+### Added (16 Nov 20:05, sign-in links, F-44)
+- Developer > Sign-in links: one link per person / role; URL, stall key, role and name ride in the #fragment (`src/data/join.ts`). Opening it sets up sync, the serving name and the role screen (Counter, Kitchen, a station or the start screen). Revoke by changing STALL_KEY.
+- Passcode lock (D-ACCESS) now off by default (code kept; Settings > Developer > Passcode lock turns it on). No pairing.
+- Builds can bake the bridge in: `VITE_SYNC_URL`, `VITE_SYNC_KEY` (empty by default).
+
 ### Added (16 Nov 19:45, Sheet schema v1)
 - Q-SHEET-DEPLOY: Google Sheet "Stall Tokens — Data (v2)" made with `_meta`, `_schema`, append-only `ops` and 14 projection tabs plus 4 formula views; `apps-script/Code.gs` v1 matches it (projections, header-name columns, append-only migrations). Web app not deployed (Steve authorises it). 1 schema test.
 ### Added (16 Nov 20:10, Token slip)

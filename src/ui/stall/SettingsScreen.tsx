@@ -87,7 +87,8 @@ export function SettingsScreen() {
         <Opt t="Change passcode" sub="Asks for a new 4-digit code next time" value="" onClick={() => { set({ passcode: '' }); a.money.toast('Passcode cleared · set a new one next time'); }} />
       </Group>
       <Group label="Developer">
-        <Opt t="Passcode lock" sub="Off = Money, Settle up and Settings open without a code on this phone" sw={!p.passcodeOff} onClick={() => { set({ passcodeOff: !p.passcodeOff }); }} />
+        <Opt t="Sign-in links" sub="One-tap links per person / role: sets up sync and opens their screen" value="" onClick={() => { a.openStall('developer'); a.unlock(); }} />
+        <Opt t="Passcode lock" sub="Off (default) = Money, Settle up and Settings open without a code on this phone" sw={!p.passcodeOff} onClick={() => { set({ passcodeOff: !p.passcodeOff }); }} />
       </Group>
       <p className={s.foot}>{`Stall Tokens ${CONFIG.app.version} · device ${p.deviceId.slice(0, 6)}`}</p>
     </StallPage>

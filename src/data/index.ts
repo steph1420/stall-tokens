@@ -4,6 +4,7 @@ import { createFallbackOpStore } from './adapters/fallback';
 import { createLocalIdb } from './adapters/localIdb';
 import { createTabChannel } from './adapters/tabChannel';
 import { createSheetTransport, isSheetUrl } from './adapters/sheetTransport';
+import { applyJoinFromLocation } from './join';
 import type { DataSource, Transport } from './types';
 
 export type { DataSource, DevicePrefs, OpStore, Transport, TabChannel, DeviceStore } from './types';
@@ -13,6 +14,7 @@ export { createFakeHub, createFakeTransport, type FakeHub } from './adapters/fak
 export { createDeviceStore } from './adapters/deviceStore';
 export { createFallbackOpStore } from './adapters/fallback';
 export { createSheetTransport, isSheetUrl, type SheetConfig } from './adapters/sheetTransport';
+export { joinUrl, readJoin, isRole, type JoinLink } from './join';
 
 function safeLocalStorage(): Storage | null {
   try { return globalThis.localStorage; } catch (e) {
@@ -25,6 +27,9 @@ function safeLocalStorage(): Storage | null {
 export function createBrowserDataSource(makeId: () => string, transports?: readonly Transport[]): DataSource {
   const idb = typeof indexedDB === 'undefined' ? null : indexedDB;
   const device = createDeviceStore(safeLocalStorage(), makeId);
+  applyJoinFromLocation(device);
+  // A link opened in an already-open tab only changes the #fragment: apply it and restart the app.
+  if (typeof window !== 'undefined') window.addEventListener('hashchange', () => { if (applyJoinFromLocation(device)) window.location.reload(); });
   const { syncUrl, syncKey } = device.read();
   const sheet = isSheetUrl(syncUrl) && syncKey ? [createSheetTransport({ url: syncUrl, key: syncKey })] : [];
   return { ops: createFallbackOpStore(idb ? createLocalIdb(idb) : null), device, channel: createTabChannel(), transports: transports ?? sheet };

@@ -4,12 +4,13 @@ import { useApp } from '../../store';
 import { MoneyScreen } from '../money/MoneyScreen';
 import { SettleScreen } from '../settle/SettleScreen';
 import { StockScreen } from '../stock/StockScreen';
+import { DeveloperScreen } from './DeveloperScreen';
 import { FloatScreen } from './FloatScreen';
 import { HistoryScreen } from './HistoryScreen';
 import { PasscodeGate } from './PasscodeGate';
 import { SettingsScreen } from './SettingsScreen';
 
-const GATED: readonly StallScreen[] = ['money', 'settle', 'settings'];
+const GATED: readonly StallScreen[] = ['money', 'settle', 'settings', 'developer'];
 
 export function StallScreens({ screen }: { screen: StallScreen }) {
   const open = useApp((x) => x.prefs.passcodeOff || x.ui.unlocked);
@@ -21,6 +22,7 @@ export function StallScreens({ screen }: { screen: StallScreen }) {
     case 'history': return <HistoryScreen />;
     case 'settings': return <SettingsScreen />;
     case 'float': return <FloatScreen />;
+    case 'developer': return <DeveloperScreen />;
     default: return <MoneyScreen />;
   }
 }
