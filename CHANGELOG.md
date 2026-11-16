@@ -2,6 +2,8 @@
 All notable changes to Stall Tokens. SemVer. Times IST.
 
 ## [Unreleased] — 2.0.0 (branch `feat/v2.0.0`)
+### Added (16 Nov 20:00, Sheet bridge)
+- Sheet bridge transport (F-35): client `createSheetTransport` on the pluggable Transport, `apps-script/Code.gs` (append-only op log in a Sheet tab, stall key check), `docs/SHEET_SETUP.md`, Settings > Sync (URL + stall key, status). Not deployed; needs Steve's TEST Sheet. 2 tests with a fake web app.
 ### Added (16 Nov 19:45, Open the stall / History / Settings)
 - Open the stall (F-32): float on a keypad, last fair's closing cash, sync pill, Start day (starts today's day if needed, saves `float:<dayId>`).
 - History (F-33): per day, paid / cancelled orders and money entries with Refunded / Edited / Cancelled / Voided tags; order sheet with Edit, Refund, Hold to cancel order; entry sheet with Hold to void.

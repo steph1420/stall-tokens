@@ -1,11 +1,13 @@
 // F-34 Settings (21-polish2/settings.html; D-ACCESS, D-THEME): Kitchen (Auto-prep, Station look), Money (Partner shares,
 // tip choices, round-off), Feel (Haptics, Appearance Night / Day), Counter (serving name, token range), Passcode,
 // Developer (passcode lock off), footer. Device prefs stay on this phone; tip choices and round-off steps are read-only (D-SETTINGS-RO).
-import type { ReactNode } from 'react';
+import { useState, type ReactNode } from 'react';
 import { CONFIG } from '../../config';
 import { formatInr } from '../../contract';
 import type { DevicePrefs } from '../../store';
-import { useApp } from '../../store';
+import { istClock, isSheetUrl, useApp } from '../../store';
+import { Sheet } from '../kit/Sheet';
+import kit from '../kit/kit.module.css';
 import { StallPage } from './StallPage';
 import s from './Stall.module.css';
 
@@ -21,6 +23,39 @@ function Opt({ t, sub, value, onClick, sw }: { t: string; sub?: string; value?: 
     {sw === undefined ? <span className={onClick ? s.setV : s.setRo}>{value}{onClick ? ' ›' : ''}</span> : <span className={sw ? s.swOn : s.sw} aria-hidden="true"><span /></span>}</>;
   if (!onClick) return <div className={s.setRow}>{body}</div>;
   return <button type="button" className={s.setRow} role={sw === undefined ? undefined : 'switch'} aria-checked={sw} onClick={onClick}>{body}</button>;
+}
+
+/** F-35 Sync: the Sheet bridge URL and stall key for this phone (docs/SHEET_SETUP.md). Saving restarts the app to connect. */
+function SyncSheet({ onClose }: { onClose: () => void }) {
+  const a = useApp((x) => x);
+  const [url, setUrl] = useState(a.prefs.syncUrl);
+  const [key, setKey] = useState(a.prefs.syncKey);
+  const bad = url.trim() !== '' && !isSheetUrl(url);
+  const save = () => { a.setPrefs({ syncUrl: url.trim(), syncKey: key.trim() }); window.location.reload(); };
+  return (
+    <Sheet title="Sync with the Sheet" onClose={onClose}>
+      <div className={s.syncForm}>
+      <p className={s.syncHint}>Paste the web-app link (ends in /exec) and the stall key from the Sheet setup. Leave empty to keep this phone local.</p>
+      <input className={kit.input} aria-label="Web-app link" placeholder="https://script.google.com/macros/s/…/exec" autoCapitalize="off" autoCorrect="off" value={url} onChange={(e) => { setUrl(e.target.value); }} />
+      <input className={kit.input} aria-label="Stall key" placeholder="Stall key" autoCapitalize="off" autoCorrect="off" value={key} onChange={(e) => { setKey(e.target.value); }} />
+      {bad ? <p className={s.warn}>That link does not look right · it should start with https://</p> : null}
+      <button type="button" className={kit.cta} disabled={bad || (url.trim() !== '' && !key.trim())} onClick={save}>Save and reconnect</button>
+      </div>
+    </Sheet>
+  );
+}
+
+function SyncRow() {
+  const p = useApp((x) => x.prefs);
+  const sync = useApp((x) => x.sync);
+  const [open, setOpen] = useState(false);
+  const state = !p.syncUrl ? 'Not set up' : sync.error ? 'Not reaching the Sheet' : sync.lastOkAt ? `Synced ${istClock(sync.lastOkAt)}` : 'Connecting…';
+  return (
+    <>
+      <Opt t="Sheet sync" sub={sync.pending ? `${String(sync.pending)} waiting to sync` : 'Phones share orders and money through the Sheet'} value={state} onClick={() => { setOpen(true); }} />
+      {open ? <SyncSheet onClose={() => { setOpen(false); }} /> : null}
+    </>
+  );
 }
 
 export function SettingsScreen() {
@@ -47,6 +82,7 @@ export function SettingsScreen() {
         <Opt t="Token range" value={(() => { const r = CONFIG.tokens.ranges[p.rangeIndex]; return r ? `${String(r.from)}–${String(r.to)}` : ''; })()} onClick={() => { set({ rangeIndex: (p.rangeIndex + 1) % CONFIG.tokens.ranges.length }); }} />
         <Opt t="Serving name" value={p.servingName || 'Not set'} />
       </Group>
+      <Group label="Sync"><SyncRow /></Group>
       <Group label="Passcode">
         <Opt t="Change passcode" sub="Asks for a new 4-digit code next time" value="" onClick={() => { set({ passcode: '' }); a.money.toast('Passcode cleared · set a new one next time'); }} />
       </Group>

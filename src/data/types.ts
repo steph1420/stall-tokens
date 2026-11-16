@@ -39,6 +39,9 @@ export interface DevicePrefs {
   passcode: string;
   /** D-ACCESS Developer switch: no passcode on this device. */
   passcodeOff: boolean;
+  /** F-35 Sheet bridge web-app URL and stall key on this phone ('' = not set up; the app stays local). */
+  syncUrl: string;
+  syncKey: string;
 }
 
 /** Per-device settings (not synced on purpose). */

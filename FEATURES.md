@@ -37,7 +37,7 @@ Every feature has a row before work starts. IDs appear in code (`// F-xx`) and i
 | F-32 | Open the stall (float count) | 21-polish2/float.html | building | src/ui/stall/StallScreens.test.tsx | planned |
 | F-33 | History per day with Edit / Refund / Hold to cancel | 21-polish2/history.html | building | src/ui/stall/StallScreens.test.tsx | planned |
 | F-34 | Settings (Appearance, Feel/haptics, Sync, token range, payees, passcode, Developer, footer) | 21-polish2/settings.html, D-ACCESS, D-THEME | building | src/ui/stall/StallScreens.test.tsx | change |
-| F-35 | Sheet bridge transport + Apps Script (TEST Sheet first) | D-SYNC | planned | | planned |
+| F-35 | Sheet bridge transport + Apps Script (TEST Sheet first) | D-SYNC | building | src/data/sheetTransport.test.ts | planned |
 | F-36 | Backup export / import (no duplicates) | plan §7.3 | planned | | change |
 | F-37 | Sync status pill + conflicts review | Q-HARM-10 | planned | | planned |
 | F-38 | Now Serving screen (v1 feature) | v1 | deferred | | Steve to decide |

@@ -25,6 +25,7 @@ export type { Split } from './rules/settle';
 export * as kitchen from './rules/kitchen';
 export type { Folded } from './fold/state';
 export type { DevicePrefs } from '../data';
+export { isSheetUrl } from '../data';
 export type { OrderStatus, Page } from './rules/status';
 export * as bill from './rules/bill';
 export * as pay from './rules/pay';
