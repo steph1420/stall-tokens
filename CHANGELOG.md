@@ -2,6 +2,8 @@
 All notable changes to Stall Tokens. SemVer. Times IST.
 
 ## [Unreleased] — 2.0.0 (branch `feat/v2.0.0`)
+### Added (16 Nov 19:45, Sheet schema v1)
+- Q-SHEET-DEPLOY: Google Sheet "Stall Tokens — Data (v2)" made with `_meta`, `_schema`, append-only `ops` and 14 projection tabs plus 4 formula views; `apps-script/Code.gs` v1 matches it (projections, header-name columns, append-only migrations). Web app not deployed (Steve authorises it). 1 schema test.
 ### Added (16 Nov 20:10, Token slip)
 - Token slip (F-42): 58 mm printable slip; Print token on the paid screen opens the print dialog. 1 UI test.
 ### Added (16 Nov 20:00, Sheet bridge)

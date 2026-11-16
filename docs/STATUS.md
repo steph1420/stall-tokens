@@ -3,6 +3,9 @@
 Stopped early on Steve's request (quota). Nothing deployed; main untouched.
 
 
+## Build pass 3 (2026-11-16 19:35 IST onwards, Pos; Steve 19:31 / 19:33)
+- Sheet (Q-SHEET-DEPLOY): "Stall Tokens — Data (v2)" in Steve's Drive (link not kept in the repo); Code.gs schema v1. Web app deploy waits for Steve (docs/SHEET_SETUP.md).
+
 ## Build pass 2 (2026-11-16 18:35 IST onwards, Pos; Steve "build as much as you can")
 - New Orders / Open Orders (F-05, F-43, Q-ORDERS-1 v3): top tabs; New Orders = Menu / Billing / Payment + one current-order line (chips row and the old Open orders drop-down removed); Open Orders = cyan band + Overview, one big squircle per order (header swipe / tap = order sheet), Lines / Cards, Confirm / Confirm all, Mark ready, hidden tap-to-change (D-OPEN-TAP), bar Cancel order + Handover. `order.client` op. Tests: `src/ui/counter/open/OpenOrdersScreen.test.tsx` (2). Shots: `/workspace/pos-shots/s2[0-4]-*`.
 - Money (F-23..F-25): home + entry + Paid by / Mixed + Refunds due; ops `person.set`, `entry.add`, `entry.void`; Stall list on launch and ⋯ (D-NAV). Tests: `src/store/money.test.ts` (2). Shots: `s3*`.
