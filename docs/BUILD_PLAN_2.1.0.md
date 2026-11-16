@@ -163,7 +163,7 @@ These are listed for Steve's verify run on Beta.
 - A separate **public** repo `steph1420/stall-tokens-beta` serves `https://steph1420.github.io/stall-tokens-beta/`. **The Stable repo, its workflows, Pages settings and service worker are never touched.**
 - The beta repo holds only a workflow. It checks out the public `steph1420/stall-tokens` at `feat/v2.1.0` (input `ref`, the default), builds with `VITE_CHANNEL=beta`, and deploys to its own Pages. No secrets anywhere; it is triggered by `workflow_dispatch` (Pos runs it after each phase) and a schedule.
 - The app detects Beta from the base path (`/stall-tokens-beta/`) and also from `VITE_CHANNEL`. Beta gets the storage prefix `stall-tokens-beta.v2`, no baked sync URL or key, and the manifest name "Stall Tokens Beta". Other paths share the origin `steph1420.github.io` but not the path scope, so the service workers can't cross.
-- Until P0 lands, the deployed Beta is 2.0.0 code under a different path. Its storage prefix is still `stall-tokens.v2`, so a phone that has both Stable and Beta open **shares data between them**. Use another browser profile for Beta until P0 (flagged in the report).
+- Until P0 lands, the Beta workflow rewrites the storage prefix in the built files to `stall-tokens-beta.v2` (receipts DB too) and labels the build "Beta". So Beta never reads Stable's data or sync settings on the same origin. After P0, the app does this itself from the base path, and the workflow step becomes a check only.
 
 ## 8b. Go sync server (Q-SYNC-GO, Q-SHEET-FLUSH; locked t77u/t78u)
 The full design is in `docs/SYNC_SERVER.md`: `server/` in Go with SQLite as the source of truth, JSON endpoints (heartbeat digest, push, pull, health, optional SSE), and the Sheet mirror through the Sheets API that never sleeps with unsent changes. Code.gs 2.0.0 becomes the fallback transport and the Sheet-edit hook.
@@ -194,7 +194,8 @@ The full design is in `docs/SYNC_SERVER.md`: `server/` in Go with SQLite as the 
 - [x] A locks recorded (Q-BETA-PATH B and the 23:21–23:26 answers, Q-SYNC-GO, Q-SHEET-FLUSH)
 - [x] B docs/SYNC_SERVER.md
 - [x] C mockup redo s119–s126 (caption strip under the phones; Q-UNPAID-ROW open) + FEATURES top-4 Pos gaps (default off), the rest under Later
-- [ ] D beta repo + first Beta deploy
+- [x] D beta repo `steph1420/stall-tokens-beta` + first Beta deploy (16 Nov 23:32 IST, run 43924329468): https://steph1420.github.io/stall-tokens-beta/. Until P0, the workflow relabels the built files: title "(Beta)", manifest "Stall Tokens Beta", storage `stall-tokens-beta.v2`. It fails if the old prefix is still there.
+- [ ] **STOPPED here (16 Nov 23:58 IST).** Next: Steve locks Q-GO-HOST / Q-GO-PUSH / Q-GO-WHEN / Q-UNPAID-ROW, then P0.
 - [ ] P0 channel plumbing (base-path detection, Beta storage prefix, About shows the channel; no Stable change)
 - [ ] P1 data + rules + unit tests
 - [ ] P2 Counter
