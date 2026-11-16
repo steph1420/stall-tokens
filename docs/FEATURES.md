@@ -30,15 +30,39 @@ This sheet lists every screen and every UI element: what it does, its states, ni
 
 *Feedback and safety*
 - **Feedback.** Every refused tap gets a toast that says why. Nothing is dropped silently (LFPS-SOW kit).
-- **Undo.** Safe, reversible actions run at once and show an Undo toast (`CONFIG.timings.undoMs` = 5 s, PK-4). Money and destructive actions use hold-to-confirm (kit `HoldButton`) and are not undoable.
+- **Undo.** Safe, reversible actions run at once and show an Undo toast (`CONFIG.timings.undoMs` = 5 s, PK-4). Payments, cancels and destructive actions use hold-to-confirm (kit `HoldButton`). **Refunds are instant with Undo** (Q-REFUND-INSTANT, Steve t75u).
   - Undo is always a new compensating op, never a deletion (Q-HARM-10).
 - **Holds.** The hold length comes from the `HOLD` tokens. Hold buttons show a fill or press animation and give a haptic.
 - **Back.** Phone Back closes the top sheet, then the screen, then returns to Launch. It never leaves the app during an order (P-6, W-13).
 
 *Data*
-- **Everything shared is an op** in the log (Q-HARM-10). Device-only prefs live in `localStorage` under the channel's storage prefix.
+- **Everything syncs** (Q-SYNC-ALL, Steve t76u). Every change is an op in the Q-HARM-10 log, pushed through the Sheet bridge at every step and folded on every device. The only exceptions are the per-device settings in **§0.1**.
   - Sheet hand edits are ops from writer `sheet`; the Sheet wins a true clash. Clashes go to the hidden `conflicts` tab and Settings › Sync › Review. The rule is never "newest timestamp wins".
 - **Privacy.** No customer phone numbers are kept. Client names are free text typed at the stall (02-privacy).
+
+## 0.1 What syncs, and the only per-device exceptions (Q-SYNC-ALL)
+**Synced as ops (all of it):**
+- Orders and **drafts** (Q-DRAFT-SYNC) and every line, note, discount, round-off, priority and client name.
+- Payments, **refunds and refund undo** (`refund.void`), cancels and completes.
+- Menu items, **categories**, **stations**, stock counts and stock moves, sold out.
+- Shared settings: stall name, fair, tip choices, round-off steps, auto-prep, station look, Open Orders look, **menu sort**, age warnings, ask-name-on-unpaid, refund limit, alert *rules* and passcode lock (see Q-PASSCODE-SYNC).
+- Money entries, partners and settlement, day lock, **day notes**, info records.
+- Conflicts and Review flips.
+- **Device registry** (`device.set`): each device's label (serving name), its token range and its sign-in role, so every Counter can see who holds which range and whose draft is whose.
+- **Snapshot and backup metadata** (`snapshot.note`: when, why, op count, hash). The snapshot content is the op log itself, which the Sheet already holds.
+
+**Stays on the device only. These are the only exceptions, for Steve to check:**
+| Setting | Why it stays on the device |
+| --- | --- |
+| Device id and its writer id | Identity: it must be unique per device (Q-HARM-9). |
+| Sync link and stall key | Credentials, never sent through the log (06 rule 13). |
+| Appearance (Night / Day / Auto) | Personal: a kitchen tablet in the sun and a Counter phone in the shade differ. |
+| Kitchen text size | Personal to the screen's distance (W-39). |
+| Quiet alerts and volume | Personal to where the device stands (PK-1). |
+| *Proposed extra, Steve to confirm:* haptics strength | Personal feel. If not confirmed, it becomes shared. |
+| *Proposed extra, Steve to confirm:* where the screen is (current order, tab, pill, station) | Navigation state, not data. It lets a device resume after a reload (W-12, PK-5). |
+
+**Not synced through the Sheet, pending a decision:** receipt photos on Money entries (F-47). They are too big for the Sheet, so this is **Q-RECEIPT-SYNC**: A ★ upload to a Drive folder through the bridge, with the op carrying the file id · B keep them on the device.
 
 ---
 
@@ -52,7 +76,7 @@ This sheet lists every screen and every UI element: what it does, its states, ni
 | Stall list (Money, Settle up, Stock, History, Open the stall, Settings) | Opens each Stall screen. | No bullets; "Open the stall" fits on one line (W-04). The last row has no border. | fix 2.1.0 (W-04) |
 | Close the day row | Opens Close day (§21). Shown once a day has started. | — | gap — added by Pos: a stall day needs an end, not just a start (unpaid, refunds and cash checked before going home) |
 | Sync dot | Top right. Shows nothing when synced, a cloud with a slash when offline, and a brief saving ring then a tick after each sync (Lippy kit). A tap opens Settings › Sync. | Only shown when sync is set up. | gap — added by Pos: phones in a fair lose signal; staff must know if their orders have reached the Sheet |
-| Device resume | A device last used as Kitchen or a Station reopens there. Counter devices still see Launch (PK-5 A, changes Q-LAUNCH-1 B for kitchen devices only). | A sign-in-link role still wins (F-44). | new 2.1.0 (PK-5) |
+| Device resume | A device last used as Kitchen or a Station reopens there (screen place is a §0.1 exception). Counter devices still see Launch (PK-5 A, changes Q-LAUNCH-1 B for kitchen devices only). | A sign-in-link role still wins (F-44). | new 2.1.0 (PK-5) |
 | Channel tag | On Beta builds only, a small "Beta" word under the stall name. | Stable shows nothing. | new 2.1.0 (Q-CHANNEL A) |
 
 ## 2. Counter shell (F-05)
@@ -63,9 +87,9 @@ This sheet lists every screen and every UI element: what it does, its states, ni
 | Page tabs Menu · Billing · Payment | Per-order page, remembered per order. | — | existing |
 | Header + (small) | Starts a new ticket. If the current draft is empty it is **reused**, so no token is burnt (W-07, W-14). | — | fix 2.1.0 (W-07) |
 | **Order line** (under the page tabs) | Shows "#004 · new order · 2 items · ₹70". Swipe ‹ › to move between drafts (dots, or "2 of 4" past `openDotsMax`). Tap opens the **Drafts sheet**. | With no draft: "Tap an item to start an order". Wording follows `orderStatus` (fixes "paying" after handover, W-05). | new 2.1.0 (Q-NEWORDERS-NAV A) |
-| **Drafts sheet** | Each draft shows its token, items, ₹ and age, with **Open** and **Discard** (hold). Includes "Held stock: Cold Drink ×2" so stranded stock is visible (W-11). | Empty drafts are discarded by themselves and never listed. Drafts untouched for `draftExpireMin` (CONFIG, default 45 min) show amber "Old draft" (never auto-deleted; Steve decides, see Q-DRAFT-EXPIRE). | new 2.1.0 (W-07, W-11, W-12) |
+| **Drafts sheet** | **Every open draft from every Counter device** (Q-DRAFT-SYNC, Steve t75u): token, items, ₹, age and **who started it** (serving name / device label, e.g. "Meera · Counter 2"), with **Open** and **Discard** (hold). Includes "Held stock: Cold Drink ×2" so stranded stock is visible (W-11). | Drafts are ops in the shared log, synced through the Sheet bridge at every step and folded on every device. Two devices editing one draft merge like any other order ops (Q-HARM-10; clashes in Sync › Review). Empty drafts are discarded by themselves and never listed. Drafts untouched for `draftExpireMin` (CONFIG, default 45 min) show amber "Old draft" (never auto-deleted; see Q-DRAFT-EXPIRE). | new 2.1.0 (Q-NEWORDERS-NAV A, Q-DRAFT-SYNC, W-07, W-11, W-12) |
 | **Big + New ticket** | A large round button at the bottom right of the Menu page, above the Billing bar (Q-SPLIT A "big + button at bottom of New Order"). Same rule as the header +. | Hidden on Billing and Payment so it never covers Confirm. | new 2.1.0 (Q-SPLIT A) |
-| Resume after reload | The current order and page are kept in device prefs. After a reload or an Android kill, the Counter opens the same draft (W-12). | If that order was paid or cancelled on another phone, it opens the newest draft or Menu. | fix 2.1.0 (W-12) |
+| Resume after reload | Only the *pointer* to the order on screen stays on the device (§0.1); the draft itself is in the synced log. After a reload or an Android kill, the Counter opens the same draft (W-12). | If that order was paid, cancelled or discarded on another device, it opens the newest draft or Menu. | fix 2.1.0 (W-12) |
 | Back button | Billing/Payment → Menu → Launch. Sheets close first. Leaving with a non-empty draft keeps the draft (it's never lost). | — | fix 2.1.0 (W-13) |
 | Sync dot | Same as §1. | — | gap — added by Pos (as §1) |
 
@@ -75,7 +99,7 @@ This sheet lists every screen and every UI element: what it does, its states, ni
 | Item card | Tap = +1. Shows the name (clamped to 2 lines with an ellipsis, price row fixed, W-17), the price, the colour edge and the stock badge. | Badges: "24 left" / "3 left" (amber at or below `lowAt`) / Sold out (dimmed; a tap gives the toast "Cold Drink is sold out"). If stock is only held by drafts, the toast says "Held in 2 drafts · Open drafts" (W-11). | fix 2.1.0 (W-17, W-11) |
 | −/+ on a card | Changes the newest editable line of that item. | − on an item already being made: toast "Already being made; change it from the kitchen". | existing |
 | Press and hold a card | Opens the stock panel (§5). | — | existing |
-| **Sort chip** | My order · Name A–Z · Price ↑/↓ · Category (grouped headers) · Stock (low first, sold out last). | A per-phone pref (P-10 A), default Category. Last choice remembered. | new 2.1.0 (Q-SPLIT A menu sort) |
+| **Sort chip** | My order · Name A–Z · Price ↑/↓ · Category (grouped headers) · Stock (low first, sold out last). | A **shared** setting (Q-SYNC-ALL; changes P-10 A from per-device), default Category. | new 2.1.0 (Q-SPLIT A menu sort) |
 | Category headers | Shown when sort = Category. The order comes from Settings › Menu › Categories. | Items with no category go under "Other". | new 2.1.0 |
 | Add item tile | Opens the Add item sheet (§4). | — | existing |
 | **Search** (magnifier in the sort row) | Filters cards by name as you type. × clears it. | For menus over about 20 items. Hidden behind the magnifier so the first layer stays calm (Lippy kit). | gap — added by Pos: a fair menu with 40+ items is slow to scan by eye |
@@ -88,7 +112,7 @@ This sheet lists every screen and every UI element: what it does, its states, ni
 | Name | Up to 60 characters. | Duplicate name: amber line "Already on the menu · save anyway?" (it saves on a second tap). | gap — added by Pos: duplicates split sales counts and confuse the kitchen |
 | Price (₹) | `inputMode="decimal"`. ₹0 is allowed; an empty price is refused. | — | existing |
 | Colour swatches | 8 filled circles; the picked one is ringed. | The CSS variable mismatch is fixed (`--c`), with a UI test that the background isn't transparent in night and day (W-02). | fix 2.1.0 (W-02) |
-| **Category dropdown** | A `<select>` listing the categories from Settings in their order, plus "**+ Add category…**", which opens an inline name field. Picking a category pre-fills its default Station and Colour. | No free text, so typos can't split the menu (W-03). A new item defaults to the last category used on this phone, not the first one. | new 2.1.0 (Q-SPLIT A, P-3) |
+| **Category dropdown** | A `<select>` listing the categories from Settings in their order, plus "**+ Add category…**", which opens an inline name field. Picking a category pre-fills its default Station and Colour. | No free text, so typos can't split the menu (W-03). A new item defaults to the last category used, not the first one. | new 2.1.0 (Q-SPLIT A, P-3) |
 | Station dropdown | Stations from data (PK-6). The default comes from the category. | — | fix 2.1.0 (W-03, W-34) |
 | Stock | Empty = no count. Whole numbers only. | — | existing |
 | Remove | Hold to remove (was a single tap). | An Undo toast follows. | gap — added by Pos: removing an item mid-service by a stray tap is costly |
@@ -192,7 +216,7 @@ Reached from the Open Orders sheet, Unpaid, History and Billing (after an edit).
 | Reason chips | Wrong item · Late · Quality · Changed mind · Other. Optional; the note box is always visible (Lippy kit). | — | new 2.1.0 |
 | Paid back by | Cash / UPI, defaulting to how the order was paid. | — | new 2.1.0 |
 | Back to stock | A toggle, off by default. On = the picked lines' qty go back to stock. | Only offered when lines are picked. | new 2.1.0 |
-| **Hold to refund ₹X** | `refund.add {reason, lines, restock}`. **Does not cancel the order.** | — | new 2.1.0 |
+| **Refund ₹X** (single tap, no hold) | `refund.add {reason, lines, restock}`, then a 5 s toast "Refunded ₹90 · Undo". Undo = a compensating `refund.void {refundId}` op (it never deletes; stock put back by `restock` is taken out again). **Does not cancel the order.** | A double tap is guarded (one refund per sheet). Undo after another device has already synced the refund still works (the void op syncs too). | new 2.1.0 (Q-REFUND-1 A amended by **Q-REFUND-INSTANT**, Steve t75u) |
 | Over-limit "Allowed by" | Refunds over ₹N, or a 100% refund, ask who allowed it (like discounts). | — | **Q-REFUND-LIMIT** (not locked; built behind the setting `refundAllowedByOverPaise`, default **off**) |
 
 ## 14. Cancel sheet
@@ -281,7 +305,7 @@ Unchanged in 2.1.0 (existing). The Close day screen (§21) links to it.
 | --- | --- | --- |
 | **General** › Stall name | The shared setting (it was only in the Counter ⋯). | change 2.1.0 (Q-SPLIT A "quickly edit stall name") |
 | General › Event / fair name | Edits today's `event` record name (P-14 is 2.2.0; this single field is in 2.1.0). | new 2.1.0 (Q-SPLIT A "event") |
-| General › Serving name, Token range | Device. | existing (moved) |
+| General › Serving name (device label), Token range | Synced through the device registry (`device.set`), so other Counters see who holds which range. | change 2.1.0 (Q-SYNC-ALL) |
 | **Display** › Appearance Night / Day / **Auto** (follows the phone) | Auto = `prefers-color-scheme`. | change 2.1.0 (Auto is a gap — added by Pos: LFPS-SOW has it; it saves switching at sunset) |
 | Display › Haptics | — | existing (moved) |
 | Display › Kitchen text size (Standard / Large) | W-39. | new 2.1.0 |
@@ -294,10 +318,10 @@ Unchanged in 2.1.0 (existing). The Close day screen (§21) links to it.
 | **Money** › Partner shares, Tip choices, Round-off | — | existing (the round-off placeholder is fixed to "5, 10", W-20) |
 | **Sync** › status (dot only), Sheet sync, **Review** (clashes) | — | existing |
 | Sync › Waiting to sync n | Lists unsynced ops by kind. | gap — added by Pos: before a reset or a phone swap, staff must see what hasn't reached the Sheet |
-| **Data** › **Back up now** | Exports `stall-tokens-backup-<IST date>-<device>.json` (op log, device prefs, contract version, op count, SHA-256). Share sheet / Downloads (P-7 A). | new 2.1.0 (Q-SPLIT A Backup) |
+| **Data** › **Back up now** | Exports `stall-tokens-backup-<IST date>-<device>.json`, containing the whole op log as known here (drafts included), plus the per-device settings in §0.1 ( contract version, op count, SHA-256). Share sheet / Downloads (P-7 A). | new 2.1.0 (Q-SPLIT A Backup) |
 | Data › **Restore from a file** | Pick a file. Shows "ops new / already here", then Import, which runs through the normal fold. Duplicate opIds are ignored and nothing is overwritten (Q-HARM-10). **A backup of the current state is made first** (LFPS-SOW kit). | new 2.1.0 |
 | Data › **Snapshots** | Automatic local snapshots before every destructive step (restore, reset, migrate) and every `snapshotEveryMin` (15) during a day, keeping the last 20. Restore one = import (it never deletes). | gap — added by Pos (LFPS-SOW Q-BAK-1 pattern): a lost phone log mid-fair is unrecoverable without it |
-| Data › **Reset this phone** | Step 1: shows unsynced ops ("12 changes not yet in the Sheet"). Step 2: Back up first (default on). Step 3: Sync now if possible. Step 4: **Hold to reset**. Wipes this channel's IndexedDB, prefs and receipts; keeps the device id (P-8 A). | new 2.1.0 (Q-SPLIT A Reset) |
+| Data › **Reset app** | Step 1: shows unsynced ops ("12 changes not yet in the Sheet"). Step 2: Back up first (default on). Step 3: Sync now if possible. Step 4: **Hold to reset**. Wipes this channel's IndexedDB, prefs and receipts; keeps the device id (P-8 A). | new 2.1.0 (Q-SPLIT A Reset) |
 | Data › Storage | Used space and "Keep data safe" (`navigator.storage.persist()`). | gap — added by Pos: Android can evict a PWA's storage under pressure unless it's persisted |
 | **App** › **Install as app** | Calls the install prompt, or shows fallback steps (Lippy kit). | gap — added by Pos |
 | App › **Updates** | A quiet dot when an update is ready; apply on next open or tap. It never reloads mid-order (LFPS-SOW kit, Q-HARM-2). | change 2.1.0 |
@@ -316,8 +340,9 @@ One navigation owner (`store/nav`) pushes a history state per screen and per she
 
 ## 26. Undo (cross-cutting, PK-4 + LFPS-SOW kit)
 - **Undo toast for:** kitchen steps, Priority on/off, Handover, Discard draft, Remove item and Send back.
-- **Not undoable:** payments, refunds and cancels. These use hold-to-confirm instead.
-- Undo writes compensating ops (never deletes). One undo stack per phone, capped at 60; the toast undoes the last entry only. **A full Undo/Redo bar is not added** (it would add clutter to the first layer).
+- **Refunds** are instant with a 5 s Undo (`refund.void`, Q-REFUND-INSTANT).
+- **Not undoable:** payments and cancels. These use hold-to-confirm instead.
+- Undo writes compensating ops (never deletes). One undo stack per device session, capped at 60. The undo *ops* sync like any other op; the toast undoes the last entry only. **A full Undo/Redo bar is not added** (it would add clutter to the first layer).
 
 ## 27. Accessibility
 - Every control has an `aria-label`. Toasts use `role="status"`; refusals use `role="alert"`.
@@ -352,4 +377,6 @@ One navigation owner (`store/nav`) pushes a history state per screen and per she
 - **Q-DRAFT-EXPIRE**: old untouched drafts. A ★ amber "Old draft" mark only · B auto-discard after N min with a toast.
 - **Q-DEV-7TAP**: Developer behind 7 taps (Q-HARM-5), with Sign-in links moved to an Account row. A ★ yes · B keep today's open Developer group.
 - **Q-BETA-PATH** (how to serve /beta/ without disturbing Stable): see BUILD_PLAN §8. A ★ a one-time 2.0.1 Stable release (no visible change) that teaches the Stable service worker to ignore `/beta/` and builds Stable + Beta in one Pages workflow · B Beta in its own repo (`stall-tokens-beta`, URL `/stall-tokens-beta/`), leaving Stable completely untouched.
+- **Q-RECEIPT-SYNC**: receipt photos. A ★ Drive folder through the bridge (the op carries the file id) · B keep them on the device.
+- **Q-PASSCODE-SYNC**: the passcode lock. A ★ shared (a salted hash in a shared setting; one code for the whole stall) · B per device.
 - **Q-MOCK-SIZE**: Lippy's kit says 421 px (Steve's phone, 3×) and the LFPS-SOW kit says 412×915. A ★ 421×927 at 3× · B 412×915.

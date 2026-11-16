@@ -38,13 +38,43 @@ All new things are **additive kinds or optional fields**. `CONTRACT_VERSION` sta
 | `record.set` table `day_note` (new table) | id = dayId; `{ text, tags }` | P-13, editable days later. |
 | `record.set` table `station` (exists) | `{ name, icon, colour, sort_order }`, `removed` = inactive | PK-6. |
 | `item.set` field `categoryId` (optional) | category record id | P-3 A. The legacy `category` text is kept as a fallback. |
-| `setting.set` keys `askNameOnUnpaid`, `refundAllowedByOverPaise`, `ageWarnMin`, `ageLateMin` | strings | Shared settings (flags in FEATURES §30). |
+| `refund.void` (new kind) | `{ refundId, reason }` | Q-REFUND-INSTANT: Undo of an instant refund as a compensating op. The fold marks the refund voided (it stays in the record, shown struck through in History) and reverses its `restock`. |
+| `order.create` + optional `device: string` | the device label (serving name + short device id) | Q-DRAFT-SYNC: shows whose draft it is on every Counter. |
+| `device.set` (new kind) | `{ deviceId, label, rangeIndex, role }` | Q-SYNC-ALL device registry. |
+| `snapshot.note` (new kind) | `{ snapshotId, at, reason, opCount, hash }` | Q-SYNC-ALL backup metadata. |
+| `receipt.set` (new kind, if Q-RECEIPT-SYNC A) | `{ entryId, fileId }` | Q-SYNC-ALL receipt photos through Drive. |
+| `setting.set` keys `autoPrep`, `stationLook`, `openLook`, `menuSort`, `askNameOnUnpaid`, `refundAllowedByOverPaise`, `ageWarnMin`, `ageLateMin` | strings | Shared settings (flags in FEATURES §30). |
 
 **Migration (no migration ops written):**
 - **Categories:** the list is the category records **plus virtual categories** with deterministic ids `name:<text>` for each distinct legacy `item.category`. Editing a virtual category writes `record.set category name:<text>`. Two phones doing the same edit converge on one id (no duplicates), and old items match by name.
 - **Stations:** the list is the station records plus virtual stations from `CONFIG.stations`. A station's **id stays its first name** (today's `line.stationId` values), so no line or item changes. A rename only sets `fields.name`.
 - **Forward compatibility:** 2.1.0's `isOp` keeps well-formed ops of **unknown kinds** in the log (they fold as no-ops and are re-folded after an update) instead of refusing them. A 2.0.0 phone can't do this, so before Stable gets 2.1.0 every phone must take the update. Sync › About shows a warning when the bridge has seen a 2.0.0 device in the last day (the bridge records the app version per writer, P6).
 - **Automatic local snapshot** before the first 2.1.0 fold on a phone (LFPS-SOW kit: back up before any migrate).
+
+### Everything syncs (Q-SYNC-ALL, Steve t76u)
+Audit of what is on the device today (v2.0.0 `DevicePrefs`, the IDB stores) and where each goes:
+| Today on the device | 2.1.0 |
+| --- | --- |
+| `servingName`, `rangeIndex`, `role` | new op `device.set {deviceId, label, rangeIndex, role}`, a device registry folded on every device. A clash on the same range = Conflict row plus a toast "Range 1–500 is also used by Ravi". |
+| `autoPrep`, `stationLook`, `openLook`, new `menuSort` | `setting.set` shared keys |
+| `passcode`, `passcodeOff` | shared setting `passcodeHash` (salted SHA-256) + `passcodeOn` (Q-PASSCODE-SYNC A ★; until it is answered, it stays as today) |
+| `haptics` | stays on the device if Steve confirms (FEATURES §0.1), else a shared setting |
+| `theme`, kitchen text size, Quiet / volume, `deviceId`, `syncUrl`, `syncKey`, screen place | stay on the device (the only exceptions, FEATURES §0.1) |
+| receipt photos (IDB `receipts`) | Q-RECEIPT-SYNC A ★: the bridge uploads to Drive; new op `receipt.set {entryId, fileId}`; the photo cache on the device stays only as a cache |
+| snapshots (new, IDB) | content = the op log (already on the server); new op `snapshot.note {snapshotId, at, reason, opCount, hash}` so every device and the Sheet see when backups were made |
+| Undo stack | the stack is session memory; every undo is a synced compensating op |
+
+Migration: on first 2.1.0 start, each device writes one `device.set` and the `setting.set` ops for its old local values, but **only if no shared value exists yet** (the first device's choice wins; later devices adopt it). Then it drops the local copies.
+Code.gs: `device.set`, `snapshot.note` and `receipt.set` are stored in the hidden `ops` log only. The device registry is projected into the existing hidden register (not a readable info tab).
+
+### Drafts sync (Q-DRAFT-SYNC, Steve t75u)
+- Drafts were already written as ops (`order.create`, `line.add`, `line.qty`, `line.note`, `order.note`, `order.discount`, `order.delete`). 2.1.0 makes this explicit and complete:
+  - **create** = `order.create`; **edit / line add / remove** = `line.add` / `line.qty` (0 removes); **discard** = `order.delete`; **open as order** = `order.send` or `payment.add`.
+  - All go through the same outbox to the Sheet bridge at every step (no device-only draft state). Every device folds them, so the Drafts sheet lists drafts from every Counter.
+- Only the "which order is on screen" pointer stays on the device (FEATURES §0.1).
+- Stock held by drafts counts on every device (`available()` already uses all live orders). Old drafts are visible to all and can be discarded by anyone (the discard is an op, so it syncs).
+- Token clash: each Counter device keeps its own token range (D-TOKEN), so two devices never make the same draft token.
+- **Code.gs:** no new tab. Draft ops land in the hidden `ops` log only. The readable info tabs and `records_log` keep excluding orders that aren't sent or paid (checked in `sheetSchema.test.ts`). `refund.void` is projected into the hidden refunds log as a void row.
 
 ## 3. Fold / rule changes (P1)
 - **Status rules**
@@ -120,6 +150,7 @@ These are listed for Steve's verify run on Beta.
 ## 7. Risks
 | Risk | Effect | Guard |
 | --- | --- | --- |
+| Drafts syncing add Sheet traffic | More pushes during service | Ops are already batched (`pushBatch`, adaptive poll); a draft step is one small op. Measured in the TEST Sheet run. |
 | A 2.0.0 phone meets 2.1.0 ops | It refuses unknown kinds, so state differs between phones | Beta uses its own namespace and a test bridge. At Stable cutover, every phone updates first; the bridge version register warns. |
 | Stable rebuild on each Beta deploy | Stable phones get a needless "Update ready" | Build date = commit time, so the Stable artifact is byte-identical. CI diff check. |
 | Stable SW serves its index.html for `/beta/` | Beta never loads on a phone that has Stable | 2.0.1 adds `navigateFallbackDenylist /beta/` (Q-BETA-PATH A), or a separate repo (B). |
