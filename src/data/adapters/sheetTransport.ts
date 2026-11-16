@@ -28,9 +28,14 @@ export function createSheetTransport(cfg: SheetConfig, doFetch: Fetch = (i, init
   return {
     name,
     async push(ops: readonly Op[]) {
-      if (!ops.length) return [];
+      if (!ops.length) return { stored: [], resend: [] };
       const d = await call({ action: 'push', ops });
-      return Array.isArray(d.stored) ? d.stored.filter((x): x is string => typeof x === 'string') : [];
+      const stored = Array.isArray(d.stored) ? d.stored.filter((x): x is string => typeof x === 'string') : [];
+      const resend = Array.isArray(d.resend) ? (d.resend as unknown[]).flatMap((r) => {
+        const x = r as { writer?: unknown; fromSeq?: unknown };
+        return typeof x.writer === 'string' && typeof x.fromSeq === 'number' ? [{ writer: x.writer, fromSeq: x.fromSeq }] : [];
+      }) : [];
+      return { stored, resend };
     },
     async pull(cursor: string) {
       const d = await call({ action: 'pull', cursor });

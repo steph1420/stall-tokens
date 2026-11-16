@@ -5,6 +5,7 @@ import { createStore as createZustand, useStore, type StoreApi } from 'zustand';
 import { useShallow } from 'zustand/react/shallow';
 import { createBrowserDataSource, createSyncEngine, type DataSource, type DevicePrefs } from '../data';
 import { catalogActions } from './catalog';
+import { conflictActions } from './conflicts';
 import { createLog, initialCore, type Core, type CoreState } from './core';
 import { counterActions } from './counter';
 import { kitchenActions } from './kitchen';
@@ -41,6 +42,7 @@ export { liveOrders } from './fold/fold';
 export interface AppState extends CoreState {
   readonly counter: ReturnType<typeof counterActions>;
   readonly catalog: ReturnType<typeof catalogActions>;
+  readonly conflicts: ReturnType<typeof conflictActions>;
   readonly kitchen: ReturnType<typeof kitchenActions>;
   readonly open: ReturnType<typeof openActions>;
   readonly money: ReturnType<typeof moneyActions>;
@@ -78,7 +80,7 @@ export function createAppStore(ds: DataSource, opts: StoreOptions = {}): AppStor
   const prefs = ds.device.read();
   const writer = `${prefs.deviceId.slice(0, 8)}.${opts.loadId ?? makeId().slice(0, 4)}`;
   let log: ReturnType<typeof createLog> | null = null;
-  const engine = createSyncEngine(ds.transports, (id) => store.getState().folded.applied.has(id), now);
+  const engine = createSyncEngine(ds.transports, (id) => store.getState().folded.applied.has(id), now, (w, from) => (log?.all() ?? []).filter((o) => o.writer === w && o.seq >= from));
   const store = createZustand<AppState>()((set, get) => {
     const core: Core = { get, set: (p) => { set(p as Partial<AppState>); }, env: { ds, engine, makeId, now } };
     // Q-PAUSE-1 A: Priority pauses / resumes other orders' lines through real ops (rules/kitchen.ts pauseMoves).
@@ -88,6 +90,7 @@ export function createAppStore(ds: DataSource, opts: StoreOptions = {}): AppStor
       ...initialCore(prefs),
       counter: counterActions(core, l),
       catalog: catalogActions(core, l),
+      conflicts: conflictActions(l),
       kitchen: kitchenActions(core, l),
       open: openActions(core, l),
       money: moneyActions(core, l),

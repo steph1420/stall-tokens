@@ -27,7 +27,11 @@ export interface Order {
 }
 export interface Payee { readonly id: string; readonly name: string; readonly upiId: string }
 export interface Day { readonly id: string; readonly label: string; readonly startedAt: number }
-export interface Conflict { readonly target: string; readonly field: string; readonly winner: string; readonly loser: string; readonly at: number }
+/** Q-HARM-10: a true clash (neither op had seen the other). `rule` says why the winner won: the later op in causal
+ * (Lamport) order, or a Sheet hand edit (sheet wins). Shown under Settings > Sync > Review; tapping flips with a new op. */
+export interface Conflict { readonly target: string; readonly field: string; readonly winner: string; readonly loser: string; readonly at: number; readonly rule: 'causal' | 'sheet-wins' }
+/** F-48 one info record (business, event, source, …); fields keyed by Sheet column name. */
+export interface InfoRecord { readonly id: string; readonly fields: Readonly<Record<string, string | number | boolean>>; readonly removed: boolean }
 /** F-23 Spent / Received entry (Q-MONEY-V8, Q-RECV). `voided` keeps the record (History hold to cancel). */
 export interface Entry {
   readonly id: string; readonly dayId: string; readonly dir: 'spent' | 'received'; readonly amount: Paise; readonly label: string;

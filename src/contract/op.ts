@@ -62,13 +62,21 @@ export interface Bodies {
   'settle.clear': { clearId: string; dayId: string; personId: string; amount: Paise; reason: ClearReason; note: string };
   'settle.undo': { targetId: string; reason: string };
   'day.lock': { dayId: string; locked: boolean; split: Record<string, number> };
+  /** F-48 Info records (Steve 16 Nov 20:10 IST): business, events, event days, sources, source items, stations and the
+   * extra details of people and items. `fields` are the Sheet's snake_case column names; a patch (absent = unchanged).
+   * Additive kind; also what a hand edit on a Sheet info tab becomes (writer `sheet`, Q-HARM-10). */
+  'record.set': { table: RecordTable; id: string; fields: Record<string, RecordValue>; removed: boolean };
 }
+export const RECORD_TABLES = ['business', 'event', 'event_day', 'source', 'source_item', 'station', 'person_info', 'item_info'] as const;
+export type RecordTable = (typeof RECORD_TABLES)[number];
+export type RecordValue = string | number | boolean;
 export type ClearReason = 'gifted' | 'paid-directly' | 'written-off' | 'shared-cost';
 export type OpKind = keyof Bodies;
 export const OP_KINDS = [
   'item.set', 'stock.adjust', 'day.start', 'order.create', 'line.add', 'line.qty', 'line.note', 'line.status', 'line.finish',
   'order.note', 'order.discount', 'order.roundoff', 'order.send', 'order.delete', 'order.priority', 'order.cancel', 'order.client', 'payment.add', 'refund.add',
   'payee.set', 'setting.set', 'person.set', 'entry.add', 'entry.void', 'settle.pay', 'settle.clear', 'settle.undo', 'day.lock',
+  'record.set',
 ] as const satisfies readonly OpKind[];
 
 /** Version vector: highest seq seen per writer. */
@@ -82,6 +90,8 @@ export interface OpHead {
   readonly lamport: number;
   readonly vv: VV;
   readonly wallAt: number; // display only; never used for ordering
+  /** Q-HARM-10: when the Sheet bridge stored the op (server clock, ms). Set on ops pulled back; display and tiebreak only. */
+  readonly recvAt?: number;
 }
 export type Op<K extends OpKind = OpKind> = K extends OpKind ? OpHead & { readonly kind: K; readonly body: Bodies[K] } : never;
 
@@ -135,6 +145,7 @@ const S: Record<OpKind, Record<string, FieldType>> = {
   'settle.clear': { clearId: 's', dayId: 's', personId: 's', amount: 'n', reason: 's', note: 's' },
   'settle.undo': { targetId: 's', reason: 's' },
   'day.lock': { dayId: 's', locked: 'b', split: 'o' },
+  'record.set': { table: 's', id: 's', fields: 'o', removed: 'b' },
 };
 const okField = (t: FieldType, x: unknown): boolean =>
   t === 's' ? typeof x === 'string'

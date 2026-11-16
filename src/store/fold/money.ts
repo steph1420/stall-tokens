@@ -50,7 +50,9 @@ function applySettle(s: Folded, op: Op<'settle.pay' | 'settle.clear' | 'settle.u
 export function applyMoneyOp(s: Folded, op: Op<MoneyKind>): Folded {
   switch (op.kind) {
     case 'person.set': {
-      const st = lww(s, `person:${op.body.personId}`, 'all', op).state;
+      const w = lww(s, `person:${op.body.personId}`, 'all', op);
+      if (!w.apply) return w.state;
+      const st = w.state;
       const { personId: id, name, isPartner, sharePct, removed } = op.body;
       const people = removed
         ? Object.fromEntries(Object.entries(st.people).filter(([k]) => k !== id))

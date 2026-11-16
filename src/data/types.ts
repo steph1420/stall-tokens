@@ -10,11 +10,15 @@ export interface OpStore {
   persistent?(): boolean;
 }
 
+/** Q-HARM-10 gap-safe: the other side lists writers whose ops it is missing from `fromSeq` on. */
+export interface Resend { readonly writer: string; readonly fromSeq: number }
+export interface PushResult { readonly stored: string[]; readonly resend: readonly Resend[] }
+
 /** One way ops travel between devices (Sheet bridge now; Bluetooth / local peer later). ARCHITECTURE §4.3. */
 export interface Transport {
   readonly name: string;
-  /** Send ops; resolves with the opIds the other side has stored. */
-  push(ops: readonly Op[]): Promise<string[]>;
+  /** Send ops; resolves with the opIds the other side has stored, and any seq gaps it wants resent (Q-HARM-10). */
+  push(ops: readonly Op[]): Promise<PushResult>;
   /** Fetch ops after the cursor. */
   pull(cursor: string): Promise<{ ops: Op[]; cursor: string }>;
 }

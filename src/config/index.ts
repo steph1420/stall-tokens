@@ -11,6 +11,7 @@ export const CONFIG = Object.freeze({
   // D-TOKEN: each Counter device picks one range; tokens restart per day.
   tokens: { ranges: [{ from: 1, to: 500 }, { from: 501, to: 1000 }], pad: 3 },
   limits: {
+    recordTextMax: 500, // F-48 info record text cell (business, events, sources)
     nameMaxChars: 60,
     noteMaxChars: 140,
     qtyMax: 99,

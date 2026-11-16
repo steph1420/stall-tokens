@@ -1,6 +1,7 @@
 // F-02 The fold: state = fold(sorted op log). Pure and idempotent. Rules that must hold for any log
 // (including ops from other devices) live here; rules about what a tap may do live in store actions.
-import { compareOps, type Item, type ItemFields, type Op, type Order } from '../../contract';
+import { CONFIG } from '../../config';
+import { compareOps, RECORD_TABLES, type InfoRecord, type Item, type ItemFields, type Op, type Order, type RecordValue } from '../../contract';
 import { emptyFolded, type Folded } from './state';
 import { applyOrderOp, isOrderOp } from './orders';
 import { lww } from './lww';
@@ -25,10 +26,31 @@ function applyItem(s: Folded, op: Op<'item.set'>): Folded {
     if (!fieldOk(key, value)) continue;
     const r = lww(st, `item:${itemId}`, key, op);
     st = r.state;
-    next = { ...next, [key]: value };
+    if (r.apply) next = { ...next, [key]: value };
   }
   if (next.count !== null && next.count >= 0) next = { ...next, oversold: false };
   return { ...st, items: { ...st.items, [itemId]: next } };
+}
+
+const isRecordValue = (v: unknown): v is RecordValue => typeof v === 'string' || typeof v === 'boolean' || (typeof v === 'number' && Number.isFinite(v));
+
+/** F-48 info record patch: each field is its own last-writer-wins target (Sheet edits win on true clashes). */
+function applyRecord(s: Folded, op: Op<'record.set'>): Folded {
+  const { table, id, fields, removed } = op.body;
+  if (!(RECORD_TABLES as readonly string[]).includes(table) || !id) return s;
+  const rows = s.records[table] ?? {};
+  let rec: InfoRecord = rows[id] ?? { id, fields: {}, removed: false };
+  let st = s;
+  for (const [k, v] of Object.entries(fields)) {
+    if (!isRecordValue(v) || !/^[a-z][a-z0-9_]{0,39}$/.test(k)) continue;
+    const r = lww(st, `rec:${table}:${id}`, k, op);
+    st = r.state;
+    if (r.apply) rec = { ...rec, fields: { ...rec.fields, [k]: typeof v === 'string' ? v.slice(0, CONFIG.limits.recordTextMax) : v } };
+  }
+  const rm = lww(st, `rec:${table}:${id}`, 'removed', op);
+  st = rm.state;
+  if (rm.apply) rec = { ...rec, removed };
+  return { ...st, records: { ...st.records, [table]: { ...rows, [id]: rec } } };
 }
 
 function applyStock(s: Folded, op: Op<'stock.adjust'>): Folded {
@@ -47,7 +69,9 @@ function applyOne(s: Folded, op: Op): Folded {
       if (s.days.some((d) => d.id === op.body.dayId)) return s;
       return { ...s, days: [...s.days, { id: op.body.dayId, label: op.body.label, startedAt: op.wallAt }] };
     case 'payee.set': {
-      const st = lww(s, `payee:${op.body.payeeId}`, 'all', op).state;
+      const w = lww(s, `payee:${op.body.payeeId}`, 'all', op);
+      if (!w.apply) return w.state;
+      const st = w.state;
       const id = op.body.payeeId;
       const payees = op.body.removed
         ? Object.fromEntries(Object.entries(st.payees).filter(([k]) => k !== id))
@@ -55,9 +79,10 @@ function applyOne(s: Folded, op: Op): Folded {
       return { ...st, payees };
     }
     case 'setting.set': {
-      const st = lww(s, 'settings', op.body.key, op).state;
-      return { ...st, settings: { ...st.settings, [op.body.key]: op.body.value } };
+      const w = lww(s, 'settings', op.body.key, op);
+      return w.apply ? { ...w.state, settings: { ...w.state.settings, [op.body.key]: op.body.value } } : w.state;
     }
+    case 'record.set': return applyRecord(s, op);
     default:
       if (MONEY_KINDS.has(op.kind)) return applyMoneyOp(s, op as Op<MoneyKind>);
       return isOrderOp(op) ? applyOrderOp(s, op) : s;

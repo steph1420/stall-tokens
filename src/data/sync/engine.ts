@@ -16,14 +16,24 @@ export interface SyncEngine {
 
 interface Lane { t: Transport; outbox: Map<string, Op>; cursor: string; failures: number }
 
-export function createSyncEngine(transports: readonly Transport[], known: (opId: string) => boolean, now: () => number): SyncEngine {
+/** Push one batch; drop what was stored; queue a resend of any seq gap the other side reports (Q-HARM-10). */
+async function pushLane(l: Lane, batch: readonly Op[], local: (writer: string, fromSeq: number) => readonly Op[]) {
+  const r = await l.t.push(batch);
+  const got = new Set(r.stored);
+  for (const id of got) l.outbox.delete(id);
+  const again = r.resend.flatMap((g) => local(g.writer, g.fromSeq)).filter((op) => !got.has(op.opId));
+  for (const op of again) l.outbox.set(op.opId, op);
+}
+
+/** `local(writer, fromSeq)`: this device's own ops of that writer from that seq, for a gap resend (Q-HARM-10). */
+export function createSyncEngine(transports: readonly Transport[], known: (opId: string) => boolean, now: () => number, local: (writer: string, fromSeq: number) => readonly Op[] = () => []): SyncEngine {
   const lanes: Lane[] = transports.map((t) => ({ t, outbox: new Map(), cursor: '', failures: 0 }));
   let lastOkAt: number | null = null;
   let error: string | null = null;
 
   async function laneRound(l: Lane): Promise<Op[]> {
     const batch = [...l.outbox.values()].slice(0, CONFIG.sync.pushBatch);
-    if (batch.length) for (const id of await l.t.push(batch)) l.outbox.delete(id);
+    if (batch.length) await pushLane(l, batch, local);
     const { ops, cursor } = await l.t.pull(l.cursor);
     l.cursor = cursor;
     return ops.filter(isValidOp);

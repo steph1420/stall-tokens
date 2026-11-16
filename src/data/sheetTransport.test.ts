@@ -23,7 +23,7 @@ describe('sheet transport (F-35)', () => {
   it('pushes once per op id and pulls after the cursor', async () => {
     const app = fakeWebApp('mango');
     const t = createSheetTransport({ url: 'https://script.example/exec', key: 'mango' }, app.fetchFn);
-    expect(await t.push([op(1), op(2)])).toEqual(['devA.1:1', 'devA.1:2']);
+    expect((await t.push([op(1), op(2)])).stored).toEqual(['devA.1:1', 'devA.1:2']);
     await t.push([op(2), op(3)]);
     expect(app.rows).toHaveLength(3);
     const first = await t.pull('0');

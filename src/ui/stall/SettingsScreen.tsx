@@ -9,6 +9,7 @@ import { amounts, istClock, isSheetUrl, useApp } from '../../store';
 import { AmountsEdit } from '../kit/AmountsEdit';
 import { Sheet } from '../kit/Sheet';
 import kit from '../kit/kit.module.css';
+import { ReviewSheet } from './ReviewSheet';
 import { StallPage } from './StallPage';
 import s from './Stall.module.css';
 
@@ -50,11 +51,15 @@ function SyncRow() {
   const p = useApp((x) => x.prefs);
   const sync = useApp((x) => x.sync);
   const [open, setOpen] = useState(false);
+  const [review, setReview] = useState(false);
+  const clashes = useApp((x) => x.folded.conflicts.length);
   const state = !p.syncUrl ? 'Not set up' : sync.error ? 'Not reaching the Sheet' : sync.lastOkAt ? `Synced ${istClock(sync.lastOkAt)}` : 'Connecting…';
   return (
     <>
       <Opt t="Sheet sync" sub={sync.pending ? `${String(sync.pending)} waiting to sync` : 'Phones share orders and money through the Sheet'} value={state} onClick={() => { setOpen(true); }} />
+      <Opt t="Review" sub="Clashes between phones or Sheet edits, resolved by the sync rules" value={String(clashes)} onClick={() => { setReview(true); }} />
       {open ? <SyncSheet onClose={() => { setOpen(false); }} /> : null}
+      {review ? <ReviewSheet onClose={() => { setReview(false); }} /> : null}
     </>
   );
 }
