@@ -8,6 +8,7 @@ All notable changes to Stall Tokens. SemVer. Times IST.
 ### Changed
 - v1 single-file app moved to `legacy/v1/index.html` (kept byte for byte; rollback tag `v1.0.0`, branch `backup/pre-v2.0.0`).
 ### Added (16 Nov 17:30, Kitchen locks)
+- Mark ready (Q-COUNTER-FINISH): Open orders can finish any sent line straight to Ready (`line.finish` op); Kitchen and Station show it muted, "Marked by counter", with the Ready icon. 1 store test.
 - Station hands over a Ready line with one more tap (Q-HANDOVER-1 C); Counter Hand over stays.
 - Priority switch on Billing, beside the token (Q-PRIORITY-1 C); quiet "Hold # for Priority" cue on the first Kitchen card.
 - Automatic pause / resume for Priority orders, written as real ops so sync stays consistent (Q-PAUSE-1 A).

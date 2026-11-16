@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import type { Order } from '../../contract';
 import { discountAmount, discountCapped, due, paid, roundOffAmount, roundOffChoices, subtotal, tips, total } from './bill';
 
-const line = (price: number, qty: number) => ({ lineId: String(price) + String(qty), itemId: 'i', name: 'x', price, category: '', stationId: '', qty, note: '', status: 'draft' as const, committed: 0 });
+const line = (price: number, qty: number) => ({ lineId: String(price) + String(qty), itemId: 'i', name: 'x', price, category: '', stationId: '', qty, note: '', status: 'draft' as const, committed: 0, byCounter: false });
 const order = (p: Partial<Order> = {}): Order => ({
   id: 'o', dayId: 'd', token: 47, servedBy: '', createdAt: 0, lines: [line(3000, 2), line(2500, 1), line(1500, 1)], note: '',
   discount: null, roundOff: null, sent: false, deleted: false, priority: false, payments: [], refunds: [], revision: 0, ...p,

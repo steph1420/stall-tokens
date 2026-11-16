@@ -26,6 +26,8 @@ export interface Bodies {
   'line.qty': { orderId: string; lineId: string; qty: number };
   'line.note': { orderId: string; lineId: string; note: string };
   'line.status': { orderId: string; lineId: string; status: LineStatus };
+  /** F-20 Q-COUNTER-FINISH: the Counter marks a sent line finished at any time; it goes straight to Ready. Additive. */
+  'line.finish': { orderId: string; lineId: string };
   'order.note': { orderId: string; note: string };
   'order.discount': DiscountBody;
   'order.roundoff': { orderId: string; amount: Paise; forTotal: Paise };
@@ -40,7 +42,7 @@ export interface Bodies {
 }
 export type OpKind = keyof Bodies;
 export const OP_KINDS = [
-  'item.set', 'stock.adjust', 'day.start', 'order.create', 'line.add', 'line.qty', 'line.note', 'line.status',
+  'item.set', 'stock.adjust', 'day.start', 'order.create', 'line.add', 'line.qty', 'line.note', 'line.status', 'line.finish',
   'order.note', 'order.discount', 'order.roundoff', 'order.send', 'order.delete', 'order.priority', 'payment.add', 'refund.add',
   'payee.set', 'setting.set',
 ] as const satisfies readonly OpKind[];
@@ -89,6 +91,7 @@ const S: Record<OpKind, Record<string, FieldType>> = {
   'line.qty': { orderId: 's', lineId: 's', qty: 'n' },
   'line.note': { orderId: 's', lineId: 's', note: 's' },
   'line.status': { orderId: 's', lineId: 's', status: 's' },
+  'line.finish': { orderId: 's', lineId: 's' },
   'order.note': { orderId: 's', note: 's' },
   'order.discount': { orderId: 's', kind: 's', value: 'n', allowedBy: 's', note: 's' },
   'order.roundoff': { orderId: 's', amount: 'n', forTotal: 'n' },

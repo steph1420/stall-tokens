@@ -4,7 +4,7 @@ import { CONFIG } from '../../config';
 import type { Line, Order } from '../../contract';
 import { formatToken, kitchen, useApp } from '../../store';
 import { usePress } from '../kit/hold';
-import { StatusMark } from './StatusMark';
+import { LineMark, StatusMark } from './StatusMark';
 import { stationVar } from './stations';
 import s from './Kitchen.module.css';
 
@@ -22,7 +22,7 @@ export const lineLabel = (l: Line): string => `${l.name}: tap for the next step,
 
 function LineRow({ o, l, other }: { o: Order; l: Line; other: boolean }) {
   const press = useLinePress(o, l);
-  const cls = [s.kline, l.status === 'handed' ? s.isHanded : '', l.status === 'done?' ? s.isDone : '', other ? s.isOther : ''].join(' ');
+  const cls = [s.kline, l.status === 'handed' ? s.isHanded : '', l.status === 'done?' ? s.isDone : '', other ? s.isOther : '', l.byCounter && l.status === 'ready' ? s.isCounter : ''].join(' ');
   const body = (
     <>
       <span className={s.bar} />
@@ -30,7 +30,7 @@ function LineRow({ o, l, other }: { o: Order; l: Line; other: boolean }) {
         <span className={s.name}>{`${String(l.qty)}× ${l.name}`}</span>
         <span className={s.note}>{l.note || l.stationId}</span>
       </span>
-      <span className={s.state}><StatusMark mark={l.status === 'draft' ? 'waiting' : l.status} /></span>
+      <span className={s.state}><LineMark l={l} /></span>
     </>
   );
   if (other) return <div className={cls} style={stationVar(l.stationId)}>{body}</div>;

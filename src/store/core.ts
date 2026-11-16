@@ -54,7 +54,7 @@ function makePersist(core: Core) {
 }
 
 /** Ops whose result can change which stations a Priority order needs (Q-PAUSE-1 A). */
-const FOLLOW_KINDS: ReadonlySet<OpKind> = new Set<OpKind>(['line.status', 'line.qty', 'order.priority', 'order.send', 'order.delete', 'payment.add']);
+const FOLLOW_KINDS: ReadonlySet<OpKind> = new Set<OpKind>(['line.status', 'line.finish', 'line.qty', 'order.priority', 'order.send', 'order.delete', 'payment.add']);
 /** Derived status ops to write after a local op (pure; see store/rules/kitchen.ts pauseMoves). */
 export type Follow = (f: Folded) => readonly Bodies['line.status'][];
 

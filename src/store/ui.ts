@@ -15,7 +15,8 @@ export type Sheet =
   | { kind: 'waived' }
   | { kind: 'serving' }
   | { kind: 'more' }
-  | { kind: 'overview' };
+  | { kind: 'overview' }
+  | { kind: 'finish'; orderId: string };
 
 export interface UiState {
   readonly screen: Screen;

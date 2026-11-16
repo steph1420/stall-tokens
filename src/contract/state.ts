@@ -7,6 +7,7 @@ export interface Line {
   readonly lineId: string; readonly itemId: string; readonly name: string; readonly price: Paise;
   readonly category: string; readonly stationId: string; readonly qty: number; readonly note: string; readonly status: LineStatus;
   readonly committed: number; // qty already taken out of stock (sent or paid)
+  readonly byCounter: boolean; // Q-COUNTER-FINISH: Ready because the Counter marked it, not the station
 }
 export interface Discount { readonly kind: 'amount' | 'pct'; readonly value: number; readonly allowedBy: string; readonly note: string }
 export interface Payment {

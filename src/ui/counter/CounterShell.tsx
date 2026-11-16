@@ -6,6 +6,8 @@ import type { Order } from '../../contract';
 import { bill, formatToken, isOpen, kitchen, liveOrders, orderStatus, useApp, type Page } from '../../store';
 import { Icon } from '../kit/Icon';
 import { Money } from '../kit/Money';
+import { Sheet } from '../kit/Sheet';
+import kit from '../kit/kit.module.css';
 import { BillingScreen } from './billing/BillingScreen';
 import { CounterSheets } from './CounterSheets';
 import { MenuScreen } from './menu/MenuScreen';
@@ -44,9 +46,13 @@ function Strip() {
 }
 
 /** F-20 Q-KITCHEN-3 A: a Done? order opens as an amber row with Send back / Confirm; a Ready order offers Hand over. */
+const finishable = (o: Order) => o.lines.some((l) => l.qty > 0 && l.status !== 'draft' && l.status !== 'handed' && !(l.status === 'ready' && l.byCounter));
+
 function KitchenStep({ o }: { o: Order }) {
   const k = useApp((st) => st.kitchen);
+  const openSheet = useApp((st) => st.openSheet);
   const step = kitchen.counterStep(o);
+  const mark = finishable(o) ? <button type="button" className={s.oquiet} onClick={() => { openSheet({ kind: 'finish', orderId: o.id }); }}>Mark ready</button> : null;
   if (step === 'confirm') {
     return (
       <div className={s.oact}>
@@ -56,9 +62,34 @@ function KitchenStep({ o }: { o: Order }) {
     );
   }
   if (step === 'handover') {
-    return <div className={s.oact}><button type="button" className={s.abtnGo} onClick={() => { k.handOver(o.id); }}>Hand over</button></div>;
+    return <div className={s.oact}>{mark}<button type="button" className={s.abtnGo} onClick={() => { k.handOver(o.id); }}>Hand over</button></div>;
   }
-  return null;
+  return mark ? <div className={s.oact}>{mark}</div> : null;
+}
+
+/** Q-COUNTER-FINISH: the Counter marks any sent line finished, whatever the kitchen status; it goes to Ready. */
+function FinishSheet() {
+  const sheet = useApp((st) => st.ui.sheet);
+  const o = useApp((st) => (st.ui.sheet?.kind === 'finish' ? st.folded.orders[st.ui.sheet.orderId] : undefined));
+  const k = useApp((st) => st.kitchen);
+  const close = useApp((st) => st.openSheet);
+  if (sheet?.kind !== 'finish' || !o) return null;
+  const lines = o.lines.filter((l) => l.qty > 0 && l.status !== 'draft');
+  return (
+    <Sheet title={`${formatToken(o.token, CONFIG.tokens.pad)} · Mark ready`} onClose={() => { close(null); }}>
+      <ul className={kit.list}>
+        {lines.map((l) => {
+          const done = l.status === 'handed' || (l.status === 'ready' && l.byCounter);
+          return (
+            <li key={l.lineId} className={kit.listRow}>
+              <span className={kit.grow}>{`${String(l.qty)}× ${l.name}`} <small>{l.status === 'handed' ? 'Handed over' : l.byCounter && l.status === 'ready' ? 'Marked by counter' : l.status === 'ready' ? 'Ready' : ''}</small></span>
+              {done ? null : <button type="button" className={s.oquiet} onClick={() => { k.finishLine(o.id, l.lineId); }}>Mark ready</button>}
+            </li>
+          );
+        })}
+      </ul>
+    </Sheet>
+  );
 }
 
 function OpenOrders() {
@@ -115,6 +146,7 @@ export function CounterShell() {
       </header>
       {page === 'menu' || !orderId ? <MenuScreen /> : page === 'billing' ? <BillingScreen /> : <PaymentScreen key={orderId} />}
       {olist ? <OpenOrders /> : null}
+      <FinishSheet />
       <CounterSheets />
     </div>
   );

@@ -94,3 +94,5 @@
 .stPaused { --st: var(--dl-stall-st-paused); }
 .stPriority { --st: var(--dl-stall-st-priority); }
 .hint { font-size: 0.6875rem; color: var(--dl-color-text-faint); }
+/* Q-COUNTER-FINISH: finished by the Counter, muted with the Ready icon. */
+.isCounter .main, .isCounter .bar { opacity: 0.5; }

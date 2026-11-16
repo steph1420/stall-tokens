@@ -105,4 +105,25 @@ describe('kitchen and station (F-19..F-22)', () => {
     expect(statuses(a)).toEqual(['Tea:handed']);
     expect(s().kitchen.advance(a, tea)).toBe(false);
   });
+  it('the Counter marks any line finished: straight to Ready, Marked by counter, Priority done resumes (Q-COUNTER-FINISH)', async () => {
+    const { s, send, order, statuses } = await ready();
+    const a = send('Tea');
+    const b = send('Coffee', 'Samosa');
+    const tea = order(a).lines[0]?.lineId ?? '';
+    const coffee = order(b).lines[0]?.lineId ?? '';
+    s().kitchen.advance(a, tea);
+    s().kitchen.togglePriority(b);
+    expect(statuses(a)).toEqual(['Tea:paused']);
+    expect(s().kitchen.finishLine(b, coffee)).toBe(true); // from Waiting, kitchen untouched
+    expect(statuses(b)).toEqual(['Coffee:ready', 'Samosa:waiting']);
+    expect(order(b).lines[0]?.byCounter).toBe(true);
+    expect(statuses(a)).toEqual(['Tea:preparing']); // Priority no longer needs Beverages
+    expect(s().kitchen.finishLine(b, coffee)).toBe(false); // already marked
+    expect(s().kitchen.finishLine(a, tea)).toBe(true); // from Preparing too
+    expect(s().kitchen.advance(a, tea)).toBe(true); // station tap hands it over
+    expect(statuses(a)).toEqual(['Tea:handed']);
+    expect(order(a).lines[0]?.byCounter).toBe(true);
+    expect(s().kitchen.finishLine(a, tea)).toBe(false);
+    expect(order(b).lines[1]?.byCounter).toBe(false);
+  });
 });

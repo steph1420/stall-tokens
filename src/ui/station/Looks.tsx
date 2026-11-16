@@ -3,11 +3,9 @@
 import type { Line, Order } from '../../contract';
 import { kitchen } from '../../store';
 import { Token, lineLabel, useLinePress } from '../kitchen/KitchenCard';
-import { StatusMark } from '../kitchen/StatusMark';
+import { LineMark, StatusMark } from '../kitchen/StatusMark';
 import { stationVar } from '../kitchen/stations';
 import s from './Station.module.css';
-
-const mark = (l: Line) => (l.status === 'draft' ? 'waiting' : l.status);
 
 function Others({ o, station }: { o: Order; station: string }) {
   const others = kitchen.linesAt(o, null).filter((l) => l.stationId !== station);
@@ -15,7 +13,7 @@ function Others({ o, station }: { o: Order; station: string }) {
   return (
     <ul className={s.others} aria-label="Other stations">
       {others.map((l) => (
-        <li key={l.lineId} style={stationVar(l.stationId)}><span>{`${String(l.qty)}× ${l.name}`}</span><StatusMark mark={mark(l)} small /></li>
+        <li key={l.lineId} style={stationVar(l.stationId)}><span>{`${String(l.qty)}× ${l.name}`}</span><LineMark l={l} small /></li>
       ))}
     </ul>
   );
@@ -23,13 +21,13 @@ function Others({ o, station }: { o: Order; station: string }) {
 
 function ItemCard({ o, l }: { o: Order; l: Line }) {
   const press = useLinePress(o, l);
-  const cls = [s.icard, l.status === 'done?' ? s.icardDone : '', l.status === 'handed' ? s.icardHanded : ''].join(' ');
+  const cls = [s.icard, l.status === 'done?' ? s.icardDone : '', l.status === 'handed' || l.byCounter ? s.icardHanded : ''].join(' ');
   return (
     <div role="button" tabIndex={0} className={cls} style={stationVar(l.stationId)} {...press} aria-label={lineLabel(l)}>
       <span className={s.iqty}>{l.qty}</span>
       <span className={s.iname}>{l.name}</span>
       {l.note ? <span className={s.inote}>{l.note}</span> : null}
-      <span className={s.istate}><StatusMark mark={mark(l)} /></span>
+      <span className={s.istate}><LineMark l={l} /></span>
     </div>
   );
 }
@@ -51,7 +49,7 @@ function TicketRow({ o, l }: { o: Order; l: Line }) {
     <li role="button" tabIndex={0} className={[s.trow, l.status === 'done?' ? s.trowDone : '', l.status === 'handed' ? s.icardHanded : ''].join(' ')} {...press} aria-label={lineLabel(l)}>
       <span className={s.tqty}>{l.qty}×</span>
       <span className={s.tname}>{l.name}{l.note ? <small>{l.note}</small> : null}</span>
-      <StatusMark mark={mark(l)} />
+      <LineMark l={l} />
     </li>
   );
 }

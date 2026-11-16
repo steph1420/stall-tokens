@@ -86,6 +86,13 @@ function statusActions({ st, order, setLines, autoPrep, log, toast }: Ctx) {
     /** Counter, Q-KITCHEN-3 A: Confirm turns Done? into Ready; Send back returns it to Preparing. */
     confirmDone(orderId: string): boolean { const o = order(orderId); return o ? setLines(o, (s) => s === 'done?', 'ready') > 0 : false; },
     sendBack(orderId: string): boolean { const o = order(orderId); return o ? setLines(o, (s) => s === 'done?', 'preparing') > 0 : false; },
+    /** Q-COUNTER-FINISH: any sent line, any kitchen status, straight to Ready (shown as "Marked by counter"). */
+    finishLine(orderId: string, lineId: string): boolean {
+      const l = order(orderId)?.lines.find((x) => x.lineId === lineId);
+      if (!l || l.qty === 0 || l.status === 'draft' || l.status === 'handed' || (l.status === 'ready' && l.byCounter)) return false;
+      log.dispatch('line.finish', { orderId, lineId });
+      return true;
+    },
     handOver(orderId: string): boolean { const o = order(orderId); return o ? setLines(o, (s) => s === 'ready', 'handed') > 0 : false; },
   };
 }

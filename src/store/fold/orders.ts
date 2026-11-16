@@ -5,10 +5,10 @@ import type { Item, Line, Op, Order } from '../../contract';
 import type { Folded } from './state';
 import { lww } from './lww';
 
-type OrderKind = 'order.create' | 'line.add' | 'line.qty' | 'line.note' | 'line.status' | 'order.note'
+type OrderKind = 'order.create' | 'line.add' | 'line.qty' | 'line.note' | 'line.status' | 'line.finish' | 'order.note'
   | 'order.discount' | 'order.roundoff' | 'order.send' | 'order.delete' | 'order.priority' | 'payment.add' | 'refund.add';
 const ORDER_KINDS: ReadonlySet<string> = new Set<OrderKind>([
-  'order.create', 'line.add', 'line.qty', 'line.note', 'line.status', 'order.note', 'order.discount',
+  'order.create', 'line.add', 'line.qty', 'line.note', 'line.status', 'line.finish', 'order.note', 'order.discount',
   'order.roundoff', 'order.send', 'order.delete', 'order.priority', 'payment.add', 'refund.add',
 ]);
 export const isOrderOp = (op: Op): op is Op<OrderKind> => ORDER_KINDS.has(op.kind);
@@ -60,7 +60,7 @@ function setQty(s: Folded, o: Order, lineId: string, rawQty: number): Folded {
 function addLine(s: Folded, o: Order, b: Op<'line.add'>['body']): Folded {
   if (o.lines.some((l) => l.lineId === b.lineId)) return s;
   const line: Line = { lineId: b.lineId, itemId: b.itemId, name: b.name, price: Math.trunc(b.price), category: b.category,
-    stationId: b.stationId, qty: 0, note: '', status: 'draft', committed: 0 };
+    stationId: b.stationId, qty: 0, note: '', status: 'draft', committed: 0, byCounter: false };
   const next = { ...o, lines: [...o.lines, line] };
   return setQty(withOrder(s, next), next, b.lineId, b.qty);
 }
@@ -75,6 +75,13 @@ function remove(s: Folded, o: Order): Folded {
   return withOrder({ ...s, items }, { ...o, deleted: true, lines: o.lines.map((l) => ({ ...l, committed: 0 })) });
 }
 
+/** Kitchen status ops. The "Marked by counter" label (Q-COUNTER-FINISH) lasts while the line stays Ready or Handed over. */
+function lineStatus(s: Folded, o: Order, op: Op<'line.status'> | Op<'line.finish'>): Folded {
+  if (op.kind === 'line.finish') return mapLine(s, o, op.body.lineId, (l) => (l.status === 'draft' || l.status === 'handed' ? l : { ...l, status: 'ready', byCounter: true }));
+  const status = op.body.status;
+  return mapLine(s, o, op.body.lineId, (l) => (l.status === 'draft' ? l : { ...l, status, byCounter: l.byCounter && (status === 'ready' || status === 'handed') }));
+}
+
 export function applyOrderOp(s: Folded, op: Op<OrderKind>): Folded {
   if (op.kind === 'order.create') return create(s, op);
   const o = s.orders[op.body.orderId];
@@ -83,7 +90,7 @@ export function applyOrderOp(s: Folded, op: Op<OrderKind>): Folded {
     case 'line.add': return addLine(s, o, op.body);
     case 'line.qty': return setQty(s, o, op.body.lineId, op.body.qty);
     case 'line.note': return mapLine(lww(s, `line:${op.body.lineId}`, 'note', op).state, o, op.body.lineId, (l) => ({ ...l, note: op.body.note }));
-    case 'line.status': return mapLine(s, o, op.body.lineId, (l) => (l.status === 'draft' ? l : { ...l, status: op.body.status }));
+    case 'line.status': case 'line.finish': return lineStatus(s, o, op);
     case 'order.note': return withOrder(lww(s, `order:${o.id}`, 'note', op).state, { ...o, note: op.body.note });
     case 'order.discount': {
       const st = lww(s, `order:${o.id}`, 'discount', op).state;
