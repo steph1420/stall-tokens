@@ -62,7 +62,8 @@ This sheet lists every screen and every UI element: what it does, its states, ni
 | *Proposed extra, Steve to confirm:* haptics strength | Personal feel. If not confirmed, it becomes shared. |
 | *Proposed extra, Steve to confirm:* where the screen is (current order, tab, pill, station) | Navigation state, not data. It lets a device resume after a reload (W-12, PK-5). |
 
-**Not synced through the Sheet, pending a decision:** receipt photos on Money entries (F-47). They are too big for the Sheet, so this is **Q-RECEIPT-SYNC**: A ★ upload to a Drive folder through the bridge, with the op carrying the file id · B keep them on the device.
+**Images are never synced (Q-RECEIPT-SYNC C, Steve t79u: "Don't sync photos. Sync data to generate photos.").** Token slips, refund and settle-up receipts, day summaries and share images are **drawn on demand on any device from the synced data** with fixed templates, so the same data gives the same image on every device.
+- **Edge (flagged):** a photo someone *captures* (e.g. a supplier's bill on a Money entry, F-47) stays on that device only and is not part of sync or backups. Other devices see the entry and a "photo on Ravi's phone" note, not the photo. If that device is reset or lost, the photo is gone; the entry's data is not.
 
 ---
 
@@ -377,6 +378,6 @@ One navigation owner (`store/nav`) pushes a history state per screen and per she
 - **Q-DRAFT-EXPIRE**: old untouched drafts. A ★ amber "Old draft" mark only · B auto-discard after N min with a toast.
 - **Q-DEV-7TAP**: Developer behind 7 taps (Q-HARM-5), with Sign-in links moved to an Account row. A ★ yes · B keep today's open Developer group.
 - **Q-BETA-PATH** (how to serve /beta/ without disturbing Stable): see BUILD_PLAN §8. A ★ a one-time 2.0.1 Stable release (no visible change) that teaches the Stable service worker to ignore `/beta/` and builds Stable + Beta in one Pages workflow · B Beta in its own repo (`stall-tokens-beta`, URL `/stall-tokens-beta/`), leaving Stable completely untouched.
-- **Q-RECEIPT-SYNC**: receipt photos. A ★ Drive folder through the bridge (the op carries the file id) · B keep them on the device.
+- **Q-RECEIPT-SYNC**: LOCKED C (Steve t79u). No images are synced; they are drawn from the data. Captured photos stay on the device only.
 - **Q-PASSCODE-SYNC**: the passcode lock. A ★ shared (a salted hash in a shared setting; one code for the whole stall) · B per device.
 - **Q-MOCK-SIZE**: Lippy's kit says 421 px (Steve's phone, 3×) and the LFPS-SOW kit says 412×915. A ★ 421×927 at 3× · B 412×915.

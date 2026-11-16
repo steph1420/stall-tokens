@@ -42,7 +42,6 @@ All new things are **additive kinds or optional fields**. `CONTRACT_VERSION` sta
 | `order.create` + optional `device: string` | the device label (serving name + short device id) | Q-DRAFT-SYNC: shows whose draft it is on every Counter. |
 | `device.set` (new kind) | `{ deviceId, label, rangeIndex, role }` | Q-SYNC-ALL device registry. |
 | `snapshot.note` (new kind) | `{ snapshotId, at, reason, opCount, hash }` | Q-SYNC-ALL backup metadata. |
-| `receipt.set` (new kind, if Q-RECEIPT-SYNC A) | `{ entryId, fileId }` | Q-SYNC-ALL receipt photos through Drive. |
 | `setting.set` keys `autoPrep`, `stationLook`, `openLook`, `menuSort`, `askNameOnUnpaid`, `refundAllowedByOverPaise`, `ageWarnMin`, `ageLateMin` | strings | Shared settings (flags in FEATURES §30). |
 
 **Migration (no migration ops written):**
@@ -60,12 +59,12 @@ Audit of what is on the device today (v2.0.0 `DevicePrefs`, the IDB stores) and 
 | `passcode`, `passcodeOff` | shared setting `passcodeHash` (salted SHA-256) + `passcodeOn` (Q-PASSCODE-SYNC A ★; until it is answered, it stays as today) |
 | `haptics` | stays on the device if Steve confirms (FEATURES §0.1), else a shared setting |
 | `theme`, kitchen text size, Quiet / volume, `deviceId`, `syncUrl`, `syncKey`, screen place | stay on the device (the only exceptions, FEATURES §0.1) |
-| receipt photos (IDB `receipts`) | Q-RECEIPT-SYNC A ★: the bridge uploads to Drive; new op `receipt.set {entryId, fileId}`; the photo cache on the device stays only as a cache |
+| receipt photos (IDB `receipts`) | **Q-RECEIPT-SYNC C (locked):** never synced. The entry carries `hasPhotoOn: <device label>` (an `entry.add` optional field) so other devices show the note. Slips, receipts, day summaries and share images are rendered from synced data by deterministic templates (`ui/slip`, `ui/money/Receipt.tsx`, the new day summary). |
 | snapshots (new, IDB) | content = the op log (already on the server); new op `snapshot.note {snapshotId, at, reason, opCount, hash}` so every device and the Sheet see when backups were made |
 | Undo stack | the stack is session memory; every undo is a synced compensating op |
 
 Migration: on first 2.1.0 start, each device writes one `device.set` and the `setting.set` ops for its old local values, but **only if no shared value exists yet** (the first device's choice wins; later devices adopt it). Then it drops the local copies.
-Code.gs: `device.set`, `snapshot.note` and `receipt.set` are stored in the hidden `ops` log only. The device registry is projected into the existing hidden register (not a readable info tab).
+Code.gs: `device.set` and `snapshot.note` are stored in the hidden `ops` log only. The device registry is projected into the existing hidden register (not a readable info tab).
 
 ### Drafts sync (Q-DRAFT-SYNC, Steve t75u)
 - Drafts were already written as ops (`order.create`, `line.add`, `line.qty`, `line.note`, `order.note`, `order.discount`, `order.delete`). 2.1.0 makes this explicit and complete:
