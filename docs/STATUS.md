@@ -1,3 +1,9 @@
+# Status
+
+**v2.0.0 released** 16 Nov 2026 to https://steph1420.github.io/stall-tokens/, replacing v1 (never used). Rollback: redeploy tag `v1.0.0` / branch `backup/pre-v2.0.0`. Pages builds `dist/` from `main` via `.github/workflows/deploy-pages.yml`. The Sheet bridge web app is live (Steve pasted Code.gs 2.0.0); do not put the `/exec` URL or `STALL_KEY` in this repo.
+
+Still later, only when Steve says go: verify + break-it run, loophole review, walk-through test. Q-SHEET-COMPACT A and Q-INFO-EDITORS B are recorded, not in this release. The log below is the build history.
+
 # v2.0.0 build status (2026-11-16 17:20 IST) — counter + kitchen + station built; untested beyond unit/UI tests
 
 Stopped early on Steve's request (quota). Nothing deployed; main untouched.

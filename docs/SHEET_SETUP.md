@@ -37,7 +37,7 @@ Info tabs are views the bridge rewrites from the op log; the log is never overwr
 Migration v1 → v2 (add only): `menu`, `people`, `payees`, `settings` logs renamed `*_log`; new info tabs, `records_log`, `conflicts`, and `ops.vv_json` added; log tabs hidden; `_meta.schema_version` = 2. `ensureSchema_` repeats this safely on every request.
 
 ## Deploy the bridge (Steve, one step, about 3 minutes; nothing is deployed from the repo)
-In the Sheet: **Extensions → Apps Script** → replace the code with `apps-script/Code.gs` (raw link: the file on branch `feat/v2.0.0`) → **Project Settings → Script Properties → `STALL_KEY`** = a word only the stall team knows → optionally run `setup` once from the editor (applies the schema and fills the info tabs) → **Deploy → New deployment → Web app** (Execute as: Me; Who has access: Anyone) → allow → copy the `/exec` URL. Hand edits reach the app through the simple `onEdit` trigger in the same script (no extra set-up).
+In the Sheet: **Extensions → Apps Script** → replace the code with `apps-script/Code.gs` (raw link: https://raw.githubusercontent.com/steph1420/stall-tokens/v2.0.0/apps-script/Code.gs, also on `main`) → **Project Settings → Script Properties → `STALL_KEY`** = a word only the stall team knows → optionally run `setup` once from the editor (applies the schema and fills the info tabs) → **Deploy → New deployment → Web app** (Execute as: Me; Who has access: Anyone) → allow → copy the `/exec` URL. Hand edits reach the app through the simple `onEdit` trigger in the same script (no extra set-up).
 
 Check: opening the URL shows `{"ok":true,"app":"stall-tokens-bridge","protocol":2,"schema_v":2,…}`.
 

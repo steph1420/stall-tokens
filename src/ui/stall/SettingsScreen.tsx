@@ -1,8 +1,8 @@
 // F-34 Settings (21-polish2/settings.html; D-ACCESS, D-THEME): Kitchen (Auto-prep, Station look), Money (Partner shares,
 // tip choices, round-off), Feel (Haptics, Appearance Night / Day), Counter (serving name, token range), Passcode,
-// Developer (passcode lock off), footer. Device prefs stay on this phone; tip choices and round-off steps are read-only (D-SETTINGS-RO).
+// Developer (passcode lock off), Q-HARM-7 footer stamp (tap opens What's New). Device prefs stay on this phone.
 import { useState, type ReactNode } from 'react';
-import { CONFIG } from '../../config';
+import { appStamp, CONFIG } from '../../config';
 import { formatInr } from '../../contract';
 import type { DevicePrefs } from '../../store';
 import { amounts, istClock, isSheetUrl, useApp } from '../../store';
@@ -11,6 +11,7 @@ import { Sheet } from '../kit/Sheet';
 import kit from '../kit/kit.module.css';
 import { ReviewSheet } from './ReviewSheet';
 import { StallPage } from './StallPage';
+import { WHATS_NEW } from './whatsNew';
 import s from './Stall.module.css';
 
 const LOOKS = { full: 'Full card', items: 'Item cards', ticket: 'Ticket' } as const;
@@ -72,6 +73,18 @@ function AmountsOpt({ k, t, sep }: { k: amounts.AmountsKey; t: string; sep: stri
     : <Opt t={t} sub="Shared with every phone" value={v.map((x) => formatInr(x)).join(sep) || 'None'} onClick={() => { setEdit(true); }} />;
 }
 
+
+function WhatsNewSheet({ onClose }: { onClose: () => void }) {
+  return (
+    <Sheet title={WHATS_NEW.title} onClose={onClose}>
+      <p className={s.syncHint}>{`Stall Tokens v${CONFIG.app.version}`}</p>
+      <ul className={s.whatsList}>
+        {WHATS_NEW.items.map((item) => <li key={item} className={s.syncHint}>{item}</li>)}
+      </ul>
+    </Sheet>
+  );
+}
+
 export function SettingsScreen() {
   const a = useApp((x) => x);
   const p = a.prefs;
@@ -104,7 +117,18 @@ export function SettingsScreen() {
         <Opt t="Sign-in links" sub="One-tap links per person / role: sets up sync and opens their screen" value="" onClick={() => { a.openStall('developer'); a.unlock(); }} />
         <Opt t="Passcode lock" sub="Off (default) = Money, Settle up and Settings open without a code on this phone" sw={!p.passcodeOff} onClick={() => { set({ passcodeOff: !p.passcodeOff }); }} />
       </Group>
-      <p className={s.foot}>{`Stall Tokens ${CONFIG.app.version} · device ${p.deviceId.slice(0, 6)}`}</p>
+      <Footer deviceId={p.deviceId} />
     </StallPage>
+  );
+}
+
+function Footer({ deviceId }: { deviceId: string }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <>
+      <button type="button" className={s.foot} aria-label="What's New" onClick={() => { setOpen(true); }}>{appStamp()}</button>
+      <p className={s.footSub}>{`device ${deviceId.slice(0, 6)}`}</p>
+      {open ? <WhatsNewSheet onClose={() => { setOpen(false); }} /> : null}
+    </>
   );
 }

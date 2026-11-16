@@ -3,51 +3,51 @@ Every feature has a row before work starts. IDs appear in code (`// F-xx`) and i
 
 | ID | Feature | Source (mock / turn) | Status | Test | Rewrite (keep / change / drop) |
 | --- | --- | --- | --- | --- | --- |
-| F-01 | Stall theme night + day, Appearance setting | 20-polish/polish.css, Q-DAY-1, ADR-0003 | building | `npm run contrast` (336 pairs); UI/e2e theme test not written yet | change |
-| F-02 | Op log, fold, version vectors, conflicts | plan §2, Q-HARM-10 | building | src/store/fold/fold.test.ts | change |
-| F-03 | Local data (IndexedDB) + fake transport + tab channel | plan §2, Q-HARM-1 | building | src/data/data.test.ts (incl. IndexedDB fallback) | change |
-| F-04 | Launch screen (Counter, Kitchen, Stations, quiet Stall section) | 21-polish2/launch.html, Q-KITCHEN-1, Q-LAUNCH-1 B, D-NAV | building | none yet (UI tests deferred to the verify run) | change |
-| F-05 | Counter header: New Orders / Open Orders top tabs, page tabs, single current-order line (chips row dropped, Q-ORDERS-2 A) | 20-polish/*.html header, Q-ORDERS-1, Q-ORDERS-2 A | building | src/ui/counter/open/OpenOrdersScreen.test.tsx | change |
-| F-06 | Menu grid: tap to add, −/+, item note, fixed price, stock badges, sold out | 20-polish/menu.html, 12-stock/menu-plain.html, Q-POLISH-SET1, Q-STOCK-SET | building | src/store/counter.test.ts (store); UI none yet | change |
-| F-07 | Add / edit menu item (name, price, colour, category, station, stock) | 20-polish/menu.html Add item tile | building | src/store/counter.test.ts (store); UI none yet | change |
-| F-08 | Menu press-and-hold stock panel (−/+, Mark sold out) | 21-polish2/menu-stock.html, Q-STOCK-SET | building | src/store/counter.test.ts (store); UI none yet | planned |
-| F-09 | Billing table, line + order notes, qty strip, Delete (hold) | 20-polish/billing.html | building | src/store/counter.test.ts (store); UI none yet | change |
-| F-10 | Discount (₹ or %, allowed by, note) | billing.html, spec order rules | building | src/store/rules/bill.test.ts | change |
-| F-11 | Round-off at billing, both ways | Q-ROUND-1 A | building | bill.test.ts | planned |
-| F-12 | To kitchen (unpaid send) / Pay sends too | Q-POLISH-SET1 wording | building | src/store/counter.test.ts (store); UI none yet | change |
-| F-13 | Tokens per day, Counter ranges (1–500, 501+) | D-TOKEN | building | src/store/rules/tokens.test.ts | change |
-| F-14 | Payment: To collect, Cash/UPI split, numpad, slider ₹10 snap, Waived row | 20-polish/payment.html, 03-payment v5 | building | src/store/rules/pay.test.ts, e2e | change |
-| F-15 | Dynamic UPI QR (upi://pay pa pn am tn), named payees | payment.html, Q-UPI-1 A (manual confirm) | building | src/store/rules/upi.test.ts | change |
-| F-16 | Count notes (₹5–500, More notes), cash received, change | payment.html | building | pay.test.ts | change |
-| F-17 | Tip chips None/₹10/₹20/Other, separate pot | 21-polish2/tips.html, D-TIP, D-MONEY | building | pay.test.ts | planned |
-| F-18 | Edit a placed order: collect the extra or refund | spec edit rules | building | pay.test.ts, e2e | planned |
-| F-19 | Kitchen: station pills, status icons, Done? proposal, Priority (hold # or Billing switch) with automatic pause, Completed/Cancelled veil (Q-OVERLAY) | 21-polish2/kitchen.html, Q-PILLS-1, Q-ICON, Q-OPEN-1 | building | src/store/kitchen.test.ts, src/ui/kitchen/KitchenScreen.test.tsx | change |
-| F-20 | Counter confirms a station's Ready (Done?) line; Mark ready per line (`line.finish`, "Marked by counter"); Cancel order (`order.cancel`) | Q-KITCHEN-3 A, Q-COUNTER-FINISH, Q-MARK-1 B, Q-CANCEL-1 A | building | src/store/kitchen.test.ts, src/ui/counter/open/OpenOrdersScreen.test.tsx | planned |
-| F-21 | Station page, three looks, swipe between orders, Overview, hand over a Ready line | 21-polish2/station.html, Q-STN-LOOK D, Q-BACK-1 A | building | src/store/kitchen.test.ts, src/ui/kitchen/KitchenScreen.test.tsx | planned |
-| F-22 | Auto-prep next order at a station (setting) | Q-AUTOPREP | building | src/store/kitchen.test.ts | planned |
-| F-23 | Money: home (today's totals, Refunds due from cancels, entries) + Spent / Received entry with keypad | 21-polish2/money.html, received.html, Q-MONEY-V8, Q-RECV, Q-CANCEL-1 A, D-MONEY-HOME | building | src/store/money.test.ts | planned |
-| F-24 | Paid by / Received in sheet with Mixed | paidby.html, paidby-mixed.html, Q-PAIDBY, Q-MIXED-1 | building | src/store/money.test.ts | planned |
-| F-25 | Donation kind on Received | Q-VOUCH-1 | building | src/store/money.test.ts | planned |
-| F-26 | Settle up (repay others, partner split, Repay all) | settle.html, Q-NEXT-2 A, Q-PART-1 C | building | src/store/settle.test.ts | planned |
-| F-27 | Partners: shares per fair, pending warning, Split anyway | partners.html, Q-SETTLE-GAPS | building | src/store/settle.test.ts | planned |
-| F-28 | Person sheet: Pay (partial), Mark cleared with reasons + note, undo | settlesheet.html, clearnote.html | building | src/store/settle.test.ts | planned |
-| F-29 | Lock day / reopen, carry-over, loss day | Q-SETTLE-GAPS | building | src/store/settle.test.ts | planned |
-| F-30 | Stock screen with navrail categories, Low / Sold out filters | 21-polish2/stock.html, Q-STOCK-SET | building | src/store/stock.test.ts | planned |
-| F-31 | Stock paste sheet (parser + one Spent entry) | 21-polish2/stockpaste.html, Q-PASTE-1 A, Q-STOCK-SET | building | src/store/rules/stock.test.ts, src/store/stock.test.ts | planned |
-| F-32 | Open the stall (float count) | 21-polish2/float.html | building | src/ui/stall/StallScreens.test.tsx | planned |
-| F-33 | History per day with Edit / Refund / Hold to cancel | 21-polish2/history.html | building | src/ui/stall/StallScreens.test.tsx | planned |
-| F-34 | Settings (Appearance, Feel/haptics, Sync, token range, payees, passcode, Developer, footer) | 21-polish2/settings.html, D-ACCESS, D-THEME | building | src/ui/stall/StallScreens.test.tsx | change |
-| F-35 | Sheet bridge transport + Apps Script (TEST Sheet first) | D-SYNC | building | src/data/sheetTransport.test.ts | planned |
+| F-01 | Stall theme night + day, Appearance setting | 20-polish/polish.css, Q-DAY-1, ADR-0003 | LIVE (v2.0.0) | `npm run contrast` (336 pairs); UI/e2e theme test not written yet | change |
+| F-02 | Op log, fold, version vectors, conflicts | plan §2, Q-HARM-10 | LIVE (v2.0.0) | src/store/fold/fold.test.ts | change |
+| F-03 | Local data (IndexedDB) + fake transport + tab channel | plan §2, Q-HARM-1 | LIVE (v2.0.0) | src/data/data.test.ts (incl. IndexedDB fallback) | change |
+| F-04 | Launch screen (Counter, Kitchen, Stations, quiet Stall section) | 21-polish2/launch.html, Q-KITCHEN-1, Q-LAUNCH-1 B, D-NAV | LIVE (v2.0.0) | none yet (UI tests deferred to the verify run) | change |
+| F-05 | Counter header: New Orders / Open Orders top tabs, page tabs, single current-order line (chips row dropped, Q-ORDERS-2 A) | 20-polish/*.html header, Q-ORDERS-1, Q-ORDERS-2 A | LIVE (v2.0.0) | src/ui/counter/open/OpenOrdersScreen.test.tsx | change |
+| F-06 | Menu grid: tap to add, −/+, item note, fixed price, stock badges, sold out | 20-polish/menu.html, 12-stock/menu-plain.html, Q-POLISH-SET1, Q-STOCK-SET | LIVE (v2.0.0) | src/store/counter.test.ts (store); UI none yet | change |
+| F-07 | Add / edit menu item (name, price, colour, category, station, stock) | 20-polish/menu.html Add item tile | LIVE (v2.0.0) | src/store/counter.test.ts (store); UI none yet | change |
+| F-08 | Menu press-and-hold stock panel (−/+, Mark sold out) | 21-polish2/menu-stock.html, Q-STOCK-SET | LIVE (v2.0.0) | src/store/counter.test.ts (store); UI none yet | planned |
+| F-09 | Billing table, line + order notes, qty strip, Delete (hold) | 20-polish/billing.html | LIVE (v2.0.0) | src/store/counter.test.ts (store); UI none yet | change |
+| F-10 | Discount (₹ or %, allowed by, note) | billing.html, spec order rules | LIVE (v2.0.0) | src/store/rules/bill.test.ts | change |
+| F-11 | Round-off at billing, both ways | Q-ROUND-1 A | LIVE (v2.0.0) | bill.test.ts | planned |
+| F-12 | To kitchen (unpaid send) / Pay sends too | Q-POLISH-SET1 wording | LIVE (v2.0.0) | src/store/counter.test.ts (store); UI none yet | change |
+| F-13 | Tokens per day, Counter ranges (1–500, 501+) | D-TOKEN | LIVE (v2.0.0) | src/store/rules/tokens.test.ts | change |
+| F-14 | Payment: To collect, Cash/UPI split, numpad, slider ₹10 snap, Waived row | 20-polish/payment.html, 03-payment v5 | LIVE (v2.0.0) | src/store/rules/pay.test.ts, e2e | change |
+| F-15 | Dynamic UPI QR (upi://pay pa pn am tn), named payees | payment.html, Q-UPI-1 A (manual confirm) | LIVE (v2.0.0) | src/store/rules/upi.test.ts | change |
+| F-16 | Count notes (₹5–500, More notes), cash received, change | payment.html | LIVE (v2.0.0) | pay.test.ts | change |
+| F-17 | Tip chips None/₹10/₹20/Other, separate pot | 21-polish2/tips.html, D-TIP, D-MONEY | LIVE (v2.0.0) | pay.test.ts | planned |
+| F-18 | Edit a placed order: collect the extra or refund | spec edit rules | LIVE (v2.0.0) | pay.test.ts, e2e | planned |
+| F-19 | Kitchen: station pills, status icons, Done? proposal, Priority (hold # or Billing switch) with automatic pause, Completed/Cancelled veil (Q-OVERLAY) | 21-polish2/kitchen.html, Q-PILLS-1, Q-ICON, Q-OPEN-1 | LIVE (v2.0.0) | src/store/kitchen.test.ts, src/ui/kitchen/KitchenScreen.test.tsx | change |
+| F-20 | Counter confirms a station's Ready (Done?) line; Mark ready per line (`line.finish`, "Marked by counter"); Cancel order (`order.cancel`) | Q-KITCHEN-3 A, Q-COUNTER-FINISH, Q-MARK-1 B, Q-CANCEL-1 A | LIVE (v2.0.0) | src/store/kitchen.test.ts, src/ui/counter/open/OpenOrdersScreen.test.tsx | planned |
+| F-21 | Station page, three looks, swipe between orders, Overview, hand over a Ready line | 21-polish2/station.html, Q-STN-LOOK D, Q-BACK-1 A | LIVE (v2.0.0) | src/store/kitchen.test.ts, src/ui/kitchen/KitchenScreen.test.tsx | planned |
+| F-22 | Auto-prep next order at a station (setting) | Q-AUTOPREP | LIVE (v2.0.0) | src/store/kitchen.test.ts | planned |
+| F-23 | Money: home (today's totals, Refunds due from cancels, entries) + Spent / Received entry with keypad | 21-polish2/money.html, received.html, Q-MONEY-V8, Q-RECV, Q-CANCEL-1 A, D-MONEY-HOME | LIVE (v2.0.0) | src/store/money.test.ts | planned |
+| F-24 | Paid by / Received in sheet with Mixed | paidby.html, paidby-mixed.html, Q-PAIDBY, Q-MIXED-1 | LIVE (v2.0.0) | src/store/money.test.ts | planned |
+| F-25 | Donation kind on Received | Q-VOUCH-1 | LIVE (v2.0.0) | src/store/money.test.ts | planned |
+| F-26 | Settle up (repay others, partner split, Repay all) | settle.html, Q-NEXT-2 A, Q-PART-1 C | LIVE (v2.0.0) | src/store/settle.test.ts | planned |
+| F-27 | Partners: shares per fair, pending warning, Split anyway | partners.html, Q-SETTLE-GAPS | LIVE (v2.0.0) | src/store/settle.test.ts | planned |
+| F-28 | Person sheet: Pay (partial), Mark cleared with reasons + note, undo | settlesheet.html, clearnote.html | LIVE (v2.0.0) | src/store/settle.test.ts | planned |
+| F-29 | Lock day / reopen, carry-over, loss day | Q-SETTLE-GAPS | LIVE (v2.0.0) | src/store/settle.test.ts | planned |
+| F-30 | Stock screen with navrail categories, Low / Sold out filters | 21-polish2/stock.html, Q-STOCK-SET | LIVE (v2.0.0) | src/store/stock.test.ts | planned |
+| F-31 | Stock paste sheet (parser + one Spent entry) | 21-polish2/stockpaste.html, Q-PASTE-1 A, Q-STOCK-SET | LIVE (v2.0.0) | src/store/rules/stock.test.ts, src/store/stock.test.ts | planned |
+| F-32 | Open the stall (float count) | 21-polish2/float.html | LIVE (v2.0.0) | src/ui/stall/StallScreens.test.tsx | planned |
+| F-33 | History per day with Edit / Refund / Hold to cancel | 21-polish2/history.html | LIVE (v2.0.0) | src/ui/stall/StallScreens.test.tsx | planned |
+| F-34 | Settings (Appearance, Feel/haptics, Sync, token range, payees, passcode, Developer, Q-HARM-7 footer stamp + What's New) | 21-polish2/settings.html, D-ACCESS, D-THEME | LIVE (v2.0.0) | src/ui/stall/StallScreens.test.tsx | change |
+| F-35 | Sheet bridge transport + Apps Script (TEST Sheet first) | D-SYNC | LIVE (v2.0.0) | src/data/sheetTransport.test.ts | planned |
 | F-36 | Backup export / import (no duplicates) | plan §7.3 | planned | | change |
-| F-37 | Sync status pill + conflicts review | Q-HARM-10 | planned | | planned |
+| F-37 | Sync status pill + conflicts review | Q-HARM-10 | LIVE (v2.0.0) | | planned |
 | F-38 | Now Serving screen (v1 feature) | v1 | deferred | | Steve to decide |
 | F-39 | v1 data import | D-MIGRATE | dropped (Steve 16 Nov 15:48 IST: v1 never used) | | drop |
 | F-40 | Bluetooth / local-peer sync transport | Steve 16 Nov 15:48 IST | deferred (backlog) | | |
-| F-41 | Bluetooth printing: token slip as ESC/POS over Web Bluetooth where the browser has it (Chrome on Android), else window.print at 58 mm | Steve 16 Nov 19:31 IST | building | src/store/rules/escpos.test.ts | planned |
-| F-42 | Token slip (about 58 mm wide, printable) | docs/STATUS.md plan, D-TOKEN | building | src/ui/slip/TokenSlip.test.tsx | planned |
-| F-43 | Open Orders tab: cyan band + Overview, one big squircle per order (header swipe / tap = order sheet with client name, Priority, Edit in Billing, Cancel), Lines / Cards looks, Confirm / Confirm all, hidden tap-to-change status, bar Cancel order + Handover | pos-work 22-orders-tabs rough v3, Q-ORDERS-1, Q-ORDERS-3..6, Q-COMPLETE-1 A, D-OPEN-TAP | building | src/ui/counter/open/OpenOrdersScreen.test.tsx | planned |
-| F-44 | One-tap sign-in links: Developer > Sign-in links makes a link per person / role (sync URL, stall key, role, name in the #fragment); opening it sets the phone up and opens that screen; revoke by changing STALL_KEY. Passcode (D-ACCESS) off by default, code kept | Steve 16 Nov 19:31 IST | building | src/data/join.test.ts | planned |
-| F-45 | Tip choices and round-off steps are shared settings (synced), editable in Settings, on the Payment tip row (pencil) and in the Billing round-off sheet | Steve 16 Nov 19:31 IST, owner pt29u 3 | building | src/store/rules/amounts.test.ts | planned |
-| F-46 | Paste stock asks Menu or Stock only for each new thing before saving (Menu = menu item in New at ₹0; Stock only = supply) | Steve 16 Nov 19:33 IST, Q-SUPPLY-CONFIRM B | building | src/store/stock.test.ts | planned |
-| F-47 | Settle-up extras: split type Share % / Exact ₹, fewest transfers (simplify debts), shareable settle-up receipt, reminders (share sheet nudge, local reminder in 1 h), receipt photos on Money entries kept on the phone | Q-SETTLE-EXTRAS C, owner pt29u 2 | building | src/store/settleExtras.test.ts | planned |
-| F-48 | Sheet info tabs (business, events, event days, partners, associates, sources, source items, menu, stock, stations, payees, settings): editable views the bridge rewrites from the op log; hand edits become `sheet` ops (Q-HARM-10), log tabs hidden; `record.set` op; Sync > Review for clashes; gap resend | Steve 16 Nov 20:10–20:12 IST (pt37u), Q-HARM-10 | building | src/data/sheetSchema.test.ts, src/store/fold/harm10.test.ts | planned |
+| F-41 | Bluetooth printing: token slip as ESC/POS over Web Bluetooth where the browser has it (Chrome on Android), else window.print at 58 mm | Steve 16 Nov 19:31 IST | LIVE (v2.0.0) | src/store/rules/escpos.test.ts | planned |
+| F-42 | Token slip (about 58 mm wide, printable) | docs/STATUS.md plan, D-TOKEN | LIVE (v2.0.0) | src/ui/slip/TokenSlip.test.tsx | planned |
+| F-43 | Open Orders tab: cyan band + Overview, one big squircle per order (header swipe / tap = order sheet with client name, Priority, Edit in Billing, Cancel), Lines / Cards looks, Confirm / Confirm all, hidden tap-to-change status, bar Cancel order + Handover | pos-work 22-orders-tabs rough v3, Q-ORDERS-1, Q-ORDERS-3..6, Q-COMPLETE-1 A, D-OPEN-TAP | LIVE (v2.0.0) | src/ui/counter/open/OpenOrdersScreen.test.tsx | planned |
+| F-44 | One-tap sign-in links: Developer > Sign-in links makes a link per person / role (sync URL, stall key, role, name in the #fragment); opening it sets the phone up and opens that screen; revoke by changing STALL_KEY. Passcode (D-ACCESS) off by default, code kept | Steve 16 Nov 19:31 IST | LIVE (v2.0.0) | src/data/join.test.ts | planned |
+| F-45 | Tip choices and round-off steps are shared settings (synced), editable in Settings, on the Payment tip row (pencil) and in the Billing round-off sheet | Steve 16 Nov 19:31 IST, owner pt29u 3 | LIVE (v2.0.0) | src/store/rules/amounts.test.ts | planned |
+| F-46 | Paste stock asks Menu or Stock only for each new thing before saving (Menu = menu item in New at ₹0; Stock only = supply) | Steve 16 Nov 19:33 IST, Q-SUPPLY-CONFIRM B | LIVE (v2.0.0) | src/store/stock.test.ts | planned |
+| F-47 | Settle-up extras: split type Share % / Exact ₹, fewest transfers (simplify debts), shareable settle-up receipt, reminders (share sheet nudge, local reminder in 1 h), receipt photos on Money entries kept on the phone | Q-SETTLE-EXTRAS C, owner pt29u 2 | LIVE (v2.0.0) | src/store/settleExtras.test.ts | planned |
+| F-48 | Sheet info tabs (business, events, event days, partners, associates, sources, source items, menu, stock, stations, payees, settings): editable views the bridge rewrites from the op log; hand edits become `sheet` ops (Q-HARM-10), log tabs hidden; `record.set` op; Sync > Review for clashes; gap resend | Steve 16 Nov 20:10–20:12 IST (pt37u), Q-HARM-10 | LIVE (v2.0.0) | src/data/sheetSchema.test.ts, src/store/fold/harm10.test.ts | planned |

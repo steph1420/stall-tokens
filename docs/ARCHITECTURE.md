@@ -125,9 +125,8 @@ Night (`stall-night`) and day (`stall-day`) at every row. Contrast for every the
 ## 8. Live worktree
 | Copy | Repo | Branch | Tag | Path | Owner | Release pointer | Rollback sha | Live bundle hash |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| v1 (live, unused) | steph1420/stall-tokens | main | v1.0.0 | `/stall-tokens/` | Pos | main | d9daa49 | v1 single file |
-| backup | steph1420/stall-tokens | backup/pre-v2.0.0 | v1.0.0 | — | Pos | — | d9daa49 | — |
-| v2 (building) | steph1420/stall-tokens | feat/v2.0.0 | — | not deployed | Pos | — | d9daa49 | — |
+| v2 (live) | steph1420/stall-tokens | main | v2.0.0 | `/stall-tokens/` | Pos | main | v1.0.0 / d9daa49 | footer stamp (hash + build date) |
+| backup (v1, unused) | steph1420/stall-tokens | backup/pre-v2.0.0 | v1.0.0 | — | Pos | — | d9daa49 | v1 single file |
 
 ## 9. Risks
 | Risk | What we do | Check |

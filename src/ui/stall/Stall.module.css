@@ -77,7 +77,12 @@
 .sw { flex: none; width: 3.25rem; height: 2rem; border-radius: var(--dl-radius-pill); padding: 0.1875rem; display: flex; background: var(--dl-color-surface-solid); box-shadow: inset 0 0 0 var(--dl-stall-hair) var(--dl-color-hairline); }
 .sw > span { width: 1.625rem; height: 1.625rem; border-radius: 50%; background: var(--dl-stall-white); }
 .swOn { composes: sw; justify-content: flex-end; background: var(--dl-stall-go); }
-.foot { margin: 0.5rem 0 0; text-align: center; font-size: 0.8125rem; color: var(--dl-color-text-muted); }
+.foot {
+  display: block; width: 100%; margin: 0.5rem 0 0; padding: 0; border: 0; background: transparent;
+  text-align: center; font: inherit; font-size: 0.8125rem; color: var(--dl-color-text-muted);
+}
+.footSub { margin: 0.25rem 0 0; text-align: center; font-size: 0.8125rem; color: var(--dl-color-text-muted); }
+.whatsList { margin: 0.5rem 0 0; padding: 0 0 0 1.1rem; display: grid; gap: 0.5rem; }
 .syncForm { display: flex; flex-direction: column; gap: 0.625rem; }
 .syncForm > * { width: 100%; }
 .syncHint { margin: 0; font-size: 0.875rem; color: var(--dl-color-text-muted); }

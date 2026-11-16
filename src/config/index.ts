@@ -3,7 +3,13 @@
 const envStr = (k: string): string => { const v = (import.meta as { env?: Record<string, unknown> }).env?.[k]; return typeof v === 'string' ? v : ''; };
 
 export const CONFIG = Object.freeze({
-  app: { codename: 'stall-tokens', name: 'Stall Tokens', version: '2.0.0-dev.1' },
+  app: {
+    codename: 'stall-tokens',
+    name: 'Stall Tokens',
+    version: envStr('VITE_APP_VERSION') || '2.0.0',
+    gitSha: envStr('VITE_GIT_SHA') || 'dev',
+    buildDate: envStr('VITE_BUILD_DATE') || 'dev',
+  },
   ports: { dev: 5173, preview: 4173 },
   // Shared github.io origin: every storage key and DB name starts with this prefix (ARCHITECTURE §9).
   storage: { prefix: 'stall-tokens.v2', dbVersion: 1 },
@@ -44,3 +50,6 @@ export const CONFIG = Object.freeze({
 } as const);
 
 export type Side = keyof typeof CONFIG.themes;
+
+/** Q-HARM-7 footer stamp: `vX.Y.Z · <short hash> · <build date IST>`. */
+export const appStamp = (): string => `v${CONFIG.app.version} · ${CONFIG.app.gitSha} · ${CONFIG.app.buildDate}`;

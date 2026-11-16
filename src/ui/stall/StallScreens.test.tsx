@@ -3,6 +3,7 @@ import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it } from 'vitest';
 import { StoreProvider } from '../../store';
 import { makeTestStore } from '../../store/testkit';
+import { appStamp } from '../../config';
 import { StallScreens } from './StallScreens';
 
 afterEach(cleanup);
@@ -37,5 +38,20 @@ describe('Stall screens (F-32 F-34)', () => {
     const f = store.getState().folded;
     expect(f.days).toHaveLength(1);
     expect(f.settings[`float:${f.days[0]?.id ?? ''}`]).toBe('150000');
+  });
+});
+
+describe('Settings footer (F-34, Q-HARM-7)', () => {
+  it('shows the version stamp and opens What\'s New', async () => {
+    const { store } = makeTestStore();
+    await store.getState().start();
+    render(<StoreProvider store={store}><StallScreens screen="settings" /></StoreProvider>);
+    const stamp = screen.getByRole('button', { name: "What's New" });
+    expect(stamp.textContent).toBe(appStamp());
+    expect(stamp.textContent).toMatch(/^v2\.0\.0 · /);
+    expect(stamp.textContent).toMatch(/IST$/);
+    fireEvent.click(stamp);
+    expect(screen.getByRole('dialog', { name: "What's New" })).toBeTruthy();
+    expect(screen.getByText(/Kitchen and Station/)).toBeTruthy();
   });
 });

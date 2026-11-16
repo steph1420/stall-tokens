@@ -1,7 +1,14 @@
 # Changelog
 All notable changes to Stall Tokens. SemVer. Times IST.
 
-## [Unreleased] — 2.0.0 (branch `feat/v2.0.0`)
+## [Unreleased]
+
+## [2.0.0] — 16 Nov 2026
+Released to https://steph1420.github.io/stall-tokens/, replacing v1 (never used in the stall). 92 tests. Rollback: redeploy tag `v1.0.0` (branch `backup/pre-v2.0.0`). Footer stamp is `v2.0.0 · <short hash> · <build date IST>`; tap it for What's New (Q-HARM-7). GitHub Pages now deploys the Vite `dist/` from `deploy-pages.yml` on `main` (v1 was served from the repo root).
+
+### Known limits
+- F-36 backup export / import is not built. F-38 Now Serving is deferred. Q-SHEET-COMPACT A (60-day Drive backup, then compact and refresh) is not in Code.gs yet — due as 2.1.0 before the log is 60 days old. Q-INFO-EDITORS B is later, after Steve has used the Sheet. Developer options stay a normal Settings group (Sign-in links must stay easy to reach), not behind 7 taps (Q-HARM-5). No full e2e / verify / break-it run yet (Steve deferred).
+
 ### Added (16 Nov 20:25, Sheet v2 info tabs + Q-HARM-10 audit, F-48, Steve 20:10–20:12)
 - Sheet schema v2 (add-only migration): 12 visible, editable info tabs (business, events, event_days, partners, associates, sources, source_items, menu, stock_current, stations, payees, settings) with stable ids, frozen header (the only protected row), checkboxes, dropdowns and dates; every log tab, `_schema` and the new `records_log` / `conflicts` are hidden and kept intact.
 - Two-way: Sheet hand edits become ops from writer `sheet` (`onEdit`); info tabs are rewritten from the full op log after every push. New op `record.set` for business / event / day / source / station / extra details.
