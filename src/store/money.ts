@@ -8,12 +8,32 @@ import { checkEntry } from './rules/money';
 export type EntryDraft = Omit<EntryBody, 'entryId' | 'dayId'>;
 const clean = (v: string, max: number) => v.trim().replace(/\s+/g, ' ').slice(0, max);
 
+const istDate = (ms: number): string => new Date(ms + 330 * 60_000).toISOString().slice(0, 10);
+
+/** F-32 Open the stall: Start day begins today's day when the last one is from another date, then records the float. */
+function floatActions(core: Core, log: Log) {
+  return {
+    toast: (text: string) => { core.set((s) => ({ ui: { ...s.ui, toast: { text, id: (s.ui.toast?.id ?? 0) + 1 } } })); },
+    openStall(float: number): string {
+      const now = core.env.now();
+      const last = core.get().folded.days[core.get().folded.days.length - 1];
+      let dayId = last?.id ?? '';
+      if (!last || last.label !== istDate(now)) {
+        dayId = `${istDate(now)}-${core.env.makeId().slice(0, 4)}`;
+        log.dispatch('day.start', { dayId, label: istDate(now) });
+      }
+      log.dispatch('setting.set', { key: `float:${dayId}`, value: String(Math.max(0, Math.trunc(float))) });
+      return dayId;
+    },
+  };
+}
+
 export function moneyActions(core: Core, log: Log) {
   const st = () => core.get();
-  const toast = (text: string) => { core.set((s) => ({ ui: { ...s.ui, toast: { text, id: (s.ui.toast?.id ?? 0) + 1 } } })); };
   const dayId = () => st().folded.days[st().folded.days.length - 1]?.id ?? '';
+  const fl = floatActions(core, log);
   return {
-    toast,
+    ...fl,
     /** Save a Spent or Received entry. Returns an error to show, or null. */
     addEntry(d: EntryDraft): string | null {
       const parts: MoneyPart[] = d.parts.map((p) => ({ ...p, amount: Math.trunc(p.amount) }));
@@ -46,7 +66,7 @@ export function moneyActions(core: Core, log: Log) {
       const due = o?.cancel ? paid(o) : 0;
       if (!o || due <= 0) return false;
       log.dispatch('refund.add', { refundId: core.env.makeId(), orderId, amount: due, source });
-      toast(`Refunded #${String(o.token).padStart(CONFIG.tokens.pad, '0')}`);
+      fl.toast(`Refunded #${String(o.token).padStart(CONFIG.tokens.pad, '0')}`);
       return true;
     },
   };

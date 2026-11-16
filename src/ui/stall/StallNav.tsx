@@ -4,9 +4,12 @@ import { useApp } from '../../store';
 import kit from '../kit/kit.module.css';
 
 export const STALL_SCREENS: readonly { id: StallScreen; label: string; hint: string }[] = [
+  { id: 'float', label: 'Open the stall', hint: 'Cash in the register, start the day' },
   { id: 'money', label: 'Money', hint: 'Spent, received, refunds due' },
   { id: 'settle', label: 'Settle up', hint: 'Repay others, split between partners' },
   { id: 'stock', label: 'Stock', hint: 'Counts, low and sold out, paste a bill' },
+  { id: 'history', label: 'History', hint: 'Paid orders and money, per day' },
+  { id: 'settings', label: 'Settings', hint: 'Kitchen, money, feel, passcode' },
 ];
 
 export function StallNav({ className, onGo }: { className?: string | undefined; onGo?: () => void }) {

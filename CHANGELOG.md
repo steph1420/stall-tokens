@@ -2,6 +2,10 @@
 All notable changes to Stall Tokens. SemVer. Times IST.
 
 ## [Unreleased] — 2.0.0 (branch `feat/v2.0.0`)
+### Added (16 Nov 19:45, Open the stall / History / Settings)
+- Open the stall (F-32): float on a keypad, last fair's closing cash, sync pill, Start day (starts today's day if needed, saves `float:<dayId>`).
+- History (F-33): per day, paid / cancelled orders and money entries with Refunded / Edited / Cancelled / Voided tags; order sheet with Edit, Refund, Hold to cancel order; entry sheet with Hold to void.
+- Settings (F-34): Kitchen, Money (partner shares, tip choices, round-off), Feel (haptics, Night / Day), Counter, Passcode, Developer, footer. D-ACCESS passcode gate for Money, Settle up and Settings (device prefs `passcode`, `passcodeOff`). 2 UI tests.
 ### Added (16 Nov 19:20, Stock)
 - Stock (F-30): search, navrail of categories + Low · n + Sold out, counts amber when low, dimmed Sold out, tap a row for −/+ (never below 0). Paste stock (F-31): paste box with format hint, Will add preview (+qty unit, paid, discount, New item; unclear lines amber), Paid by, "Add n · Spent ₹total"; adds stock and one Spent entry (Q-PASTE-1 A). New pasted things become supply items (additive item field `supply`, D-STOCK-SUPPLY), never on the Menu. 3 tests.
 ### Added (16 Nov 19:00, Settlement)

@@ -8,6 +8,7 @@ Stopped early on Steve's request (quota). Nothing deployed; main untouched.
 - Money (F-23..F-25): home + entry + Paid by / Mixed + Refunds due; ops `person.set`, `entry.add`, `entry.void`; Stall list on launch and ⋯ (D-NAV). Tests: `src/store/money.test.ts` (2). Shots: `s3*`.
 - Settlement (F-26..F-29): Settle up + Partners + Person sheet + Mark cleared note; ops `settle.pay/clear/undo`, `day.lock`; balances carry over across days; lock blocks money changes (D-LOCK-SCOPE). Not built: receipt photos, reminders, simplify debts, exact / share split types, shareable receipts. Tests: `src/store/settle.test.ts` (2). Shots: `s4*`.
 - Stock (F-30, F-31): Stock screen + Paste stock sheet; parser per Q-STOCK-SET; one Spent entry per paste; new pasted things are supply items (D-STOCK-SUPPLY). Tests: `src/store/rules/stock.test.ts` (2), `src/store/stock.test.ts` (1). Shots: `s5*`.
+- Open the stall (F-32), History (F-33), Settings (F-34) with the D-ACCESS passcode gate. Tests: `src/ui/stall/StallScreens.test.tsx` (2). Shots: `s6*`.
 ## Kitchen + Station (2026-11-16 17:20 IST, Pos; Steve "continue")
 - Built: Kitchen (F-19), Counter Done? row + Hand over (F-20), Station page with three looks and Overview (F-21), auto-prep (F-22); Launch opens Kitchen and each station; `order.priority` op.
 - Gaps closed: ₹0 orders ("Nothing to collect" + To kitchen); IndexedDB missing or blocked now runs in memory with a calm banner.

@@ -37,7 +37,7 @@ function srcLabel(parts: readonly MoneyPart[], names: Readonly<Record<string, { 
   return m === 'upi' ? { icon: '📱', text: 'UPI' } : { icon: '🧾', text: 'Register' };
 }
 
-function Keys({ onPress }: { onPress: (k: Key) => void }) {
+export function Keys({ onPress }: { onPress: (k: Key) => void }) {
   return (
     <div className={s.keys}>
       {KEYS.map((k) => <button type="button" key={k} className={s.key} aria-label={k === 'del' ? 'Delete' : k} onClick={() => { onPress(k); }}>{k === 'del' ? <Icon name="backspace" className={s.bs} /> : k}</button>)}

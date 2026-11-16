@@ -35,6 +35,10 @@ export interface DevicePrefs {
   stationLook: 'full' | 'items' | 'ticket';
   /** Q-ORDERS-5: Open Orders body look. */
   openLook: 'lines' | 'cards';
+  /** D-ACCESS: 4-digit device passcode for Money, Settle up and Settings ('' = not set yet). A light gate, not a login. */
+  passcode: string;
+  /** D-ACCESS Developer switch: no passcode on this device. */
+  passcodeOff: boolean;
 }
 
 /** Per-device settings (not synced on purpose). */

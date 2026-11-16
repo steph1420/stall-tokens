@@ -45,6 +45,7 @@ export interface AppState extends CoreState {
   /** D-NAV: open a Stall screen; Back returns to the launch screen or the Counter. */
   readonly openStall: (screen: StallScreen) => void;
   readonly closeStall: () => void;
+  readonly unlock: () => void;
   readonly go: (screen: Screen) => void;
   readonly openSheet: (sheet: Sheet | null) => void;
   readonly setPrefs: (patch: Partial<DevicePrefs>) => void;
@@ -61,7 +62,8 @@ function navActions(core: Core) {
   return {
     go(screen: Screen) { up(() => ({ screen, sheet: null })); },
     openStall(screen: StallScreen) { up((u) => ({ screen, sheet: null, stallFrom: u.screen === 'counter' ? 'counter' : 'launch' })); },
-    closeStall() { up((u) => ({ screen: u.stallFrom, sheet: null })); },
+    closeStall() { up((u) => ({ screen: u.stallFrom, sheet: null, unlocked: false })); },
+    unlock() { up(() => ({ unlocked: true })); },
     openSheet(sheet: Sheet | null) { up(() => ({ sheet })); },
   };
 }

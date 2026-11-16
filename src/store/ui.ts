@@ -38,6 +38,8 @@ export interface UiState {
   readonly openId: string | null;
   /** Where a Stall screen's Back returns to. */
   readonly stallFrom: 'launch' | 'counter';
+  /** D-ACCESS: passcode entered for this visit to the Stall screens; cleared on leaving them. */
+  readonly unlocked: boolean;
 }
 
-export const initialUi: UiState = { screen: 'launch', orderId: null, pages: {}, sheet: null, toast: null, kitchenFilter: null, station: null, counterTab: 'new', openId: null, stallFrom: 'launch' };
+export const initialUi: UiState = { screen: 'launch', orderId: null, pages: {}, sheet: null, toast: null, kitchenFilter: null, station: null, counterTab: 'new', openId: null, stallFrom: 'launch', unlocked: false };
