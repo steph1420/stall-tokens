@@ -5,6 +5,7 @@ Stopped early on Steve's request (quota). Nothing deployed; main untouched.
 
 ## Build pass 2 (2026-11-16 18:35 IST onwards, Pos; Steve "build as much as you can")
 - New Orders / Open Orders (F-05, F-43, Q-ORDERS-1 v3): top tabs; New Orders = Menu / Billing / Payment + one current-order line (chips row and the old Open orders drop-down removed); Open Orders = cyan band + Overview, one big squircle per order (header swipe / tap = order sheet), Lines / Cards, Confirm / Confirm all, Mark ready, hidden tap-to-change (D-OPEN-TAP), bar Cancel order + Handover. `order.client` op. Tests: `src/ui/counter/open/OpenOrdersScreen.test.tsx` (2). Shots: `/workspace/pos-shots/s2[0-4]-*`.
+- Money (F-23..F-25): home + entry + Paid by / Mixed + Refunds due; ops `person.set`, `entry.add`, `entry.void`; Stall list on launch and ⋯ (D-NAV). Tests: `src/store/money.test.ts` (2). Shots: `s3*`.
 ## Kitchen + Station (2026-11-16 17:20 IST, Pos; Steve "continue")
 - Built: Kitchen (F-19), Counter Done? row + Hand over (F-20), Station page with three looks and Overview (F-21), auto-prep (F-22); Launch opens Kitchen and each station; `order.priority` op.
 - Gaps closed: ₹0 orders ("Nothing to collect" + To kitchen); IndexedDB missing or blocked now runs in memory with a calm banner.

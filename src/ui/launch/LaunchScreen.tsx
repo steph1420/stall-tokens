@@ -1,8 +1,9 @@
 // F-04 Launch (21-polish2/launch.html): shown every time the app opens (Q-LAUNCH-1 B). Section 1 Counter, Kitchen;
-// section 2 the stations (working names, CONFIG.stations, Q-KITCHEN-2 C).
+// section 2 the stations (working names, CONFIG.stations, Q-KITCHEN-2 C); section 3 the quiet Stall list (D-NAV).
 import { useApp } from '../../store';
 import { Icon } from '../kit/Icon';
 import { STATIONS, stationIcon } from '../kitchen/stations';
+import { StallNav } from '../stall/StallNav';
 import s from './LaunchScreen.module.css';
 
 export function LaunchScreen() {
@@ -30,6 +31,10 @@ export function LaunchScreen() {
               </button>
             ))}
           </div>
+        </section>
+        <section className={s.stations}>
+          <div className={s.label}>Stall</div>
+          <StallNav className={s.stall} />
         </section>
       </main>
     </div>

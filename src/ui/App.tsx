@@ -8,6 +8,7 @@ import { UpdateBanner } from './kit/Update';
 import { KitchenScreen } from './kitchen/KitchenScreen';
 import { LaunchScreen } from './launch/LaunchScreen';
 import { StationScreen } from './station/StationScreen';
+import { StallScreens } from './stall/StallScreens';
 import k from './kit/kit.module.css';
 
 export function App() {
@@ -22,7 +23,7 @@ export function App() {
   if (!ready) return null;
   return (
     <>
-      {screen === 'launch' ? <LaunchScreen /> : screen === 'kitchen' ? <KitchenScreen /> : screen === 'station' ? <StationScreen /> : <CounterShell />}
+      {screen === 'launch' ? <LaunchScreen /> : screen === 'kitchen' ? <KitchenScreen /> : screen === 'station' ? <StationScreen /> : screen === 'counter' ? <CounterShell /> : <StallScreens screen={screen} />}
       <Toast />
       <SaveBanner />
       <MemoryBanner />

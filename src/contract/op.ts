@@ -6,6 +6,15 @@ export const CONTRACT_VERSION = 2;
 
 export type LineStatus = 'draft' | 'waiting' | 'preparing' | 'done?' | 'ready' | 'held' | 'handed' | 'paused';
 export type PaySource = 'cash' | 'upi';
+/** F-24 Paid by / Received in (Q-PAIDBY, Q-MIXED-1): one source per part; Mixed = several parts. */
+export type MoneySource = 'register' | 'upi' | 'person';
+export interface MoneyPart { source: MoneySource; personId: string | null; amount: Paise }
+export interface EntryBody {
+  entryId: string; dayId: string; dir: 'spent' | 'received'; amount: Paise; label: string;
+  kind: 'normal' | 'donation'; parts: MoneyPart[]; note: string;
+  /** For (Spent) / From (Received) when it is a person in the book, e.g. a partner paying in; else null. */
+  personId: string | null;
+}
 
 export interface ItemFields {
   name: string; price: Paise; swatch: number; category: string; stationId: string;
@@ -42,12 +51,16 @@ export interface Bodies {
   'refund.add': { refundId: string; orderId: string; amount: Paise; source: PaySource };
   'payee.set': { payeeId: string; name: string; upiId: string; removed: boolean };
   'setting.set': { key: string; value: string };
+  /** F-23..F-29 Money and settlement (additive kinds; contract stays v2). */
+  'person.set': { personId: string; name: string; isPartner: boolean; sharePct: number; removed: boolean };
+  'entry.add': EntryBody;
+  'entry.void': { entryId: string; reason: string };
 }
 export type OpKind = keyof Bodies;
 export const OP_KINDS = [
   'item.set', 'stock.adjust', 'day.start', 'order.create', 'line.add', 'line.qty', 'line.note', 'line.status', 'line.finish',
   'order.note', 'order.discount', 'order.roundoff', 'order.send', 'order.delete', 'order.priority', 'order.cancel', 'order.client', 'payment.add', 'refund.add',
-  'payee.set', 'setting.set',
+  'payee.set', 'setting.set', 'person.set', 'entry.add', 'entry.void',
 ] as const satisfies readonly OpKind[];
 
 /** Version vector: highest seq seen per writer. */
@@ -84,7 +97,7 @@ export function compareOps(a: OpHead, b: OpHead): number {
   return a.seq - b.seq;
 }
 
-type FieldType = 's' | 'n' | 'b' | 'o' | 'n?';
+type FieldType = 's' | 'n' | 'b' | 'o' | 'n?' | 'a';
 const S: Record<OpKind, Record<string, FieldType>> = {
   'item.set': { itemId: 's', fields: 'o' },
   'stock.adjust': { itemId: 's', delta: 'n', reason: 's' },
@@ -107,13 +120,17 @@ const S: Record<OpKind, Record<string, FieldType>> = {
   'refund.add': { refundId: 's', orderId: 's', amount: 'n', source: 's' },
   'payee.set': { payeeId: 's', name: 's', upiId: 's', removed: 'b' },
   'setting.set': { key: 's', value: 's' },
+  'person.set': { personId: 's', name: 's', isPartner: 'b', sharePct: 'n', removed: 'b' },
+  'entry.add': { entryId: 's', dayId: 's', dir: 's', amount: 'n', label: 's', kind: 's', parts: 'a', note: 's', personId: 'n?' },
+  'entry.void': { entryId: 's', reason: 's' },
 };
 const okField = (t: FieldType, x: unknown): boolean =>
   t === 's' ? typeof x === 'string'
     : t === 'n' ? typeof x === 'number' && Number.isFinite(x)
       : t === 'b' ? typeof x === 'boolean'
         : t === 'o' ? isRecord(x)
-          : x === null || typeof x === 'string';
+          : t === 'a' ? Array.isArray(x)
+            : x === null || typeof x === 'string';
 
 /** Body check per kind (F-02). Money and counts must be finite numbers; strings must be strings. */
 export function isValidOp(value: unknown): value is Op {

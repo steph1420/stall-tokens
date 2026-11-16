@@ -4,6 +4,7 @@ import { compareOps, type Item, type ItemFields, type Op, type Order } from '../
 import { emptyFolded, type Folded } from './state';
 import { applyOrderOp, isOrderOp } from './orders';
 import { lww } from './lww';
+import { applyMoneyOp } from './money';
 
 const ITEM_DEFAULTS: ItemFields = {
   name: '', price: 0, swatch: 0, category: '', stationId: '', count: null, unit: '', lowAt: 0, soldOut: false, order: 0, removed: false,
@@ -57,6 +58,7 @@ function applyOne(s: Folded, op: Op): Folded {
       const st = lww(s, 'settings', op.body.key, op).state;
       return { ...st, settings: { ...st.settings, [op.body.key]: op.body.value } };
     }
+    case 'person.set': case 'entry.add': case 'entry.void': return applyMoneyOp(s, op);
     default:
       return isOrderOp(op) ? applyOrderOp(s, op) : s;
   }

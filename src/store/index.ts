@@ -9,11 +9,14 @@ import { createLog, initialCore, type Core, type CoreState } from './core';
 import { counterActions } from './counter';
 import { kitchenActions } from './kitchen';
 import { openActions } from './open';
+import { moneyActions } from './money';
 import { liveOrders as live } from './fold/fold';
 import { pauseMoves } from './rules/kitchen';
-import type { Screen, Sheet } from './ui';
+import type { Screen, Sheet, StallScreen } from './ui';
 
-export type { CounterTab, Screen, Sheet, StationPlace } from './ui';
+export type { CounterTab, Screen, Sheet, StallScreen, StationPlace } from './ui';
+export type { EntryDraft } from './money';
+export * as money from './rules/money';
 export * as kitchen from './rules/kitchen';
 export type { Folded } from './fold/state';
 export type { DevicePrefs } from '../data';
@@ -31,6 +34,10 @@ export interface AppState extends CoreState {
   readonly catalog: ReturnType<typeof catalogActions>;
   readonly kitchen: ReturnType<typeof kitchenActions>;
   readonly open: ReturnType<typeof openActions>;
+  readonly money: ReturnType<typeof moneyActions>;
+  /** D-NAV: open a Stall screen; Back returns to the launch screen or the Counter. */
+  readonly openStall: (screen: StallScreen) => void;
+  readonly closeStall: () => void;
   readonly go: (screen: Screen) => void;
   readonly openSheet: (sheet: Sheet | null) => void;
   readonly setPrefs: (patch: Partial<DevicePrefs>) => void;
@@ -60,7 +67,10 @@ export function createAppStore(ds: DataSource, opts: StoreOptions = {}): AppStor
       catalog: catalogActions(core, l),
       kitchen: kitchenActions(core, l),
       open: openActions(core, l),
+      money: moneyActions(core, l),
       go(screen) { set((s) => ({ ui: { ...s.ui, screen, sheet: null } })); },
+      openStall(screen) { set((s) => ({ ui: { ...s.ui, screen, sheet: null, stallFrom: s.ui.screen === 'counter' ? 'counter' : 'launch' } })); },
+      closeStall() { set((s) => ({ ui: { ...s.ui, screen: s.ui.stallFrom, sheet: null } })); },
       openSheet(sheet) { set((s) => ({ ui: { ...s.ui, sheet } })); },
       setPrefs(patch) { const next = { ...get().prefs, ...patch }; ds.device.write(next); set({ prefs: next }); },
       retrySave() { l.retrySave(); },

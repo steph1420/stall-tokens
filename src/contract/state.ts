@@ -1,5 +1,5 @@
 // Derived state shapes (the fold's output). Screens read these through the store.
-import type { ItemFields, LineStatus, PaySource } from './op';
+import type { ItemFields, LineStatus, MoneyPart, PaySource } from './op';
 import type { Paise } from './money';
 
 export interface Item extends ItemFields { readonly id: string; readonly sold: number; readonly oversold: boolean }
@@ -28,3 +28,11 @@ export interface Order {
 export interface Payee { readonly id: string; readonly name: string; readonly upiId: string }
 export interface Day { readonly id: string; readonly label: string; readonly startedAt: number }
 export interface Conflict { readonly target: string; readonly field: string; readonly winner: string; readonly loser: string; readonly at: number }
+/** F-23 Spent / Received entry (Q-MONEY-V8, Q-RECV). `voided` keeps the record (History hold to cancel). */
+export interface Entry {
+  readonly id: string; readonly dayId: string; readonly dir: 'spent' | 'received'; readonly amount: Paise; readonly label: string;
+  readonly kind: 'normal' | 'donation'; readonly parts: readonly MoneyPart[]; readonly note: string; readonly personId: string | null; readonly at: number; readonly by: string;
+  readonly voided: string | null;
+}
+/** F-27 A person in the money book; partners carry a share per fair (Q-SETTLE-GAPS). Names are typed in the app only. */
+export interface Person { readonly id: string; readonly name: string; readonly isPartner: boolean; readonly sharePct: number }

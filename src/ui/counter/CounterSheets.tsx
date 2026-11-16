@@ -6,6 +6,7 @@ import { bill, useApp } from '../../store';
 import { Money } from '../kit/Money';
 import { Sheet } from '../kit/Sheet';
 import k from '../kit/kit.module.css';
+import { StallNav } from '../stall/StallNav';
 
 const R = CONFIG.money.paisePerRupee;
 
@@ -255,6 +256,8 @@ function MoreSheet() {
           </div></li>
         <li><button type="button" className={k.listRow} onClick={() => { a.openSheet({ kind: 'payee' }); }}>UPI IDs</button></li>
       </ul>
+      <div className={k.fieldLab}>Stall</div>
+      <StallNav />
       <Field id="stallname" label="Stall name"><input id="stallname" className={k.input} value={name} maxLength={CONFIG.limits.nameMaxChars} onChange={(e) => { setName(e.target.value); }} onBlur={() => { if (name.trim() !== stall) a.cat.setSetting('stallName', name); }} /></Field>
     </Sheet>
   );
