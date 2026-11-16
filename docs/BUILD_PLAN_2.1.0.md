@@ -193,7 +193,7 @@ The full design is in `docs/SYNC_SERVER.md`: `server/` in Go with SQLite as the 
 - [ ] D5 feedback from LFPS-SOW / Lippy folded in; Steve answers FEATURES §30
 - [x] A locks recorded (Q-BETA-PATH B and the 23:21–23:26 answers, Q-SYNC-GO, Q-SHEET-FLUSH)
 - [x] B docs/SYNC_SERVER.md
-- [ ] C mockup redo s119+
+- [x] C mockup redo s119–s126 (caption strip under the phones; Q-UNPAID-ROW open) + FEATURES top-4 Pos gaps (default off), the rest under Later
 - [ ] D beta repo + first Beta deploy
 - [ ] P0 channel plumbing (base-path detection, Beta storage prefix, About shows the channel; no Stable change)
 - [ ] P1 data + rules + unit tests

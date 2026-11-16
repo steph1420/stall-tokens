@@ -67,6 +67,36 @@ This sheet lists every screen and every UI element: what it does, its states, ni
 
 ---
 
+## 0.2 Pos gaps — top 4 (each **default off**; Steve switches on or vetoes)
+Steve asked (16 Nov) for only the strongest gaps to lead. Each one ships behind a shared setting that is **off** until he turns it on.
+1. **Close the day** (§21): a checklist (unpaid, refunds due, cash count, notes, lock) and a day summary. Why: a stall day needs an end, not just a start.
+2. **Keep data safe** (Settings › Data › Storage, `navigator.storage.persist()`). Why: Android can evict a PWA's storage under pressure.
+3. **Waiting to sync n** (Settings › Sync). Why: before a reset or a phone swap, staff must see what hasn't reached the server or Sheet.
+4. **History search** (§24): by token number, name or item. Why: "the boy in the red shirt's order from 6 pm" has to be findable.
+
+### Later — Pos ideas (not in 2.1.0 unless Steve picks one)
+- Sync dot
+- Sync dot
+- **Search** (magnifier in the sort row)
+- Empty menu
+- Name
+- Remove
+- Client name
+- Print failed
+- **Filter chips**
+- "Register by the book" help
+- **Close day** (new screen)
+- Day summary
+- **Display** › Appearance Night / Day / **Auto** (follows the phone)
+- Data › **Snapshots**
+- **App** › **Install as app**
+- The other rows marked "Later — Pos idea" below stay documented for reference but are **not built** in 2.1.0.
+
+### Mockups (redo, 16 Nov 23:55 IST): `handovers/pos/assets/roughs-2.1.0/s119…s126`
+- **Q-UNPAID-ROW** (Unpaid tab rows; open, Steve locks):
+  - A ★ each row has one **Paid** action, and a tap on the row opens it (s119);
+  - B no button, and a tap on the row opens it (s120).
+
 ## 1. Launch (F-04)
 | Element | What it does | States / edge cases | Status |
 | --- | --- | --- | --- |
@@ -75,8 +105,8 @@ This sheet lists every screen and every UI element: what it does, its states, ni
 | Kitchen tile | Opens the Kitchen. | — | existing |
 | Station tiles | One tile per **active station from data** (PK-6). Shows the station's colour and icon and opens its Station page. | No stations yet: a "Set up stations" link to Settings › Stations. Renaming a station keeps its id (PK-6, W-34). | fix 2.1.0 (W-34) |
 | Stall list (Money, Settle up, Stock, History, Open the stall, Settings) | Opens each Stall screen. | No bullets; "Open the stall" fits on one line (W-04). The last row has no border. | fix 2.1.0 (W-04) |
-| Close the day row | Opens Close day (§21). Shown once a day has started. | — | gap — added by Pos: a stall day needs an end, not just a start (unpaid, refunds and cash checked before going home) |
-| Sync dot | Top right. Shows nothing when synced, a cloud with a slash when offline, and a brief saving ring then a tick after each sync (Lippy kit). A tap opens Settings › Sync. | Only shown when sync is set up. | gap — added by Pos: phones in a fair lose signal; staff must know if their orders have reached the Sheet |
+| Close the day row | Opens Close day (§21). Shown once a day has started. | — | **Pos gap, top 4 (default off)**: a stall day needs an end, not just a start (unpaid, refunds and cash checked before going home) |
+| Sync dot | Top right. Shows nothing when synced, a cloud with a slash when offline, and a brief saving ring then a tick after each sync (Lippy kit). A tap opens Settings › Sync. | Only shown when sync is set up. | Later — Pos idea: phones in a fair lose signal; staff must know if their orders have reached the Sheet |
 | Device resume | A device last used as Kitchen or a Station reopens there (screen place is a §0.1 exception). Counter devices still see Launch (PK-5 A, changes Q-LAUNCH-1 B for kitchen devices only). | A sign-in-link role still wins (F-44). | new 2.1.0 (PK-5) |
 | Channel tag | On Beta builds only, a small "Beta" word under the stall name. | Stable shows nothing. | new 2.1.0 (Q-CHANNEL A) |
 
@@ -92,7 +122,7 @@ This sheet lists every screen and every UI element: what it does, its states, ni
 | **Big + New ticket** | A large round button at the bottom right of the Menu page, above the Billing bar (Q-SPLIT A "big + button at bottom of New Order"). Same rule as the header +. | Hidden on Billing and Payment so it never covers Confirm. | new 2.1.0 (Q-SPLIT A) |
 | Resume after reload | Only the *pointer* to the order on screen stays on the device (§0.1); the draft itself is in the synced log. After a reload or an Android kill, the Counter opens the same draft (W-12). | If that order was paid, cancelled or discarded on another device, it opens the newest draft or Menu. | fix 2.1.0 (W-12) |
 | Back button | Billing/Payment → Menu → Launch. Sheets close first. Leaving with a non-empty draft keeps the draft (it's never lost). | — | fix 2.1.0 (W-13) |
-| Sync dot | Same as §1. | — | gap — added by Pos (as §1) |
+| Sync dot | Same as §1. | — | Later — Pos idea (as §1) |
 
 ## 3. Menu (F-06)
 | Element | What it does | States / edge cases | Status |
@@ -103,20 +133,20 @@ This sheet lists every screen and every UI element: what it does, its states, ni
 | **Sort chip** | My order · Name A–Z · Price ↑/↓ · Category (grouped headers) · Stock (low first, sold out last). | A **shared** setting (Q-SYNC-ALL; changes P-10 A from per-device), default Category. | new 2.1.0 (Q-SPLIT A menu sort) |
 | Category headers | Shown when sort = Category. The order comes from Settings › Menu › Categories. | Items with no category go under "Other". | new 2.1.0 |
 | Add item tile | Opens the Add item sheet (§4). | — | existing |
-| **Search** (magnifier in the sort row) | Filters cards by name as you type. × clears it. | For menus over about 20 items. Hidden behind the magnifier so the first layer stays calm (Lippy kit). | gap — added by Pos: a fair menu with 40+ items is slow to scan by eye |
+| **Search** (magnifier in the sort row) | Filters cards by name as you type. × clears it. | For menus over about 20 items. Hidden behind the magnifier so the first layer stays calm (Lippy kit). | Later — Pos idea: a fair menu with 40+ items is slow to scan by eye |
 | Billing bar | Item count, ₹ total, "Billing ›". | — | existing |
-| Empty menu | One line, "Add your first item", over a calm gradient (LFPS-SOW kit). | — | gap — added by Pos: no blank first screen |
+| Empty menu | One line, "Add your first item", over a calm gradient (LFPS-SOW kit). | — | Later — Pos idea: no blank first screen |
 
 ## 4. Add / Edit item sheet (F-07)
 | Element | What it does | States / edge cases | Status |
 | --- | --- | --- | --- |
-| Name | Up to 60 characters. | Duplicate name: amber line "Already on the menu · save anyway?" (it saves on a second tap). | gap — added by Pos: duplicates split sales counts and confuse the kitchen |
+| Name | Up to 60 characters. | Duplicate name: amber line "Already on the menu · save anyway?" (it saves on a second tap). | Later — Pos idea: duplicates split sales counts and confuse the kitchen |
 | Price (₹) | `inputMode="decimal"`. ₹0 is allowed; an empty price is refused. | — | existing |
 | Colour swatches | 8 filled circles; the picked one is ringed. | The CSS variable mismatch is fixed (`--c`), with a UI test that the background isn't transparent in night and day (W-02). | fix 2.1.0 (W-02) |
 | **Category dropdown** | A `<select>` listing the categories from Settings in their order, plus "**+ Add category…**", which opens an inline name field. Picking a category pre-fills its default Station and Colour. | No free text, so typos can't split the menu (W-03). A new item defaults to the last category used, not the first one. | new 2.1.0 (Q-SPLIT A, P-3) |
 | Station dropdown | Stations from data (PK-6). The default comes from the category. | — | fix 2.1.0 (W-03, W-34) |
 | Stock | Empty = no count. Whole numbers only. | — | existing |
-| Remove | Hold to remove (was a single tap). | An Undo toast follows. | gap — added by Pos: removing an item mid-service by a stray tap is costly |
+| Remove | Hold to remove (was a single tap). | An Undo toast follows. | Later — Pos idea: removing an item mid-service by a stray tap is costly |
 | Save / Cancel | Save checks every field and shows the error inline. | Enter in Name moves to Price; Enter in Price saves. | existing + keyboard gap |
 
 ## 5. Stock panel (hold a menu card) (F-08)
@@ -133,7 +163,7 @@ This sheet lists every screen and every UI element: what it does, its states, ni
 | Token + Serving | Token and server name. | — | existing |
 | Table (Item / Rate / Qty / Amount) | −/+, tap qty = the 1–99 list, pencil = line note. | Long names wrap in full here (W-17). | existing |
 | Order note | Free text up to 140 characters. Quick chips: **Takeaway · Dine-in · Allergy** (Allergy pre-fills "ALLERGY: "). | Allergy words (CONFIG list) make the note show as a warning strip in the Kitchen (PK-2). | new 2.1.0 (PK-2, W-25) + chips gap (added by Pos: quicker than typing, and makes allergy notes consistent) |
-| Client name | An optional field (it was only in the Open Orders sheet). | — | gap — added by Pos: unpaid orders need a name to chase; one place to type it before sending |
+| Client name | An optional field (it was only in the Open Orders sheet). | — | Later — Pos idea: unpaid orders need a name to chase; one place to type it before sending |
 | Priority switch | `order.priority`. | — | existing |
 | Discount (₹/%) + Allowed by | — | **More than the bill:** refused with "Discount is more than the bill". A 100% discount needs a note (W-16). | fix 2.1.0 (W-16) |
 | Round-off | ±₹5/₹10, dropped when the bill changes. | — | existing |
@@ -160,7 +190,7 @@ This sheet lists every screen and every UI element: what it does, its states, ni
 | Slip preview (58 mm) | Moves to `kit/Sheet`, so Back and Escape close it (W-24). | fix 2.1.0 (W-24) |
 | Print token entry points | The paid screen, plus **To kitchen** (slip marked UNPAID), the order sheet, Unpaid and History (reprint marked "Reprint") (W-19). | fix 2.1.0 (W-19) |
 | Refunded mark | A slip reprinted after a refund shows "Refunded ₹X". | new 2.1.0 (P-2) |
-| Print failed | If Bluetooth fails: toast "Printer not reached · Print with phone" (falls back to `window.print`). | gap — added by Pos: a silent print failure means a customer with no token |
+| Print failed | If Bluetooth fails: toast "Printer not reached · Print with phone" (falls back to `window.print`). | Later — Pos idea: a silent print failure means a customer with no token |
 
 ## 9. Open Orders (F-43)
 | Element | What it does | States / edge cases | Status |
@@ -262,8 +292,8 @@ Reached from the Open Orders sheet, Unpaid, History and Billing (after an edit).
 | Where | Counter ⋯ › **Order History**, and Stall › History (one screen with a segment **Orders · Money**). | — | new 2.1.0 (see **Q-HISTORY-1**) |
 | Day sections | Newest first. "Today", then dates (en-GB, IST). | — | existing |
 | Rows | **Every sent order** (W-08), with token `#004` (W-18), time, items, ₹, and a tag: Unpaid ₹X · Paid cash/UPI/Mixed · Refunded ₹X · Refund due ₹X · Cancelled · Written off · Edited. | — | fix 2.1.0 (W-08, W-18, W-21) |
-| **Search** | Token number, client name or item. | — | gap — added by Pos: "the boy in the red shirt's order from 6 pm" has to be findable |
-| **Filter chips** | All · Unpaid · Refunded · Cancelled. | — | gap — added by Pos: quick to check the day's problems |
+| **Search** | Token number, client name or item. | — | **Pos gap, top 4 (default off)**: "the boy in the red shirt's order from 6 pm" has to be findable |
+| **Filter chips** | All · Unpaid · Refunded · Cancelled. | — | Later — Pos idea: quick to check the day's problems |
 | Row tap → History sheet | Edit (Billing), **Refund** (always enabled when money is held, W-10), Take payment (if due), Print token, Hold to cancel. | — | fix 2.1.0 (W-10, W-19) |
 | Money segment | The existing entries list (Spent/Received, Hold to void). | — | existing |
 | Empty | "Nothing yet today". | — | existing |
@@ -275,7 +305,7 @@ Reached from the Open Orders sheet, Unpaid, History and Billing (after an edit).
 | **Unpaid ₹X · n** tile | Opens the Unpaid tab (W-08). | fix 2.1.0 (W-08) |
 | **Written off ₹X** line | Unpaid completions (§12). Outside the partner split until Steve says otherwise (**Q-WRITEOFF-SPLIT**). | new 2.1.0 |
 | Refunds due (from cancels) | Cash back / UPI back. | existing |
-| "Register by the book" help | One line of help on tap: "Cash that should be in the box: float + cash sales − cash spent − cash back". | gap — added by Pos: the report found the term unclear |
+| "Register by the book" help | One line of help on tap: "Cash that should be in the box: float + cash sales − cash spent − cash back". | Later — Pos idea: the report found the term unclear |
 
 ## 19. Settle up / Partners (F-26…F-29)
 Unchanged in 2.1.0 (existing). The Close day screen (§21) links to it.
@@ -291,8 +321,8 @@ Unchanged in 2.1.0 (existing). The Close day screen (§21) links to it.
 | Element | What it does | States / edge cases | Status |
 | --- | --- | --- | --- |
 | Open the stall | Float keypad, Start day. | **Day rollover:** on the first order of a new IST date while the old day is still open, ask "Start today (tokens from #001) or keep yesterday's day?" (W-22). The "Last fair closed with" wording is only used when a day was really closed. | fix 2.1.0 (W-22) |
-| **Close day** (new screen) | A checklist with five steps. 1) **Unpaid** orders (n, ₹): take payment / complete. 2) **Refunds due**. 3) **Cash count**: count notes (the Payment tiles) vs Register by the book, showing the difference ("₹20 short"). 4) **Day notes** (§22). 5) **Settle up**, then Lock day (F-29). | Every step can be skipped with a reason, but it's shown in the day summary. | gap — added by Pos: the report found no close-day checklist (§4); cash short/over is the most common stall dispute |
-| Day summary | Totals, by item (top sellers), by payment type, refunds, write-offs. Shared with **hold to share** (LFPS-SOW kit). | — | gap — added by Pos: the partners ask "how did we do" every evening |
+| **Close day** (new screen) | A checklist with five steps. 1) **Unpaid** orders (n, ₹): take payment / complete. 2) **Refunds due**. 3) **Cash count**: count notes (the Payment tiles) vs Register by the book, showing the difference ("₹20 short"). 4) **Day notes** (§22). 5) **Settle up**, then Lock day (F-29). | Every step can be skipped with a reason, but it's shown in the day summary. | Later — Pos idea: the report found no close-day checklist (§4); cash short/over is the most common stall dispute |
+| Day summary | Totals, by item (top sellers), by payment type, refunds, write-offs. Shared with **hold to share** (LFPS-SOW kit). | — | Later — Pos idea: the partners ask "how did we do" every evening |
 
 ## 22. Day notes (new, Q-SPLIT A)
 | Element | What it does | Status |
@@ -306,7 +336,7 @@ Unchanged in 2.1.0 (existing). The Close day screen (§21) links to it.
 | **General** › Stall name | The shared setting (it was only in the Counter ⋯). | change 2.1.0 (Q-SPLIT A "quickly edit stall name") |
 | General › Event / fair name | Edits today's `event` record name (P-14 is 2.2.0; this single field is in 2.1.0). | new 2.1.0 (Q-SPLIT A "event") |
 | General › Serving name (device label), Token range | Synced through the device registry (`device.set`), so other Counters see who holds which range. | change 2.1.0 (Q-SYNC-ALL) |
-| **Display** › Appearance Night / Day / **Auto** (follows the phone) | Auto = `prefers-color-scheme`. | change 2.1.0 (Auto is a gap — added by Pos: LFPS-SOW has it; it saves switching at sunset) |
+| **Display** › Appearance Night / Day / **Auto** (follows the phone) | Auto = `prefers-color-scheme`. | change 2.1.0 (Auto is a Later — Pos idea: LFPS-SOW has it; it saves switching at sunset) |
 | Display › Haptics | — | existing (moved) |
 | Display › Kitchen text size (Standard / Large) | W-39. | new 2.1.0 |
 | Display › Alerts: Quiet, Volume | PK-1. | new 2.1.0 |
@@ -315,13 +345,13 @@ Unchanged in 2.1.0 (existing). The Close day screen (§21) links to it.
 | **Kitchen** › Auto-prep, Station look | — | existing |
 | **Money** › Partner shares, Tip choices, Round-off | — | existing (the round-off placeholder is fixed to "5, 10", W-20) |
 | **Sync** › status (dot only), Sheet sync, **Review** (clashes) | — | existing |
-| Sync › Waiting to sync n | Lists unsynced ops by kind. | gap — added by Pos: before a reset or a phone swap, staff must see what hasn't reached the Sheet |
+| Sync › Waiting to sync n | Lists unsynced ops by kind. | **Pos gap, top 4 (default off)**: before a reset or a phone swap, staff must see what hasn't reached the Sheet |
 | **Data** › **Back up now** | Exports `stall-tokens-backup-<IST date>-<device>.json`, containing the whole op log as known here (drafts included), plus the per-device settings in §0.1 ( contract version, op count, SHA-256). Share sheet / Downloads (P-7 A). | new 2.1.0 (Q-SPLIT A Backup) |
 | Data › **Restore from a file** | Pick a file. Shows "ops new / already here", then Import, which runs through the normal fold. Duplicate opIds are ignored and nothing is overwritten (Q-HARM-10). **A backup of the current state is made first** (LFPS-SOW kit). | new 2.1.0 |
-| Data › **Snapshots** | Automatic local snapshots before every destructive step (restore, reset, migrate) and every `snapshotEveryMin` (15) during a day, keeping the last 20. Restore one = import (it never deletes). | gap — added by Pos (LFPS-SOW Q-BAK-1 pattern): a lost phone log mid-fair is unrecoverable without it |
+| Data › **Snapshots** | Automatic local snapshots before every destructive step (restore, reset, migrate) and every `snapshotEveryMin` (15) during a day, keeping the last 20. Restore one = import (it never deletes). | Later — Pos idea (LFPS-SOW Q-BAK-1 pattern): a lost phone log mid-fair is unrecoverable without it |
 | Data › **Reset app** | Step 1: shows unsynced ops ("12 changes not yet in the Sheet"). Step 2: Back up first (default on). Step 3: Sync now if possible. Step 4: **Hold to reset**. Wipes this channel's IndexedDB, prefs and receipts; keeps the device id (P-8 A). | new 2.1.0 (Q-SPLIT A Reset) |
-| Data › Storage | Used space and "Keep data safe" (`navigator.storage.persist()`). | gap — added by Pos: Android can evict a PWA's storage under pressure unless it's persisted |
-| **App** › **Install as app** | Calls the install prompt, or shows fallback steps (Lippy kit). | gap — added by Pos |
+| Data › Storage | Used space and "Keep data safe" (`navigator.storage.persist()`). | **Pos gap, top 4 (default off)**: Android can evict a PWA's storage under pressure unless it's persisted |
+| **App** › **Install as app** | Calls the install prompt, or shows fallback steps (Lippy kit). | Later — Pos idea |
 | App › **Updates** | A quiet dot when an update is ready; apply on next open or tap. It never reloads mid-order (LFPS-SOW kit, Q-HARM-2). | change 2.1.0 |
 | App › **About** | Version, **channel (Stable / Beta)**, device id, the footer stamp. A tap opens What's New. | new 2.1.0 (Q-CHANNEL A) |
 | **Account** › Sign-in links | Kept as a normal row (DECISIONS v2.0.0 note) and moved out of Developer. | change 2.1.0 |
