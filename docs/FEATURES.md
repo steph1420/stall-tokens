@@ -32,7 +32,7 @@ This sheet lists every screen and every UI element: what it does, its states, ni
 - **Feedback.** Every refused tap gets a toast that says why. Nothing is dropped silently (LFPS-SOW kit).
 - **Undo.** Safe, reversible actions run at once and show an Undo toast (`CONFIG.timings.undoMs` = 5 s, PK-4). Payments, cancels and destructive actions use hold-to-confirm (kit `HoldButton`). **Refunds are instant with Undo** (Q-REFUND-INSTANT, Steve t75u).
   - Undo is always a new compensating op, never a deletion (Q-HARM-10).
-- **Holds.** The hold length comes from the `HOLD` tokens. Hold buttons show a fill or press animation and give a haptic.
+- **Holds.** The hold length comes from the `HOLD` tokens. Hold buttons show a fill or press animation and give a haptic. Unpaid Complete is the exception in §9: the progress is a bar along the top of the action bar, not a fill or a ring on the button (Q-HOLD-RING A), because the thumb would hide it.
 - **Back.** Phone Back closes the top sheet, then the screen, then returns to Launch. It never leaves the app during an order (P-6, W-13).
 
 *Data*
@@ -197,7 +197,7 @@ Steve asked (16 Nov) for only the strongest gaps to lead. Each one ships behind 
 | Lines / Cards look | — | — | existing |
 | Line: Mark ready / Confirm / Confirm all | As before, but Mark ready is just Ready. A Counter-marked line shows "Marked by counter" everywhere and **does not complete** the order. | — | fix 2.1.0 (W-06, W-27) |
 | **Send back** | On a line the station marked Ready (Done?): Confirm / **Send back** (Send back = back to Preparing, with a toast to the station) (W-31, Q-KITCHEN-3 A). | — | fix 2.1.0 (W-31) |
-| Bottom bar **Cancel · Handover · Complete** | **Handover** hands over every line; it never completes an unpaid order. If paid, the order completes and gets the green veil. If unpaid, the order stays, tagged "Handed over · Unpaid ₹55". **Complete** (paid): a tap completes it. **Complete** (unpaid): the button is **yellow** (warn token). A tap shows the toast "Order unpaid · Press and hold to complete without payment". Press and hold shows a **timed ring** with "Marking as complete" (Steve's words, kept although Lippy's kit dislikes rings). Release = `order.complete {unpaid:true}`. | Every action is bound to the order id it was drawn for. The bar is locked while the veil shows (W-09). After Handover, a 5 s Undo toast (compensating line.status ops). | new 2.1.0 (Q-HANDOVER-PAY revised) + fix W-09 |
+| Bottom bar **Cancel · Handover · Complete** | **Handover** hands over every line; it never completes an unpaid order. If paid, the order completes and gets the green veil. If unpaid, the order stays, tagged "Handed over · Unpaid ₹55". **Complete** (paid): a tap completes it. **Complete** (unpaid): the button is **yellow** (warn token). A tap shows the toast "Order unpaid · Press and hold to complete without payment". Press and hold shows a **wide bar** filling left to right along the top edge of the bottom action bar, with the text "Marking as complete" above it (**Q-HOLD-RING A**, locked 16 Nov 23:49 IST). There is no ring on or around the button — Steve's thumb would hide it. A short haptic buzz on finish; release early cancels. Held to the end = `order.complete {unpaid:true}`. | Every action is bound to the order id it was drawn for. The bar is locked while the veil shows (W-09). After Handover, a 5 s Undo toast (compensating line.status ops). | new 2.1.0 (Q-HANDOVER-PAY revised, Q-HOLD-RING A) + fix W-09 |
 | Empty | "No open orders" over a calm texture (LFPS-SOW kit). | — | existing (restyled) |
 | Landscape | The card scrolls above the bar; lines are never hidden under it (report §3). | — | fix 2.1.0 |
 
@@ -219,7 +219,7 @@ Steve asked (16 Nov) for only the strongest gaps to lead. Each one ships behind 
 | --- | --- | --- | --- |
 | List | Every sent order with money due, oldest first. Shows token, client, items, **₹ due** (soft red), status (In kitchen / Ready / Handed over) and age. Total at the top: "₹1,240 · 6 orders". | Drafts are not listed. Cancelled orders are not listed (they go to Refunds due instead). | new 2.1.0 (Q-HANDOVER-PAY revised) |
 | Row tap | Opens the order sheet with Take payment first. There is no Paid button on the row (Q-UNPAID-ROW B, s120). | — | new 2.1.0 (Q-UNPAID-ROW B) |
-| Order sheet actions | **Take payment** · **Complete** (the same yellow hold as §9) live on the opened order sheet, not on the list row. | — | new 2.1.0 |
+| Order sheet actions | **Take payment** · **Complete** (the same yellow hold as §9: Q-HOLD-RING A, a wide bar along the top of the action bar, no ring on the button) live on the opened order sheet, not on the list row. | — | new 2.1.0 |
 | ~~Handover-unpaid name ask~~ | Not built: **Q-UNPAID-NAME B** (Steve: never ask). | — | dropped |
 | Empty | "Nothing unpaid ✓" in soft green text, no icon (Lippy kit). | — | new 2.1.0 |
 
@@ -396,3 +396,4 @@ One navigation owner (`store/nav`) pushes a history state per screen and per she
 - **Q-GO-PUSH B (locked 16 Nov 23:44 IST):** polling plus an SSE live stream while a screen is open. Built with the Go server in 2.2.0.
 - **Q-GO-WHEN B (locked 16 Nov 23:44 IST):** 2.1.0 ships on the current Code.gs bridge with the digest freshness check added. The Go server comes in 2.2.0, Beta first.
 - **Q-UNPAID-ROW B (locked 16 Nov 23:44 IST):** no Paid button; a tap on the row opens it. Layout is s120.
+- **Q-HOLD-RING A (locked 16 Nov 23:49 IST):** the unpaid Complete hold is a wide bar filling left to right along the top edge of the bottom action bar, with "Marking as complete" above it. No ring on or around the button (the thumb would hide it). A short haptic buzz on finish; release early cancels. Mockup: `s121-complete-hold-bar.png` (the earlier ring pair `s121-complete-toast-ring.png` is superseded).
