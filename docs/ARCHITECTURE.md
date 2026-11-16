@@ -62,6 +62,11 @@ The op log does not know how ops travel. The sync engine (`data/sync/engine.ts`)
 ### 4.4 Sign-in links (F-44, Steve 16 Nov 19:31 IST)
 `data/join.ts` reads `#join=<base64url JSON {v,u,k,r,n}>` before the data source picks transports, writes the device prefs (sync URL, key, role, serving name) and strips the fragment with `history.replaceState`. The fragment never reaches a server. `prefs.role` picks the first screen (`store/core.ts` uiForRole). Revocation = new STALL_KEY. The passcode gate (D-ACCESS) stays in code, off by default.
 
+### 4.5 Device-only stores and devices (pass 3)
+- Receipt photos: `data/adapters/receipts.ts`, own IndexedDB `stall-tokens.v2.receipts`, keyed by entry id; never in the op log or the Sheet (F-47).
+- Bluetooth printer: `data/adapters/btPrinter.ts` (Web Bluetooth, writable characteristic on common ESC/POS services, 100-byte chunks); bytes from the pure `store/rules/escpos.ts` (F-41).
+- Shared settings via `setting.set`: `tipChips`, `roundOffSteps` (F-45), `splitMode`, `splitExact:<personId>` (F-47).
+
 ## 5. Interaction owners
 | Screen | Interaction owner | Gestures (one per direction) |
 | --- | --- | --- |
