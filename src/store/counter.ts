@@ -34,7 +34,7 @@ function makeCtx(core: Core, log: Log) {
   /** Stock left for new taps: count minus what is already in draft lines anywhere. */
   const available = (itemId: string): number => {
     const it = st().folded.items[itemId];
-    if (!it || it.removed || it.soldOut) return 0;
+    if (!it || it.removed || it.soldOut || it.supply) return 0;
     if (it.count === null) return Number.POSITIVE_INFINITY;
     const drafts = liveOrders(st().folded).reduce((n, o) => n + o.lines.filter((l) => l.itemId === itemId).reduce((m, l) => m + l.qty - l.committed, 0), 0);
     return it.count - drafts;
@@ -76,7 +76,7 @@ function lineActions(x: Ctx, nav: Nav) {
     /** Tap a menu card: +1 (F-06). */
     addItem(itemId: string) {
       const it = st().folded.items[itemId];
-      if (!it || it.removed) return;
+      if (!it || it.removed || it.supply) return;
       if (it.soldOut || available(itemId) < 1) { toast(`${it.name} is sold out`); return; }
       const o = current() ?? ensure();
       if (!o) return;

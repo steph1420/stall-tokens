@@ -19,6 +19,8 @@ export interface EntryBody {
 export interface ItemFields {
   name: string; price: Paise; swatch: number; category: string; stationId: string;
   count: number | null; unit: string; lowAt: number; soldOut: boolean; order: number; removed: boolean;
+  /** D-STOCK-SUPPLY: stock-only things (straws, cups) from Paste stock; never on the Menu. Additive, default false. */
+  supply: boolean;
 }
 export interface DiscountBody { orderId: string; kind: 'amount' | 'pct'; value: number; allowedBy: string; note: string }
 export interface PaymentBody {

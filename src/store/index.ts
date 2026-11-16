@@ -11,6 +11,7 @@ import { kitchenActions } from './kitchen';
 import { openActions } from './open';
 import { moneyActions } from './money';
 import { settleActions } from './settle';
+import { stockActions } from './stock';
 import { liveOrders as live } from './fold/fold';
 import { pauseMoves } from './rules/kitchen';
 import type { Screen, Sheet, StallScreen } from './ui';
@@ -19,6 +20,7 @@ export type { CounterTab, Screen, Sheet, StallScreen, StationPlace } from './ui'
 export type { EntryDraft } from './money';
 export * as money from './rules/money';
 export * as settle from './rules/settle';
+export * as stock from './rules/stock';
 export type { Split } from './rules/settle';
 export * as kitchen from './rules/kitchen';
 export type { Folded } from './fold/state';
@@ -39,6 +41,7 @@ export interface AppState extends CoreState {
   readonly open: ReturnType<typeof openActions>;
   readonly money: ReturnType<typeof moneyActions>;
   readonly settle: ReturnType<typeof settleActions>;
+  readonly stock: ReturnType<typeof stockActions>;
   /** D-NAV: open a Stall screen; Back returns to the launch screen or the Counter. */
   readonly openStall: (screen: StallScreen) => void;
   readonly closeStall: () => void;
@@ -83,6 +86,7 @@ export function createAppStore(ds: DataSource, opts: StoreOptions = {}): AppStor
       open: openActions(core, l),
       money: moneyActions(core, l),
       settle: settleActions(core, l),
+      stock: stockActions(core, l, (amount, label, note, parts) => get().money.addEntry({ dir: 'spent', amount, label, kind: 'normal', parts, note, personId: null })),
       ...navActions(core),
       setPrefs(patch) { const next = { ...get().prefs, ...patch }; ds.device.write(next); set({ prefs: next }); },
       retrySave() { l.retrySave(); },

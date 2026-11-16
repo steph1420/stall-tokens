@@ -28,7 +28,7 @@ export const CONFIG = Object.freeze({
   },
   stations: ['Tortillas', 'Momos', 'Desserts', 'Sandwiches', 'Cutlets', 'Beverages'] as const,
   swatchCount: 8, // item colours are swatch indexes into --dl-stall-swatch-N (tokens)
-  stock: { lowAtDefault: 5 },
+  stock: { lowAtDefault: 5, supplyCategory: 'Supplies' },
   sync: { pollMinMs: 4000, pollMaxMs: 60000, backoff: 2, pushBatch: 200, timeoutMs: 15000 },
   timings: { toastMs: 2600, fakeDelayMs: 120, clockTickMs: 30000 },
   // Open Orders header: dots up to this many orders, then "3 of 12" (Q-ORDERS-1).

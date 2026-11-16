@@ -60,6 +60,10 @@
   --dl-stall-cta: linear-gradient(180deg, #8be7ff 0%, #45eef8 42%, #2ac4e8 100%);
   --dl-stall-cta-shadow: inset 0 1px 0 rgba(255,255,255,.45), 0 0 18px rgba(69,238,248,.22);
   --dl-stall-on-cta: #041018;
+  --dl-stall-blue: #2a76e0;
+  --dl-stall-on-blue: #ffffff;
+  --dl-stall-paste-bg: #fff4c2;
+  --dl-stall-paste-text: #2a2210;
   --dl-stall-del-bg: color-mix(in srgb, #FF453A 74%, #3a1018);
   --dl-stall-sheet: rgba(11,22,40,.96);
   --dl-stall-pop: 0 10px 28px rgba(0,0,0,.45);
@@ -90,6 +94,10 @@
   --dl-stall-cta: linear-gradient(180deg, #7ff0ff 0%, #2fe0f0 45%, #12bfe0 100%);
   --dl-stall-cta-shadow: inset 0 1px 0 rgba(255,255,255,.6), 0 4px 14px rgba(6,182,212,.35);
   --dl-stall-on-cta: #031620;
+  --dl-stall-blue: #1f6fd9;
+  --dl-stall-on-blue: #ffffff;
+  --dl-stall-paste-bg: #fff4c2;
+  --dl-stall-paste-text: #2a2210;
   --dl-stall-del-bg: #d70015;
   --dl-stall-sheet: rgba(255,255,255,.97);
   --dl-stall-pop: 0 10px 28px rgba(10,40,80,.18);

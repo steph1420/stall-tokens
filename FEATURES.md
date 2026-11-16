@@ -32,8 +32,8 @@ Every feature has a row before work starts. IDs appear in code (`// F-xx`) and i
 | F-27 | Partners: shares per fair, pending warning, Split anyway | partners.html, Q-SETTLE-GAPS | building | src/store/settle.test.ts | planned |
 | F-28 | Person sheet: Pay (partial), Mark cleared with reasons + note, undo | settlesheet.html, clearnote.html | building | src/store/settle.test.ts | planned |
 | F-29 | Lock day / reopen, carry-over, loss day | Q-SETTLE-GAPS | building | src/store/settle.test.ts | planned |
-| F-30 | Stock screen with navrail categories, Low / Sold out filters | 21-polish2/stock.html, Q-STOCK-SET | planned | | planned |
-| F-31 | Stock paste sheet (parser + one Spent entry) | 21-polish2/stockpaste.html, Q-PASTE-1 A, Q-STOCK-SET | planned | | planned |
+| F-30 | Stock screen with navrail categories, Low / Sold out filters | 21-polish2/stock.html, Q-STOCK-SET | building | src/store/stock.test.ts | planned |
+| F-31 | Stock paste sheet (parser + one Spent entry) | 21-polish2/stockpaste.html, Q-PASTE-1 A, Q-STOCK-SET | building | src/store/rules/stock.test.ts, src/store/stock.test.ts | planned |
 | F-32 | Open the stall (float count) | 21-polish2/float.html | planned | | planned |
 | F-33 | History per day with Edit / Refund / Hold to cancel | 21-polish2/history.html | planned | | planned |
 | F-34 | Settings (Appearance, Feel/haptics, Sync, token range, payees, passcode, Developer, footer) | 21-polish2/settings.html, D-ACCESS, D-THEME | planned | | change |

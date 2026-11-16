@@ -2,6 +2,8 @@
 All notable changes to Stall Tokens. SemVer. Times IST.
 
 ## [Unreleased] — 2.0.0 (branch `feat/v2.0.0`)
+### Added (16 Nov 19:20, Stock)
+- Stock (F-30): search, navrail of categories + Low · n + Sold out, counts amber when low, dimmed Sold out, tap a row for −/+ (never below 0). Paste stock (F-31): paste box with format hint, Will add preview (+qty unit, paid, discount, New item; unclear lines amber), Paid by, "Add n · Spent ₹total"; adds stock and one Spent entry (Q-PASTE-1 A). New pasted things become supply items (additive item field `supply`, D-STOCK-SUPPLY), never on the Menu. 3 tests.
 ### Added (16 Nov 19:00, Settlement)
 - Settlement (F-26..F-29): Settle up (Stall in hand, 1 Repay others with Pay, 2 Split between partners dimmed until step 1 is done, Repay all) and Partners (pending repayments warning with Review, To split, shares %, "Covering …'s ₹… · added back", Add a partner, Split anyway / Split and lock the day, Reopen). Person sheet: amount (partial ok), Via / When tiles, history with Undo, Mark cleared + Pay; Mark cleared asks Gifted / Paid directly / Written off / Shared cost + note. Ops `settle.pay`, `settle.clear`, `settle.undo`, `day.lock` (additive). A locked day refuses money changes. 2 store tests.
 ### Added (16 Nov 18:50, Money)

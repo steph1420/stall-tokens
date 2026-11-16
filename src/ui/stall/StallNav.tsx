@@ -6,6 +6,7 @@ import kit from '../kit/kit.module.css';
 export const STALL_SCREENS: readonly { id: StallScreen; label: string; hint: string }[] = [
   { id: 'money', label: 'Money', hint: 'Spent, received, refunds due' },
   { id: 'settle', label: 'Settle up', hint: 'Repay others, split between partners' },
+  { id: 'stock', label: 'Stock', hint: 'Counts, low and sold out, paste a bill' },
 ];
 
 export function StallNav({ className, onGo }: { className?: string | undefined; onGo?: () => void }) {

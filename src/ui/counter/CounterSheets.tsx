@@ -32,7 +32,7 @@ function Swatches({ value, onPick }: { value: number; onPick: (i: number) => voi
 function ItemSheet({ itemId }: { itemId: string | null }) {
   const close = useClose();
   const it = useApp((st) => (itemId ? st.folded.items[itemId] : undefined));
-  const cats = useApp((st) => [...new Set(Object.values(st.folded.items).filter((i) => !i.removed).map((i) => i.category).filter(Boolean))]);
+  const cats = useApp((st) => [...new Set(Object.values(st.folded.items).filter((i) => !i.removed && !i.supply).map((i) => i.category).filter(Boolean))]);
   const cat = useApp((st) => st.catalog);
   const [name, setName] = useState(it?.name ?? '');
   const [price, setPrice] = useState(it ? String(it.price / R) : '');

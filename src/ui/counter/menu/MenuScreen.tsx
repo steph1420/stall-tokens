@@ -54,7 +54,7 @@ export function MenuScreen() {
   const order = useApp((st) => (st.ui.orderId ? st.folded.orders[st.ui.orderId] : undefined));
   const c = useApp((st) => st.counter);
   const openSheet = useApp((st) => st.openSheet);
-  const items = Object.values(folded.items).filter((i) => !i.removed).sort((a, b) => a.order - b.order || a.name.localeCompare(b.name));
+  const items = Object.values(folded.items).filter((i) => !i.removed && !i.supply).sort((a, b) => a.order - b.order || a.name.localeCompare(b.name));
   const count = order?.lines.reduce((n, l) => n + l.qty, 0) ?? 0;
   return (
     <>
