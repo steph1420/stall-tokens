@@ -12,6 +12,7 @@ import { openActions } from './open';
 import { moneyActions } from './money';
 import { settleActions } from './settle';
 import { stockActions } from './stock';
+export { kindKey, type NewKinds } from './stock';
 import { liveOrders as live } from './fold/fold';
 import { pauseMoves } from './rules/kitchen';
 import type { Screen, Sheet, StallScreen } from './ui';

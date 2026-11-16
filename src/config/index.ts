@@ -31,7 +31,8 @@ export const CONFIG = Object.freeze({
   },
   stations: ['Tortillas', 'Momos', 'Desserts', 'Sandwiches', 'Cutlets', 'Beverages'] as const,
   swatchCount: 8, // item colours are swatch indexes into --dl-stall-swatch-N (tokens)
-  stock: { lowAtDefault: 5, supplyCategory: 'Supplies' },
+  // Q-SUPPLY-CONFIRM B: a pasted thing marked "Menu" lands in `newMenuCategory` at ₹0 until a price is set.
+  stock: { lowAtDefault: 5, supplyCategory: 'Supplies', newMenuCategory: 'New' },
   // F-44 baked-in sync (Steve 19:33): a build can carry the bridge URL / key (VITE_SYNC_URL, VITE_SYNC_KEY); empty by default.
   sync: { bakedUrl: envStr('VITE_SYNC_URL'), bakedKey: envStr('VITE_SYNC_KEY'), pollMinMs: 4000, pollMaxMs: 60000, backoff: 2, pushBatch: 200, timeoutMs: 15000 },
   timings: { toastMs: 2600, fakeDelayMs: 120, clockTickMs: 30000, printDelayMs: 300 },

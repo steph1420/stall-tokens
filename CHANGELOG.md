@@ -2,6 +2,9 @@
 All notable changes to Stall Tokens. SemVer. Times IST.
 
 ## [Unreleased] — 2.0.0 (branch `feat/v2.0.0`)
+### Changed (16 Nov 20:30, Paste stock asks Menu or Stock only, F-46, Q-SUPPLY-CONFIRM B)
+- Each new thing in Paste stock shows Menu / Stock only; Add stays off until every new thing is chosen. Menu = a menu item in category New at ₹0 (set its price on the Menu); Stock only = a supply item (was: every new thing became a supply, D-STOCK-SUPPLY).
+
 ### Added (16 Nov 20:20, shared tip choices / round-off steps, F-45)
 - Tip choices and round-off steps are shared `setting.set` values (`tipChips`, `roundOffSteps`, comma-separated paise), synced to every phone and the Sheet `settings` tab; CONFIG keeps the defaults. Edit them in Settings > Money, with the pencil on the Payment tip row, or under Round-off in the Billing discount sheet (`ui/kit/AmountsEdit.tsx`).
 

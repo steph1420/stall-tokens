@@ -42,3 +42,8 @@
 .paidBy b { font-size: 1.125rem; color: var(--dl-color-text-display); }
 .addGo { width: 100%; margin-top: 0.875rem; min-height: 3.5rem; border-radius: var(--dl-radius-lg); font-size: 1.1875rem; font-weight: 700; color: var(--dl-stall-on-blue); background: var(--dl-stall-blue); }
 .addGo:disabled { opacity: 0.45; }
+/* Q-SUPPLY-CONFIRM B: Menu / Stock only per new thing */
+.wl { flex-wrap: wrap; }
+.kinds { flex-basis: 100%; display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; padding-bottom: 0.75rem; }
+.kind { min-height: var(--dl-hit-comfortable); border-radius: var(--dl-radius-md); font-size: 0.9375rem; font-weight: 600; color: var(--dl-color-text); background: var(--dl-color-surface-raised, var(--dl-color-surface)); box-shadow: inset 0 0 0 var(--dl-stall-hair) var(--dl-color-hairline); }
+.kindOn { composes: kind; color: var(--dl-stall-on-blue); background: var(--dl-stall-blue); box-shadow: none; }
