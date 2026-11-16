@@ -8,6 +8,7 @@ Stopped early on Steve's request (quota). Nothing deployed; main untouched.
 - Sign-in links (F-44): Developer > Sign-in links; passcode off by default (code kept). Test: `src/data/join.test.ts` (2). Shots: `s80-signin-links`, `s81-link-opened-station`.
 - Shared tip choices / round-off steps (F-45): Settings, Payment tip row, Billing round-off. Test: `src/store/rules/amounts.test.ts` (2). Shots: `s85-settings-tips-edit`, `s86-billing-roundoff-edit`, `s87-payment-tips-edit`.
 - Paste stock Menu / Stock only per new thing (F-46, Q-SUPPLY-CONFIRM B, replaces D-STOCK-SUPPLY's always-supply). Test: `src/store/stock.test.ts` (2). Shot: `s52-paste-menu-or-stock`.
+- Bluetooth slip printing (F-41): ESC/POS over Web Bluetooth, falls back to window.print 58 mm. Not tried on a real printer (none here). Test: `src/store/rules/escpos.test.ts` (1). Shot: `s71-token-slip-bt` (printer refused → reason + Print (58 mm)).
 
 ## Build pass 2 (2026-11-16 18:35 IST onwards, Pos; Steve "build as much as you can")
 - New Orders / Open Orders (F-05, F-43, Q-ORDERS-1 v3): top tabs; New Orders = Menu / Billing / Payment + one current-order line (chips row and the old Open orders drop-down removed); Open Orders = cyan band + Overview, one big squircle per order (header swipe / tap = order sheet), Lines / Cards, Confirm / Confirm all, Mark ready, hidden tap-to-change (D-OPEN-TAP), bar Cancel order + Handover. `order.client` op. Tests: `src/ui/counter/open/OpenOrdersScreen.test.tsx` (2). Shots: `/workspace/pos-shots/s2[0-4]-*`.

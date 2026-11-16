@@ -2,6 +2,9 @@
 All notable changes to Stall Tokens. SemVer. Times IST.
 
 ## [Unreleased] — 2.0.0 (branch `feat/v2.0.0`)
+### Added (16 Nov 20:40, Bluetooth slip printing, F-41)
+- Print token: where the browser has Web Bluetooth (Chrome on Android) the preview offers Bluetooth printer (ESC/POS, 32 columns, ASCII with "Rs", feed + cut; `store/rules/escpos.ts`, `data/adapters/btPrinter.ts`) or Print (58 mm); a printer error says why and leaves Print (58 mm). Without Web Bluetooth it prints with the browser straight away, as before.
+
 ### Changed (16 Nov 20:30, Paste stock asks Menu or Stock only, F-46, Q-SUPPLY-CONFIRM B)
 - Each new thing in Paste stock shows Menu / Stock only; Add stays off until every new thing is chosen. Menu = a menu item in category New at ₹0 (set its price on the Menu); Stock only = a supply item (was: every new thing became a supply, D-STOCK-SUPPLY).
 

@@ -1,41 +1,72 @@
 // F-42 Token slip (D-SLIP): about 58 mm wide, printable from the browser (Print token on the paid screen). Stall name,
 // big token number, IST time, items × qty, total, how it was paid, "Show this at pickup". Black on white for paper.
-// The same layout will feed a Bluetooth thermal printer later (DECISIONS backlog); no printer code here.
-import { useEffect } from 'react';
+// F-41 (Steve 16 Nov 19:31 IST): where Web Bluetooth exists the same text goes to a thermal printer as ESC/POS;
+// otherwise, or if the printer fails, window.print at 58 mm.
+import { useEffect, useState } from 'react';
 import { CONFIG } from '../../config';
 import { formatInr, type Order } from '../../contract';
-import { bill, formatToken, istClock, useApp } from '../../store';
+import { bill, bluetoothPrint, canBluetoothPrint, escposSlip, formatToken, istClock, useApp, type SlipText } from '../../store';
 import s from './TokenSlip.module.css';
 
-export function SlipBody({ o }: { o: Order }) {
+function useSlipText(o: Order): SlipText {
   const stall = useApp((x) => x.folded.settings.stallName ?? 'Fair stall');
   const cash = o.payments.reduce((t, p) => t + p.cash, 0); const upi = o.payments.reduce((t, p) => t + p.upi, 0);
+  return {
+    stall, token: formatToken(o.token, CONFIG.tokens.pad),
+    meta: `${istClock(o.payments[0]?.at ?? o.createdAt)}${o.client ? ` · ${o.client}` : ''}`,
+    lines: o.lines.map((l) => [`${l.name}${l.qty > 1 ? ` ×${String(l.qty)}` : ''}`, formatInr(l.price * l.qty)] as const),
+    total: formatInr(bill.total(o)),
+    paid: cash && upi ? 'Paid · cash + UPI' : upi ? 'Paid · UPI' : cash ? 'Paid · cash' : 'Not paid yet',
+  };
+}
+
+export function SlipBody({ o }: { o: Order }) {
+  const t = useSlipText(o);
   return (
     <div className={s.slip} aria-label="Token slip">
-      <div className={s.stall}>{stall}</div>
+      <div className={s.stall}>{t.stall}</div>
       <div className={s.tokLab}>Token</div>
-      <div className={s.tok}>{formatToken(o.token, CONFIG.tokens.pad)}</div>
-      <div className={s.meta}>{`${istClock(o.payments[0]?.at ?? o.createdAt)}${o.client ? ` · ${o.client}` : ''}`}</div>
-      <ul className={s.lines}>{o.lines.map((l) => <li key={l.lineId}><span>{`${l.name}${l.qty > 1 ? ` ×${String(l.qty)}` : ''}`}</span><span>{formatInr(l.price * l.qty)}</span></li>)}</ul>
-      <div className={s.total}><span>Total</span><span>{formatInr(bill.total(o))}</span></div>
-      <div className={s.meta}>{cash && upi ? 'Paid · cash + UPI' : upi ? 'Paid · UPI' : cash ? 'Paid · cash' : 'Not paid yet'}</div>
+      <div className={s.tok}>{t.token}</div>
+      <div className={s.meta}>{t.meta}</div>
+      <ul className={s.lines}>{t.lines.map(([l, r], i) => <li key={`${String(i)}${l}`}><span>{l}</span><span>{r}</span></li>)}</ul>
+      <div className={s.total}><span>Total</span><span>{t.total}</span></div>
+      <div className={s.meta}>{t.paid}</div>
       <div className={s.foot}>Show this at pickup</div>
     </div>
   );
 }
 
-/** Full-screen preview that prints itself once shown; closes after the print dialog. */
-export function TokenSlipPrint({ o, onDone }: { o: Order; onDone: () => void }) {
+/** Browser print at 58 mm: prints itself once shown; closes after the print dialog. */
+function useAutoPrint(on: boolean, onDone: () => void) {
   useEffect(() => {
+    if (!on) return undefined;
     const after = () => { onDone(); };
     window.addEventListener('afterprint', after);
     const t = setTimeout(() => { window.print(); }, CONFIG.timings.printDelayMs);
     return () => { clearTimeout(t); window.removeEventListener('afterprint', after); };
-  }, [onDone]);
+  }, [on, onDone]);
+}
+
+/** Full-screen preview. With Web Bluetooth: Bluetooth printer or Print (58 mm); without: browser print straight away. */
+export function TokenSlipPrint({ o, onDone }: { o: Order; onDone: () => void }) {
+  const bt = canBluetoothPrint();
+  const [paper] = useState(!bt);
+  const [msg, setMsg] = useState('');
+  const t = useSlipText(o);
+  useAutoPrint(paper, onDone);
+  const viaBt = () => {
+    setMsg('Sending to the printer…');
+    bluetoothPrint(escposSlip(t)).then(() => { onDone(); }, (e: unknown) => { setMsg(`${e instanceof Error ? e.message : 'Printer did not answer'} · use Print (58 mm)`); });
+  };
   return (
     <div className={s.preview} role="dialog" aria-label="Print token">
       <SlipBody o={o} />
-      <button type="button" className={s.close} onClick={onDone}>Close</button>
+      {msg ? <p className={s.msg} role="status">{msg}</p> : null}
+      <div className={s.btns}>
+        {bt ? <button type="button" className={s.close} onClick={viaBt}>Bluetooth printer</button> : null}
+        {bt ? <button type="button" className={s.close} onClick={() => { window.print(); }}>Print (58 mm)</button> : null}
+        <button type="button" className={s.close} onClick={onDone}>Close</button>
+      </div>
     </div>
   );
 }
