@@ -5,7 +5,7 @@ import { chromium } from '@playwright/test';
 import { demoOps } from './seed-plain.mjs';
 
 const out = process.argv[2] ?? '.';
-const BETA = 'https://steph1420.github.io/stall-tokens-beta/';
+const BETA = process.env.BETA_URL ?? 'https://steph1420.github.io/stall-tokens-beta/';
 const SIZES = [['360x740', 360, 740], ['390x844', 390, 844], ['421x927', 421, 927], ['430x932', 430, 932],
   ['ipad-820x1180', 820, 1180], ['ipad-1180x820', 1180, 820], ['land-927x421', 927, 421]];
 const VARIANTS = [...SIZES.map((s) => [...s, 'night', '']), ['421x927', 421, 927, 'day', ''], ['421x927-text200', 421, 927, 'night', 'text200'], ['421x927-safearea', 421, 927, 'night', 'safe']];
@@ -22,7 +22,9 @@ const measure = (p) => p.evaluate(() => {
   const fixed = [...document.querySelectorAll('body *')].filter(vis).filter((e) => ['fixed', 'sticky'].includes(getComputedStyle(e).position)).map((e) => e.getBoundingClientRect()).filter((r) => r.height < vh * 0.6);
   let overlap = 0; for (let i = 0; i < fixed.length; i++) for (let j = i + 1; j < fixed.length; j++) { const a = fixed[i], c = fixed[j]; const ix = Math.min(a.right, c.right) - Math.max(a.left, c.left), iy = Math.min(a.bottom, c.bottom) - Math.max(a.top, c.top); if (ix > 4 && iy > 4 && !(a.left >= c.left && a.right <= c.right && a.top >= c.top && a.bottom <= c.bottom) && !(c.left >= a.left && c.right <= a.right && c.top >= a.top && c.bottom <= a.bottom)) overlap++; }
   const bottomBelow = [...document.querySelectorAll('button')].filter(vis).filter((e) => e.getBoundingClientRect().bottom > vh + 1 && getComputedStyle(e.parentElement ?? e).position === 'fixed').length;
-  return { hscroll: de.scrollWidth > vw + 1 || document.body.scrollWidth > vw + 1, off, small, overlap, bottomBelow };
+  const confirm = [...document.querySelectorAll('button')].find((e) => /^Confirm payment$/.test((e.textContent ?? '').trim()));
+  const inView = confirm ? (() => { const r = confirm.getBoundingClientRect(); return r.top >= 0 && r.bottom <= vh + 1 && r.left >= 0 && r.right <= vw + 1; })() : null;
+  return { hscroll: de.scrollWidth > vw + 1 || document.body.scrollWidth > vw + 1, off, small, overlap, bottomBelow, confirmInView: inView };
 });
 
 const rows = [];
@@ -43,7 +45,9 @@ for (const [label, w, h, theme, mode] of VARIANTS) {
   await go('2-menu', async () => { await p.getByRole('button', { name: /counter/i }).first().click(); for (const n of ['Tea', 'Samosa', 'Coffee']) await p.getByRole('button', { name: new RegExp(`^${n}, add one`) }).first().click(); });
   await go('3-billing', async () => { await p.getByRole('button', { name: /^Bill|items/ }).last().click(); });
   await go('4-payment', async () => { await p.getByRole('button', { name: 'To kitchen' }).first().click(); await p.getByRole('button', { name: /^Pay/ }).first().click(); });
-  await go('5-open', async () => { await p.getByRole('tab', { name: /Open Orders/ }).click(); });
+  await go('5-unpaid', async () => { await p.getByRole('tab', { name: /Unpaid/ }).click(); });
+  await go('5b-orderview', async () => { await p.getByRole('button', { name: /#001/ }).first().click(); });
+  await go('5c-open', async () => { await p.getByRole('tab', { name: /Open Orders/ }).click(); });
   await go('6-kitchen', async () => { await p.goto(BETA); await p.waitForTimeout(400); if (mode === 'text200') await p.addStyleTag({ content: 'html{font-size:200% !important}' }); await p.getByRole('button', { name: /^Kitchen/ }).first().click(); });
   await go('7-settings', async () => { await p.goto(BETA); await p.waitForTimeout(400); if (mode === 'text200') await p.addStyleTag({ content: 'html{font-size:200% !important}' }); await p.getByRole('button', { name: /settings/i }).first().click(); });
   await ctx.close();

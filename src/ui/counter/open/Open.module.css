@@ -23,7 +23,7 @@
 .navR svg { transform: scaleX(-1); }
 .navL:disabled, .navR:disabled { opacity: 0.3; }
 .div { height: var(--dl-stall-hair); margin: 0.25rem 1.125rem 0; background: var(--dl-color-hairline); }
-.lookRow { display: flex; justify-content: space-between; align-items: center; padding: 0.625rem 1.125rem 0.25rem; }
+.lookRow { display: flex; flex-wrap: wrap; gap: 0.5rem; justify-content: space-between; align-items: center; padding: 0.625rem 1.125rem 0.25rem; }
 .lk { font-size: 0.75rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--dl-color-text-faint); }
 .looks { display: flex; padding: 0.125rem; border-radius: var(--dl-radius-sm); background: var(--dl-color-track); }
 .look { min-height: var(--dl-hit-min); padding: 0 0.75rem; border-radius: var(--dl-radius-xs); font-size: 0.8125rem; font-weight: 600; color: var(--dl-color-text-muted); }

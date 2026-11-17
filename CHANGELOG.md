@@ -3,6 +3,18 @@ All notable changes to Stall Tokens. SemVer. Times IST.
 
 ## [Unreleased]
 
+### 2.1.0 P2 — Counter (17 Nov 2026, Beta only; F-54..F-57)
+- **Two phones, one order (s127, locked).** The phone with an order on screen holds it. Another phone that opens it sees "#012 is open on Counter 1" with **Check now**, a 10 s countdown, and **Take over** · **New order** · **Back**. Leaving the order (Back, another order, cancel, complete, or 30 s in the background) hands it over at once; a phone not heard from for 90 s lets go by itself. The phone that was taken over goes view-only ("Taken over by Counter 2") with its own Take over. If this phone is busy with another order when the waited-for one comes free, a calm toast offers **Open** instead of switching.
+- **Unpaid tab (s120).** Third Counter tab with a red count and "₹X to collect". Tap a row for the order: **Take payment**, or press and hold the yellow bar to complete without payment (the amount stays on record).
+- **Refund (s122).** One tap refunds the whole order the way it was paid, with **Undo** in the toast. "Change lines, reason or note ›" opens the Refund sheet: some items or an amount, reason, note, Cash or UPI, back to stock. From the order view and the Open Orders order sheet.
+- **Drafts (s123).** A "Drafts n" pill beside + lists unsent orders from every Counter; Discard needs a second tap.
+- **A new day?** On a new date with yesterday's day still open, the first new order asks: Start today (tokens from #001) or Keep yesterday's day. The item you tapped is added after you answer.
+- **Phone Back** steps back inside the app (sheet, order, tab, page, start screen) and never closes it mid-order. The token slip is a sheet, so Back closes it.
+- Large text (200 %): Billing reflows into stacked rows, bars wrap, **Confirm payment** always stays on screen. Every Counter button is at least 44 px. One New order on the paid screen.
+- Fixes from the walkthrough: Open Orders band removed, Overview moved beside Lines/Cards (W-01); colour swatches show (W-02); Category is a list with "+ Add category…", a new item takes its category's usual station (W-03); Stall list bullets and wrapping (W-04); a double tap on Handover no longer hands over the next order (W-09); "Adds up ✓" instead of "Paid ✓" before Confirm (W-15); a discount can't be more than the bill and a free order needs a note (W-16); long names clamp to two lines on the menu (W-17); History shows #004 (W-18); Print token from the order sheet and order view (W-19); cancelling a paid order is press-and-hold (W-21).
+- Menu search and sort (past 8 items): Menu order, A to Z, Most sold today.
+- Bluetooth printer errors are now plain: "The printer did not answer. Check it is on and near, or use Print (58 mm)."
+
 ### 2.1.0 P1 — data and rules, no new screens (17 Nov 2026, Beta only; F-50..F-53)
 - **Unpaid orders no longer vanish (W-05, W-08).** Handing over an unpaid order keeps it on Open Orders as Unpaid. Only Handover + paid, or Complete, finishes an order (Q-COMPLETE-2 A).
 - **Ready never finishes an order (W-06, W-27).** A line the Counter marks Ready stays on the Kitchen and Station, muted ("Marked by counter"), until it is handed over.

@@ -1,4 +1,4 @@
-// P2 Counter sheets: Drafts (s123), the new-day question (W-22), the Refund sheet (s122 "Change lines, reason or
+// F-55 F-56 P2 Counter sheets: Drafts (s123), the new-day question (W-22), the Refund sheet (s122 "Change lines, reason or
 // note") and the token slip as a sheet so the phone's Back closes it (W-24).
 import { useState } from 'react';
 import { CONFIG } from '../../config';

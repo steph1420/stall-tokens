@@ -1,4 +1,4 @@
-// s127 take-over (locked 17 Nov 2026). s127a: the order is open on another phone: Take over / New order / Back, with
+// F-54 s127 take-over (locked 17 Nov 2026). s127a: the order is open on another phone: Take over / New order / Back, with
 // an automatic check every 10 s and a big Check now (Steve pt9u). s127b: this phone's order was taken: view only, with
 // its own Take over. While either shows, the order underneath cannot be changed (inert; the store refuses too).
 import { useEffect, useState } from 'react';

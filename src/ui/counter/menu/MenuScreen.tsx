@@ -53,7 +53,7 @@ function Card({ it }: { it: Item }) {
 
 type Sort = 'menu' | 'az' | 'sold';
 const matches = (i: Item, q: string) => { const t = q.trim().toLowerCase(); return !t || i.name.toLowerCase().includes(t) || i.category.toLowerCase().includes(t); };
-/** P2 menu sort: the stall's own order, A to Z, or most sold on the current day (the count is kept per item id). */
+/** F-57 P2 menu sort: the stall's own order, A to Z, or most sold on the current day (the count is kept per item id). */
 function sortItems(items: Item[], sort: Sort, f: Folded): Item[] {
   const byMenu = (a: Item, b: Item) => a.order - b.order || a.name.localeCompare(b.name);
   if (sort === 'az') return [...items].sort((a, b) => a.name.localeCompare(b.name));

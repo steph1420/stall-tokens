@@ -1,4 +1,4 @@
-// s121 / s122 order view (P2), opened from the Unpaid tab. Unpaid: Take payment, and the yellow hold bar to complete
+// F-55 s121 / s122 order view (P2), opened from the Unpaid tab. Unpaid: Take payment, and the yellow hold bar to complete
 // without payment (Q-COMPLETE-2 A, Q-HOLD-RING A). Paid: Refund in one tap (whole, same way it was paid, Undo toast),
 // "Change lines, reason or note ›" for the Refund sheet, Reprint, and Complete.
 import { CONFIG } from '../../../config';

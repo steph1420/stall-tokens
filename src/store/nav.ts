@@ -1,4 +1,4 @@
-// W-13 / W-24 one navigation owner (06 rule 2): the phone's Back closes the top sheet, then steps back through the
+// F-56 W-13 / W-24 one navigation owner (06 rule 2): the phone's Back closes the top sheet, then steps back through the
 // Counter, then the screen, and never leaves the app mid-order. Pure step + the history trap the App arms.
 import type { CoreState } from './core';
 import type { UiState } from './ui';

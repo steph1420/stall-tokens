@@ -14,7 +14,7 @@ import type { CounterTab } from './ui';
 function navActions(core: Core, { st, ui, order, log }: Ctx) {
   const list = () => openOrders(liveOrders(st().folded));
   return {
-    showTab(tab: CounterTab) { ui({ counterTab: tab, sheet: null }); },
+    showTab(tab: CounterTab) { ui({ counterTab: tab, sheet: null, orderView: null }); },
     showOpen(orderId: string) { ui({ openId: orderId }); },
     /** Swipe the header for the previous / next order. */
     stepOpen(dir: 1 | -1) {
