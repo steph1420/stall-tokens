@@ -97,9 +97,10 @@ describe('pay4 tip like waive (D-PAY4-1)', () => {
     expect(tip).toEqual(['₹10', '₹20', 'Other']);
     expect(screen.queryByRole('button', { name: /No tip|Edit tip/ })).toBeNull();
     tap(/^− Waive/);
-    expect(chips('Waive').slice(0, 3)).toEqual(tip);
+    expect(chips('Waive')).toEqual(tip);
+    expect(screen.queryByRole('button', { name: /Who/ })).toBeNull();
   });
-  it('tap a lit chip to take the tip off; an Other tip shows as its own lit chip', async () => {
+  it('tap a lit chip to take the tip off; an Other tip shows as its own lit chip and keeps the picker open', async () => {
     await payScreen();
     const d0 = due();
     tap(/^\+ Tip/); chip('Tip', 1);
@@ -109,11 +110,32 @@ describe('pay4 tip like waive (D-PAY4-1)', () => {
     chip('Tip', 1);
     expect(due()).toBe(d0);
     tap(/^\+ Tip/); tap('Other');
+    expect(screen.getByRole('group', { name: 'Tip' })).toBeTruthy();
     for (const k of ['1', '5']) tap(k);
+    expect(screen.getByRole('group', { name: 'Tip' })).toBeTruthy();
     tap('Done');
     expect(due()).toBe(d0 + 15);
-    tap(/^\+ Tip/);
     expect(chips('Tip')).toEqual(['₹10', '₹20', '₹15', 'Other']);
     expect(within(screen.getByRole('group', { name: 'Tip' })).getAllByRole('button')[2]?.getAttribute('aria-pressed')).toBe('true');
+  });
+  it('Other on Waive keeps the chips open; Allowed by is a note under the amount, not on the picker', async () => {
+    await payScreen();
+    tap(/^− Waive/);
+    expect(chips('Waive')).toEqual(['₹10', '₹20', 'Other']);
+    tap('Other');
+    expect(screen.getByRole('group', { name: 'Waive' })).toBeTruthy();
+    expect(screen.getByRole('dialog', { name: 'Number pad' })).toBeTruthy();
+    expect(screen.queryByRole('button', { name: /Who/ })).toBeNull();
+    for (const k of ['3', '0']) tap(k);
+    expect(screen.getByRole('group', { name: 'Waive' })).toBeTruthy();
+    tap('Done');
+    const note = screen.getByRole('button', { name: /waived/ });
+    expect(note.getAttribute('aria-label')).toBe('₹30 waived · Allowed by Choose');
+    expect(screen.getByRole('button', { name: 'Confirm payment' }).hasAttribute('disabled')).toBe(false);
+    tap(/waived/);
+    act(() => { fireEvent.change(screen.getByLabelText('Allowed by'), { target: { value: 'Ravi' } }); });
+    act(() => { fireEvent.change(screen.getByLabelText('Note'), { target: { value: 'regular' } }); });
+    tap('Done');
+    expect(screen.getByRole('button', { name: /waived/ }).getAttribute('aria-label')).toBe('₹30 waived · Allowed by Ravi · regular');
   });
 });

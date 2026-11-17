@@ -3,6 +3,11 @@ All notable changes to Stall Tokens. SemVer. Times IST.
 
 ## [Unreleased]
 
+### Waive note (Steve, 17 Nov 2026)
+- Typing an Other amount for − Waive or + Tip no longer closes the chip row.
+- The Waive picker is only for the amount (₹10, ₹20, Other). Once a waiver is set, a calm note under the amounts reads "₹30 waived · Allowed by Choose ▾". Tapping it opens the existing Waived sheet (optional name and reason; Confirm never waits for it).
+- Every handle sheet (and the Payment number pad) can be dragged, closes on a tap outside, and closes with a downward flick.
+
 ### Extras on by default (Q-P4-EXTRAS-ON A), 17 Nov 2026
 - Close the day and History search are on for every phone, including ones with saved settings that never touched the toggle. A phone that explicitly turned one off stays off. The switches stay in Settings › Extras.
 

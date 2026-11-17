@@ -12,7 +12,11 @@
   padding: 0.625rem 1rem calc(1.25rem + env(safe-area-inset-bottom));
   width: 100%; max-width: 40rem; margin: 0 auto;
 }
-.grab { width: 2.25rem; height: 0.25rem; border-radius: var(--dl-radius-pill); background: color-mix(in srgb, var(--dl-color-text-faint) 50%, transparent); margin: 0.125rem auto 0.625rem; }
+.grab {
+  display: flex; justify-content: center; align-items: center; width: 100%;
+  min-height: var(--dl-hit-min); margin: 0 0 0.125rem; touch-action: none; cursor: grab;
+}
+.grab::before { content: ''; width: 2.25rem; height: 0.25rem; border-radius: var(--dl-radius-pill); background: color-mix(in srgb, var(--dl-color-text-faint) 50%, transparent); }
 .sheetTitle { font-family: var(--dl-stall-font-display); font-size: 1.0625rem; font-weight: 600; color: var(--dl-color-text-display); padding: 0 0.25rem 0.75rem; }
 
 .hold { position: relative; overflow: hidden; isolation: isolate; }
