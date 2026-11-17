@@ -9,7 +9,8 @@ const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const pkg = JSON.parse(readFileSync(join(root, 'package.json'), 'utf8'));
 
 function shortSha() {
-  const fromEnv = process.env.GITHUB_SHA ?? process.env.VITE_GIT_SHA;
+  // VITE_GIT_SHA first: the Beta workflow builds this repo from another repo, where GITHUB_SHA is the Beta repo's commit (F-49).
+  const fromEnv = process.env.VITE_GIT_SHA || process.env.GITHUB_SHA;
   if (fromEnv) return fromEnv.slice(0, 7);
   try { return execSync('git rev-parse --short=7 HEAD', { cwd: root, encoding: 'utf8' }).trim(); } catch { return 'unknown'; }
 }
