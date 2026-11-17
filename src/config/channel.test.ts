@@ -18,9 +18,17 @@ describe('channel', () => {
     expect(CHANNELS.stable.prefix).toBe('stall-tokens.v2');
     expect(CHANNELS.beta.prefix).toBe('stall-tokens-beta.v2');
     expect(CHANNELS.beta.prefix.startsWith(CHANNELS.stable.prefix)).toBe(false);
-    // Tests run at the jsdom root with no VITE_CHANNEL: Stable.
-    expect(CONFIG.app.channel).toBe('stable');
-    expect(CONFIG.storage.prefix).toBe('stall-tokens.v2');
-    expect(CONFIG.app.channelLabel).toBe('Stable');
+    // The running config follows its channel (Stable locally, Beta in the stall-tokens-beta CI with VITE_CHANNEL=beta).
+    expect(CONFIG.storage.prefix).toBe(CHANNELS[CONFIG.app.channel].prefix);
+    expect(CONFIG.app.channelLabel).toBe(CHANNELS[CONFIG.app.channel].label);
+  });
+
+  it('never bakes a sync link or key into Beta', () => {
+    if (CONFIG.app.channel === 'beta') {
+      expect(CONFIG.sync.bakedUrl).toBe('');
+      expect(CONFIG.sync.bakedKey).toBe('');
+    } else {
+      expect(CONFIG.app.channel).toBe('stable');
+    }
   });
 });

@@ -1,7 +1,7 @@
 # Status
 
 ## 2.1.0 build (branch `feat/v2.1.0`, Beta only) — P0 done 17 Nov 2026
-- **P0 channel plumbing (F-49, Q-CHANNEL A, Q-BETA-PATH B):** `src/config/index.ts` detects Beta from the `/stall-tokens-beta/` path or `VITE_CHANNEL=beta`; storage prefix by channel (`stall-tokens-beta.v2` on Beta, Stable unchanged `stall-tokens.v2`, receipts DB now follows it); no baked sync on Beta; `vite.config.ts` names manifest + title by channel; Settings › About › Version shows "2.1.0 · Beta/Stable". Test: `src/config/channel.test.ts`. Version 2.1.0. `npm run check` green (94 tests).
+- **P0 channel plumbing (F-49, Q-CHANNEL A, Q-BETA-PATH B):** `src/config/index.ts` detects Beta from the `/stall-tokens-beta/` path or `VITE_CHANNEL=beta`; storage prefix by channel (`stall-tokens-beta.v2` on Beta, Stable unchanged `stall-tokens.v2`, receipts DB now follows it); no baked sync on Beta; `vite.config.ts` names manifest + title by channel; Settings › About › Version shows "2.1.0 · Beta/Stable". Test: `src/config/channel.test.ts`. Version 2.1.0. `npm run check` green on both channels (95 tests; also run with `VITE_CHANNEL=beta`, as the Beta CI does).
 - Beta workflow (`steph1420/stall-tokens-beta`): the sed rewrite became a check only (title, manifest name, Beta prefix in the JS).
 - Stable / `main` untouched. Mockups s119–s126 approved by Steve 17 Nov 06:15 IST.
 - **Next: P1 data + rules (no UI)** per `docs/BUILD_PLAN_2.1.0.md` §1. Not started.

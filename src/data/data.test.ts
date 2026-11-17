@@ -1,10 +1,12 @@
 import 'fake-indexeddb/auto';
 import { describe, expect, it } from 'vitest';
+import { CONFIG } from '../config';
 import { opMaker } from '../mock/fixtures';
 import { createDeviceStore, PREFS_KEY } from './adapters/deviceStore';
 import { createFakeHub, createFakeTransport } from './adapters/fakeTransport';
 import { createFallbackOpStore } from './adapters/fallback';
 import { createLocalIdb, DB_NAME } from './adapters/localIdb';
+import { DB as RECEIPTS_DB } from './adapters/receipts';
 import { createSyncEngine } from './sync/engine';
 
 describe('LocalIdb (F-03)', () => {
@@ -20,8 +22,10 @@ describe('LocalIdb (F-03)', () => {
     expect(again.map((o) => o.opId).sort()).toEqual(['idb.1:1', 'idb.1:2']);
   });
   it('names start with the storage prefix (shared github.io origin)', () => {
-    expect(DB_NAME.startsWith('stall-tokens.v2')).toBe(true);
-    expect(PREFS_KEY.startsWith('stall-tokens.v2')).toBe(true);
+    // F-49: the prefix is per channel (Stable `stall-tokens.v2`, Beta `stall-tokens-beta.v2`).
+    expect(DB_NAME).toBe(`${CONFIG.storage.prefix}.log`);
+    expect(PREFS_KEY.startsWith(CONFIG.storage.prefix)).toBe(true);
+    expect(RECEIPTS_DB).toBe(`${CONFIG.storage.prefix}.receipts`);
   });
 });
 
