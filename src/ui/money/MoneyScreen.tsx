@@ -69,6 +69,7 @@ export function MoneyScreen() {
         <div className={st.tile}><span className={st.tileL}>Spent</span><Money p={d.spent} className={st.tileV} /></div>
         <div className={st.tile}><span className={st.tileL}>{`Received${d.donations ? ` · incl. ${formatInr(d.donations)} donations` : ''}`}</span><Money p={d.received} className={st.tileV} /></div>
         <div className={st.tile}><span className={st.tileL}>Tips (own pot)</span><Money p={d.tips} className={st.tileV} /></div>
+        <div className={st.tile}><span className={st.tileL}>Waived</span><Money p={d.waived} className={st.tileV} /></div>
         <div className={st.tile}><span className={st.tileL}>Register by the book</span><Money p={d.registerFlow + Number(folded.settings[`float:${dayId}`] ?? 0)} className={st.tileV} /></div>
       </div>
       <RefundsDue />

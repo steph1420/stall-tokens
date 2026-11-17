@@ -10,6 +10,7 @@ export function Toast() {
   const handling = useApp((st) => st.handling);
   const refund = useApp((st) => st.refund);
   const kitchen = useApp((st) => st.kitchen);
+  const counter = useApp((st) => st.counter);
   const [shown, setShown] = useState<number | null>(null);
   useEffect(() => {
     if (!toast) return undefined;
@@ -25,6 +26,7 @@ export function Toast() {
     else if (a?.run === 'undoRefund') refund.undo(a.orderId, a.refundId);
     else if (a?.run === 'undoStep') kitchen.undoStep(a.orderId, a.lineId, a.status, a.from);
     else if (a?.run === 'undoPriority') kitchen.undoPriority(a.orderId, a.on);
+    else if (a?.run === 'undoPay') counter.undoAdjust(a.orderId, a.tip, a.waived);
   };
   return (
     <div className={a ? s.toastAct : s.toast} role="status">

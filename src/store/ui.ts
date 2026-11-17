@@ -31,7 +31,10 @@ export type Sheet =
 /** A toast's one button (s127 "Open", s122 "Undo"). */
 export type ToastAction = { readonly label: string; readonly run: 'open'; readonly orderId: string } | { readonly label: string; readonly run: 'undoRefund'; readonly orderId: string; readonly refundId: string }
   | { readonly label: string; readonly run: 'undoStep'; readonly orderId: string; readonly lineId: string; readonly status: LineStatus; readonly from: LineStatus }
-  | { readonly label: string; readonly run: 'undoPriority'; readonly orderId: string; readonly on: boolean };
+  | { readonly label: string; readonly run: 'undoPriority'; readonly orderId: string; readonly on: boolean }
+  | { readonly label: string; readonly run: 'undoPay'; readonly orderId: string; readonly tip: number; readonly waived: number };
+/** pay2: Undo for + Tip / − Waive. The payment draft lives on the screen, so the toast hands the old amounts back here. */
+export interface PayUndo { readonly seq: number; readonly orderId: string; readonly tip: number; readonly waived: number }
 /** `ms` = how long it stays (P3 kitchen Undo: CONFIG.kitchen.undoToastMs); default by kind. */
 export interface ToastState { readonly text: string; readonly id: number; readonly action?: ToastAction; readonly ms?: number }
 
@@ -41,6 +44,7 @@ export interface UiState {
   readonly pages: Readonly<Record<string, Page>>;
   readonly sheet: Sheet | null;
   readonly toast: ToastState | null;
+  readonly payUndo: PayUndo | null;
   /** Kitchen station pill; null = All (Q-OPEN-1 A). */
   readonly kitchenFilter: string | null;
   readonly station: StationPlace | null;
@@ -67,4 +71,4 @@ export interface UiState {
   readonly dayKept: string;
 }
 
-export const initialUi: UiState = { screen: 'launch', orderId: null, pages: {}, sheet: null, toast: null, kitchenFilter: null, station: null, counterTab: 'new', openId: null, stallFrom: 'launch', unlocked: false, orderView: null, waitFor: null, waitLabel: '', heldHere: [], nextCheckAt: 0, pendingItem: '', dayKept: '' };
+export const initialUi: UiState = { screen: 'launch', orderId: null, pages: {}, sheet: null, toast: null, payUndo: null, kitchenFilter: null, station: null, counterTab: 'new', openId: null, stallFrom: 'launch', unlocked: false, orderView: null, waitFor: null, waitLabel: '', heldHere: [], nextCheckAt: 0, pendingItem: '', dayKept: '' };

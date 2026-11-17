@@ -34,16 +34,6 @@
 .tEnd { right: 0; }
 .tMid { transform: translateX(-50%); color: var(--dl-color-text-muted); }
 .over { margin: 0.375rem 0.25rem; font-size: 0.875rem; color: var(--dl-stall-danger-text); }
-.adj { display: flex; width: 100%; align-items: center; gap: 0.5rem; min-height: var(--dl-hit-min); margin: 0.375rem 0 0.125rem; padding: 0 0.5rem; font-size: 0.9375rem; color: var(--dl-color-text-muted); text-align: left; }
-.roundOff { display: inline-flex; align-items: center; min-height: var(--dl-hit-min); margin: 0.125rem 0; padding: 0 0.5rem; font-size: 0.9375rem; font-weight: 600; color: var(--dl-color-accent); }
-.changeDue { display: grid; grid-template-columns: 1fr auto auto; align-items: baseline; gap: 0.25rem 0.75rem; margin: 0.375rem 0.25rem; font-size: 0.9375rem; color: var(--dl-color-text-muted); }
-.adjLab { flex: 1; min-width: 0; }
-.adjAmt { font-weight: var(--dl-stall-num-weight); font-size: 1.25rem; letter-spacing: -0.03em; font-variant-numeric: tabular-nums; color: var(--dl-stall-warn-text); }
-.adjPencil { width: 1.375rem; height: 1.375rem; display: grid; place-items: center; color: var(--dl-color-text-faint); }
-.adjPencil svg { width: 0.875rem; height: 0.875rem; display: block; }
-.tipBlock { margin: 0.75rem 0 0.25rem; }
-.tipLab { font-size: 0.8125rem; color: var(--dl-color-text-muted); padding: 0 0.25rem 0.375rem; }
-.tips { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.5rem; }
 .chip { min-height: var(--dl-hit-comfortable); border-radius: var(--dl-radius-md); font-size: 1rem; font-weight: 600; color: var(--dl-color-text); background: var(--dl-color-surface); box-shadow: inset 0 0 0 var(--dl-stall-hair) var(--dl-color-hairline); }
 .chipOn { composes: chip; color: var(--dl-stall-pos-text); background: color-mix(in srgb, var(--dl-stall-go) 16%, var(--dl-color-surface)); box-shadow: inset 0 0 0 var(--dl-stall-hair) color-mix(in srgb, var(--dl-stall-go) 40%, transparent); }
 .qrBlock { display: flex; flex-direction: column; align-items: center; margin: 0.875rem 0 0.5rem; }
@@ -75,13 +65,6 @@
 .qb { width: var(--dl-hit-comfortable); height: var(--dl-hit-comfortable); display: grid; place-items: center; font-size: 1.75rem; font-weight: 300; color: var(--dl-color-text-muted); }
 .qn { flex: 1; text-align: center; font-variant-numeric: tabular-nums; font-size: 1.5rem; color: var(--dl-color-text); }
 .moreNotes { display: flex; align-items: center; justify-content: center; min-height: 7rem; font-size: 0.8125rem; color: var(--dl-color-text-faint); }
-.tally { margin-top: 0.875rem; padding: 0.25rem 0.25rem 0.5rem; display: grid; grid-template-columns: 1fr auto; gap: 0.25rem 0.75rem; font-size: 0.9375rem; }
-.tLab { color: var(--dl-color-text-muted); }
-.tAmt { font-weight: var(--dl-stall-num-weight); font-size: 1.25rem; letter-spacing: -0.03em; font-variant-numeric: tabular-nums; color: var(--dl-color-text-display); text-align: right; }
-.tChgLab { color: var(--dl-stall-pos-text); }
-.tChg { composes: tAmt; color: var(--dl-stall-pos-text); }
-.tShortLab { color: var(--dl-stall-warn-text); }
-.tShort { composes: tAmt; color: var(--dl-stall-warn-text); }
 .bar {
   flex: none; position: relative; z-index: var(--dl-z-dock); display: flex; align-items: center; gap: 0.625rem;
   padding: 0.625rem 1rem calc(0.75rem + env(safe-area-inset-bottom));
@@ -120,3 +103,22 @@
   .bar { flex-wrap: wrap; }
   .confirm { flex: 1 1 100%; order: 3; }
 }
+
+/* pay2 (locked 17 Nov): + Tip / − Waive pills with quick chips; one-tap cash given; big Give back. */
+.adjBlock { margin: 0.25rem 0 0.75rem; display: flex; flex-direction: column; align-items: center; gap: 0.5rem; }
+.adjPills { display: flex; flex-wrap: wrap; justify-content: center; gap: 0.5rem; }
+.pillTip { min-height: var(--dl-hit-min); padding: 0 1rem; border-radius: var(--dl-radius-pill); font-size: 0.9375rem; font-weight: 650; color: var(--dl-color-accent); background: var(--dl-color-track); }
+.pillTipOn { composes: pillTip; background: color-mix(in srgb, var(--dl-color-accent) 16%, transparent); }
+.pillWaive { composes: pillTip; color: var(--dl-stall-danger-text); }
+.pillWaiveOn { composes: pillWaive; background: color-mix(in srgb, var(--dl-color-danger) 14%, transparent); }
+.adjChips { display: flex; flex-wrap: wrap; justify-content: center; gap: 0.5rem; }
+.adjChips .chip, .adjChips .chipOn { padding: 0 1rem; min-width: var(--dl-hit-min); }
+.given { margin-top: 0.75rem; display: flex; flex-direction: column; gap: 0.625rem; }
+.givenBtns { display: grid; grid-template-columns: auto repeat(3, 1fr); align-items: center; gap: 0.5rem; }
+.givenLab { font-size: 0.8125rem; color: var(--dl-color-text-muted); padding-right: 0.25rem; }
+.note { min-height: var(--dl-hit-comfortable); border-radius: var(--dl-radius-md); font-size: 1.25rem; font-weight: 650; color: var(--dl-color-text); background: var(--dl-color-surface); box-shadow: inset 0 0 0 var(--dl-stall-hair) var(--dl-color-hairline); }
+.noteOn { composes: note; background: var(--dl-chip-positive-bg); box-shadow: inset 0 0 0 var(--dl-stall-hair-2) var(--dl-chip-positive-border); }
+.giveBack { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 0.25rem 0.75rem; padding: 0.75rem 1rem; border-radius: var(--dl-radius-lg); background: var(--dl-chip-positive-bg); font-size: 0.9375rem; color: var(--dl-color-text-muted); }
+.giveBack b { font-size: 1.75rem; font-weight: 700; color: var(--dl-stall-pos-text); }
+.giveShort { padding: 0.5rem 0.25rem; font-size: 0.9375rem; color: var(--dl-stall-warn-text); }
+@container counter (max-width: 24rem) { .givenBtns { grid-template-columns: repeat(3, 1fr); } .givenLab { grid-column: 1 / -1; } }

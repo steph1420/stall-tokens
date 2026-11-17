@@ -1,6 +1,6 @@
 // Counter actions (F-05..F-18). Every rule about what a tap may do lives here; screens only call these.
 import { CONFIG } from '../config';
-import type { Discount, Line, Order, PaySource, PaymentBody } from '../contract';
+import type { Discount, Line, Order, Paise, PaySource, PaymentBody } from '../contract';
 import type { Core, Log } from './core';
 import { liveOrders } from './fold/fold';
 import { due, held, preRound, subtotal, total } from './rules/bill';
@@ -217,6 +217,18 @@ function billActions(x: Ctx) {
   return self;
 }
 
+/** pay2: Undo toast for + Tip / − Waive (the draft is on the payment screen, which reads ui.payUndo). */
+function adjustActions({ core, st, ui }: Ctx) {
+  return {
+    /** pay2: "+ Tip ₹10 · Undo" / "Waived ₹20 · Undo"; `prev` = the amounts before the change. */
+    adjustToast(text: string, prev: { tip: Paise; waived: Paise }) {
+      const orderId = st().ui.orderId; if (!orderId) return;
+      core.set((s) => ({ ui: { ...s.ui, toast: { text, id: (s.ui.toast?.id ?? 0) + 1, ms: CONFIG.payment.adjustUndoMs, action: { label: 'Undo', run: 'undoPay', orderId, tip: prev.tip, waived: prev.waived } } } }));
+    },
+    undoAdjust(orderId: string, tip: Paise, waived: Paise) { ui({ payUndo: { seq: (st().ui.payUndo?.seq ?? 0) + 1, orderId, tip, waived } }); },
+  };
+}
+
 function flowActions(x: Ctx) {
   const { core, log, st, toast, ui, current, editable } = x;
   const self = {
@@ -286,6 +298,6 @@ function cancelActions(x: Ctx) {
 export function counterActions(core: Core, log: Log) {
   const x = makeCtx(core, log);
   const nav = navActions(x);
-  return { ...nav, ...dayActions(x), ...lineActions(x, nav), ...billActions(x), ...flowActions(x), ...cancelActions(x), totalOf: (o: Order) => total(o), available: x.available, toast: x.toast };
+  return { ...nav, ...dayActions(x), ...lineActions(x, nav), ...billActions(x), ...flowActions(x), ...adjustActions(x), ...cancelActions(x), totalOf: (o: Order) => total(o), available: x.available, toast: x.toast };
 }
 export type CounterActions = ReturnType<typeof counterActions>;
