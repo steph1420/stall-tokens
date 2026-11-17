@@ -25,10 +25,14 @@ function safeLocalStorage(): Storage | null {
   }
 }
 
+function safeSessionStorage(): Storage | null {
+  try { return globalThis.sessionStorage; } catch { return null; } // blocked: no per-tab place, the device's place is used
+}
+
 /** The browser data source. The Sheet bridge joins when this phone has a sync URL and key (F-35); else local only. */
 export function createBrowserDataSource(makeId: () => string, transports?: readonly Transport[]): DataSource {
   const idb = typeof indexedDB === 'undefined' ? null : indexedDB;
-  const device = createDeviceStore(safeLocalStorage(), makeId);
+  const device = createDeviceStore(safeLocalStorage(), makeId, safeSessionStorage());
   applyJoinFromLocation(device);
   // A link opened in an already-open tab only changes the #fragment: apply it and restart the app.
   if (typeof window !== 'undefined') window.addEventListener('hashchange', () => { if (applyJoinFromLocation(device)) window.location.reload(); });

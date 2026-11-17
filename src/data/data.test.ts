@@ -2,7 +2,7 @@ import 'fake-indexeddb/auto';
 import { describe, expect, it } from 'vitest';
 import { CONFIG } from '../config';
 import { opMaker } from '../mock/fixtures';
-import { createDeviceStore, PREFS_KEY } from './adapters/deviceStore';
+import { createDeviceStore, PREFS_KEY, TAB_ROLE_KEY } from './adapters/deviceStore';
 import { createFakeHub, createFakeTransport } from './adapters/fakeTransport';
 import { createFallbackOpStore } from './adapters/fallback';
 import { createLocalIdb, DB_NAME } from './adapters/localIdb';
@@ -41,6 +41,17 @@ describe('device prefs', () => {
     const d = createDeviceStore(null, () => 'private01');
     d.write({ ...d.read(), theme: 'day' });
     expect(d.read().theme).toBe('day');
+  });
+  it('a reload keeps this tab\'s own place when another tab on the device became the Kitchen (PK-5)', () => {
+    localStorage.setItem(PREFS_KEY, JSON.stringify({ lastRole: 'kitchen' }));
+    sessionStorage.setItem(TAB_ROLE_KEY, '');
+    expect(createDeviceStore(localStorage, () => 'tab1', sessionStorage).read().lastRole).toBe('');
+    expect(createDeviceStore(localStorage, () => 'tab1', sessionStorage).read().lastRole).toBe(''); // and again on the next reload
+    expect(sessionStorage.getItem(TAB_ROLE_KEY)).toBe('');
+    sessionStorage.clear(); // app killed and reopened: the device's last place
+    expect(createDeviceStore(localStorage, () => 'tab2', sessionStorage).read().lastRole).toBe('kitchen');
+    sessionStorage.setItem(TAB_ROLE_KEY, 'admin'); // hostile tab value is ignored
+    expect(createDeviceStore(localStorage, () => 'tab3', sessionStorage).read().lastRole).toBe('kitchen');
   });
 });
 
