@@ -1,8 +1,9 @@
 // F-21 Station looks B (item cards) and C (kitchen ticket), Q-STN-LOOK D. Look A is the shared KitchenCard.
+// PK-2 (W-25/W-38): every look carries the same header facts and the order note strip.
 // Own lines use the same press owner as the card (tap = next status, hold = On hold); other stations' lines are muted.
 import type { Line, Order } from '../../contract';
 import { kitchen } from '../../store';
-import { Token, lineLabel, useLinePress } from '../kitchen/KitchenCard';
+import { Facts, NoteStrip, PriorityToken, lineLabel, useLinePress } from '../kitchen/KitchenCard';
 import { LineMark, StatusMark } from '../kitchen/StatusMark';
 import { stationVar } from '../kitchen/stations';
 import s from './Station.module.css';
@@ -36,7 +37,8 @@ export function ItemCards({ o, station }: { o: Order; station: string }) {
   const own = kitchen.linesAt(o, station);
   return (
     <section className={s.look} aria-label="Item cards">
-      <div className={s.lookH}><Token o={o} />{o.priority ? <StatusMark mark="priority" /> : null}</div>
+      <div className={s.lookH}><PriorityToken o={o} /><Facts o={o} />{o.priority ? <StatusMark mark="priority" /> : null}</div>
+      <NoteStrip o={o} />
       <div className={s.igrid}>{own.map((l) => <ItemCard key={l.lineId} o={o} l={l} />)}</div>
       <Others o={o} station={station} />
     </section>
@@ -58,7 +60,8 @@ export function Ticket({ o, station }: { o: Order; station: string }) {
   const own = kitchen.linesAt(o, station);
   return (
     <section className={s.ticket} aria-label="Kitchen ticket">
-      <div className={s.tickH}><Token o={o} />{o.priority ? <StatusMark mark="priority" /> : null}</div>
+      <div className={s.tickH}><PriorityToken o={o} /><Facts o={o} />{o.priority ? <StatusMark mark="priority" /> : null}</div>
+      <NoteStrip o={o} />
       <ul className={s.tlist}>{own.map((l) => <TicketRow key={l.lineId} o={o} l={l} />)}</ul>
       <Others o={o} station={station} />
     </section>

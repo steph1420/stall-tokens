@@ -137,7 +137,9 @@ Station tap: Waiting → Preparing → Done?; On hold → Preparing; Ready → H
 | --- | --- |
 | Standard | 360×780, 390×844 (the locked mockups' size) |
 | Large text (root font 125%) | 390×844 |
-| Landscape check | 844×390 |
+| Landscape check | 844×390, 927×421 |
+| Kitchen tablet (W-33; grid in P3b) | 1024×768, 820×1180, 1180×820 |
+| 200 % text (P2/P3) | 421×927 with `html{font-size:200%}`: Counter reflows, Kitchen pills wrap and the header scrolls with the tickets (container `counter`, under 24rem) |
 
 Night (`stall-night`) and day (`stall-day`) at every row. Contrast for every theme pair runs in `npm run contrast`. Sizes are in rem so large system text scales the layout.
 

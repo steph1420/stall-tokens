@@ -3,14 +3,14 @@ import { act, cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { DEMO_MENU } from '../../mock/fixtures';
 import { StoreProvider } from '../../store';
-import { makeTestStore } from '../../store/testkit';
+import { makeTestStore, stepClock } from '../../store/testkit';
 import { StationScreen } from '../station/StationScreen';
 import { KitchenScreen } from './KitchenScreen';
 
 afterEach(() => { cleanup(); vi.useRealTimers(); });
 
 async function seeded() {
-  const { store } = makeTestStore();
+  const { store } = makeTestStore({ now: stepClock() });
   await store.getState().start();
   const s = () => store.getState();
   for (const m of DEMO_MENU) s().catalog.saveItem(null, { name: m.name, price: m.price, swatch: m.swatch, category: m.category, stationId: m.stationId, count: null });

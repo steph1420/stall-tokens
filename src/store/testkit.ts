@@ -24,3 +24,9 @@ export function memoryStorage(): Storage {
     removeItem: (k) => { m.delete(k); }, setItem: (k, v) => { m.set(k, v); },
   };
 }
+
+/** P3 (W-30 step gap): a clock that moves on by `stepMs` each time it is read, so back-to-back test taps are real taps. */
+export function stepClock(stepMs = 1000, start = Date.UTC(2026, 10, 16, 10, 0)): () => number {
+  let t = start;
+  return () => (t += stepMs);
+}

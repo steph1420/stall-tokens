@@ -1,17 +1,18 @@
 // F-21 Station page (21-polish2/station.html, 07-station/station-v1). One whole order per screen; swipe left/right or
 // tap a tab to change order; Overview = item totals + status split + look (Q-STN-LOOK D, default Full card D-STATION).
 // Other stations' lines are muted with their status. Back returns to the opener (Q-BACK-1 A). Interaction owner (§5).
-import { useRef } from 'react';
+import { useEffect, useRef } from 'react';
 import { CONFIG } from '../../config';
 import type { Order } from '../../contract';
-import { kitchen, liveOrders, useApp, type Folded, type StationPlace } from '../../store';
+import { formatToken, kitchen, liveOrders, useApp, type Folded, type StationPlace } from '../../store';
 import { Icon } from '../kit/Icon';
+import { useWakeLock } from '../kit/wakeLock';
 import { KitchenCard } from '../kitchen/KitchenCard';
 import { StatusMark, type Mark } from '../kitchen/StatusMark';
 import { stationIcon, stationVar } from '../kitchen/stations';
 import k from '../kitchen/Kitchen.module.css';
 import { ItemCards, Ticket } from './Looks';
-import { LeavingCard, useLeaving } from '../kitchen/Leaving';
+import { LeavingCard, useLeaving, type Why } from '../kitchen/Leaving';
 import { Overview } from './Overview';
 import s from './Station.module.css';
 
@@ -49,7 +50,7 @@ function OrderTabs({ list, station, current }: { list: readonly Order[]; station
         return (
           <button type="button" role="tab" aria-selected={on} key={x.id} className={[s.otab, on ? s.otabOn : '', m === 'paused' ? s.otabPaused : ''].join(' ')}
             data-mark={m} onClick={() => { a.showStationOrder(x.id); }}>
-            <span className={s.tok}><span className={k.hash}>#</span>{String(x.token).padStart(CONFIG.tokens.pad, '0')}</span>
+            <span className={s.tok}><span className={k.hash}>#</span>{formatToken(x.token, CONFIG.tokens.pad).slice(1)}</span>
             <StatusMark mark={m} label={false} small />
           </button>
         );
@@ -62,43 +63,84 @@ function OrderTabs({ list, station, current }: { list: readonly Order[]; station
 function useShown(place: StationPlace | null, folded: Folded): Order[] {
   if (!place) return [];
   const list = kitchen.stationOrders(liveOrders(folded), place.id);
-  const o = list.find((x) => x.id === place.orderId) ?? list[0];
+  // W-28: the shown order is pinned; no silent fall-back to the first order (that swapped it under the finger).
+  const o = place.orderId ? list.find((x) => x.id === place.orderId) : undefined;
   return o ? [o] : [];
+}
+
+/** W-28: pin the first order when nothing is pinned; after a pinned order has left (its veil is over), move on with a toast. */
+function usePin(place: StationPlace | null, list: readonly Order[], leaving: boolean) {
+  const a = useApp((st) => st.kitchen);
+  const pinned = place?.orderId ?? null;
+  const here = !!pinned && list.some((x) => x.id === pinned);
+  const next = list[0];
+  useEffect(() => {
+    if (!place || here || leaving) return;
+    a.moveOn(next?.id ?? null, pinned && next ? formatToken(next.token, CONFIG.tokens.pad) : null);
+  }, [a, place, here, leaving, next, pinned]);
+}
+
+/** W-28 / W-41: a Priority order that is not on screen gets a banner to open it, instead of a swap. */
+function PriorityBanner({ list, current }: { list: readonly Order[]; current: string | undefined }) {
+  const a = useApp((st) => st.kitchen);
+  const p = list.find((x) => x.priority && x.id !== current);
+  if (!p) return null;
+  return (
+    <button type="button" className={s.priBanner} aria-label={`Priority ${formatToken(p.token, CONFIG.tokens.pad)} · Open`} onClick={() => { a.showStationOrder(p.id); }}>
+      <StatusMark mark="priority" label={false} small /><span>{`Priority ${formatToken(p.token, CONFIG.tokens.pad)}`}</span><b>Open</b>
+    </button>
+  );
+}
+
+function StationHeader({ station, count }: { station: string; count: number }) {
+  const stallName = useApp((st) => st.folded.settings.stallName ?? 'Fair stall');
+  const a = useApp((st) => st.kitchen);
+  const openSheet = useApp((st) => st.openSheet);
+  return (
+    <div className={k.hdr}>
+      <div className={k.kicker}>{stallName}</div>
+      <button type="button" className={k.back} aria-label="Back" onClick={() => { a.closeStation(); }}><Icon name="chevLeft" /></button>
+      <h1 className={s.title}><Icon name={stationIcon(station)} className={s.titleIc} /><span>{`${station} · ${String(count)}`}</span></h1>
+      <button type="button" className={k.open} onClick={() => { openSheet({ kind: 'overview' }); }}>Overview</button>
+    </div>
+  );
+}
+
+function Shown({ o, why, station }: { o: Order | undefined; why: Why | undefined; station: string }) {
+  const look = useApp((st) => st.prefs.stationLook);
+  if (!o) return <p className={k.empty}>Nothing to make at {station}</p>;
+  return (
+    <LeavingCard key={o.id} why={why} o={o} station={station}>
+      {look === 'items' ? <ItemCards o={o} station={station} /> : look === 'ticket' ? <Ticket o={o} station={station} /> : <KitchenCard o={o} station={station} only={false} />}
+    </LeavingCard>
+  );
 }
 
 export function StationScreen() {
   const place = useApp((st) => st.ui.station);
   const folded = useApp((st) => st.folded);
-  const look = useApp((st) => st.prefs.stationLook);
   const sheet = useApp((st) => st.ui.sheet?.kind);
-  const stallName = useApp((st) => st.folded.settings.stallName ?? 'Fair stall');
   const a = useApp((st) => st.kitchen);
-  const openSheet = useApp((st) => st.openSheet);
   const swipe = useSwipe((d) => { a.stepStationOrder(d); });
-  const gone = useLeaving(useShown(place, folded), folded.orders);
+  const gone = useLeaving(useShown(place, folded), folded.orders, place?.id ?? null);
+  const list = place ? kitchen.stationOrders(liveOrders(folded), place.id) : [];
+  usePin(place, list, gone.length > 0);
+  useWakeLock(true);
   if (!place) return null;
   const station = place.id;
-  const list = kitchen.stationOrders(liveOrders(folded), station);
-  const live = list.find((x) => x.id === place.orderId) ?? list[0];
+  const live = place.orderId ? list.find((x) => x.id === place.orderId) : undefined;
   const left = gone.find((g) => !live || g.o.id !== live.id);
   const o = left?.o ?? live;
   return (
     <div className={k.phone} style={stationVar(station)}>
-      <header className={k.chrome}>
-        <div className={k.hdr}>
-          <div className={k.kicker}>{stallName}</div>
-          <button type="button" className={k.back} aria-label="Back" onClick={() => { a.closeStation(); }}><Icon name="chevLeft" /></button>
-          <h1 className={s.title}><Icon name={stationIcon(station)} className={s.titleIc} /><span>{station}</span></h1>
-          <button type="button" className={k.open} onClick={() => { openSheet({ kind: 'overview' }); }}>Overview</button>
-        </div>
-        <OrderTabs list={list} station={station} current={o?.id} />
-      </header>
-      <main className={s.body} {...swipe}>
-        {!o ? <p className={k.empty}>Nothing to make at {station}</p>
-          : <LeavingCard key={o.id} why={left?.why}>{look === 'items' ? <ItemCards o={o} station={station} />
-            : look === 'ticket' ? <Ticket o={o} station={station} />
-              : <KitchenCard o={o} station={station} only={false} />}</LeavingCard>}
-      </main>
+      <div className={k.kscroll}>
+        <header className={k.chrome}>
+          <StationHeader station={station} count={list.length} />
+          <OrderTabs list={list} station={station} current={o?.id} />
+          <PriorityBanner list={list} current={o?.id} />
+        </header>
+        <main className={s.body} {...swipe}><Shown o={o} why={left?.why} station={station} /></main>
+      </div>
       {sheet === 'overview' ? <Overview station={station} /> : null}
     </div>
   );

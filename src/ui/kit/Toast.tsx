@@ -4,16 +4,17 @@ import { CONFIG } from '../../config';
 import { useApp } from '../../store';
 import s from './kit.module.css';
 
-/** A toast with a button (s127 "Open", s122 "Undo") stays longer (CONFIG.handling.actionToastMs). */
+/** A toast with a button (s127 "Open", s122 "Undo", P3 kitchen Undo) stays longer (its own ms, else CONFIG.handling.actionToastMs). */
 export function Toast() {
   const toast = useApp((st) => st.ui.toast);
   const handling = useApp((st) => st.handling);
   const refund = useApp((st) => st.refund);
+  const kitchen = useApp((st) => st.kitchen);
   const [shown, setShown] = useState<number | null>(null);
   useEffect(() => {
     if (!toast) return undefined;
     setShown(toast.id);
-    const t = setTimeout(() => { setShown(null); }, toast.action ? CONFIG.handling.actionToastMs : CONFIG.timings.toastMs);
+    const t = setTimeout(() => { setShown(null); }, toast.ms ?? (toast.action ? CONFIG.handling.actionToastMs : CONFIG.timings.toastMs));
     return () => { clearTimeout(t); };
   }, [toast]);
   if (!toast || shown !== toast.id) return null;
@@ -22,6 +23,8 @@ export function Toast() {
     setShown(null);
     if (a?.run === 'open') handling.open(a.orderId);
     else if (a?.run === 'undoRefund') refund.undo(a.orderId, a.refundId);
+    else if (a?.run === 'undoStep') kitchen.undoStep(a.orderId, a.lineId, a.status, a.from);
+    else if (a?.run === 'undoPriority') kitchen.undoPriority(a.orderId, a.on);
   };
   return (
     <div className={a ? s.toastAct : s.toast} role="status">

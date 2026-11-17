@@ -71,6 +71,14 @@ export const CONFIG = Object.freeze({
   timings: { tapLockMs: 900, toastMs: 2600, fakeDelayMs: 120, clockTickMs: 30000, printDelayMs: 300, remindLaterMs: 3600000 },
   // Open Orders header: dots up to this many orders, then "3 of 12" (Q-ORDERS-1).
   openDotsMax: 8,
+  // P3 kitchen (PK-2 / PK-4 / W-28 / W-41, D-P3-*): one step per line per stepGapMs (W-30); an Undo toast after each step;
+  // ticket age turns amber / red after these minutes (W-38); a note with one of these words shows as a warning (W-25);
+  // taps pause for reorderGuardMs after the list reorders under the finger (W-28 / W-41); a leaving card keeps its veil
+  // for veilMs (W-43, was Leaving.tsx HOLD_MS); new tickets glow for newGlowMs (silent highlight, Q-KITCHEN-ALERT D-item).
+  kitchen: {
+    stepGapMs: 600, undoToastMs: 5000, ageAmberMin: 8, ageRedMin: 15, reorderGuardMs: 450, veilMs: 2500, newGlowMs: 6000,
+    allergyWords: ['allergy', 'allergic', 'nut', 'nuts', 'peanut', 'peanuts', 'gluten', 'dairy', 'lactose', 'egg', 'eggs', 'jain', 'vegan', 'no onion', 'no garlic'],
+  },
   // swipePx: horizontal travel that turns a drag on the Station page into next / previous order (Q-STN-LOOK D).
   gesture: { moveCancelPx: 10, swipePx: 56 },
 } as const);

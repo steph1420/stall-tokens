@@ -4,7 +4,7 @@ import { act, cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { afterEach, describe, expect, it } from 'vitest';
 import { DEMO_MENU } from '../../../mock/fixtures';
 import { bill, isOpen, kitchen, orderStatus, StoreProvider } from '../../../store';
-import { makeTestStore } from '../../../store/testkit';
+import { makeTestStore, stepClock } from '../../../store/testkit';
 import { CancelSheet } from '../CancelSheet';
 import { OpenOrdersScreen } from './OpenOrdersScreen';
 
@@ -14,7 +14,7 @@ const must = <T,>(x: T | null | undefined): T => { if (x === null || x === undef
 afterEach(cleanup);
 
 async function setup() {
-  const { store } = makeTestStore();
+  const { store } = makeTestStore({ now: stepClock() });
   await store.getState().start();
   const s = () => store.getState();
   for (const m of DEMO_MENU) s().catalog.saveItem(null, { name: m.name, price: m.price, swatch: m.swatch, category: m.category, stationId: m.stationId, count: null });

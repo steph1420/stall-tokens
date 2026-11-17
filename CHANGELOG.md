@@ -3,6 +3,14 @@ All notable changes to Stall Tokens. SemVer. Times IST.
 
 ## [Unreleased]
 
+### 2.1.0 P3 — Kitchen + Station (17 Nov 2026, Beta only; F-58..F-60)
+- **Ticket header (PK-2, s124).** Every ticket shows its age ("4 min", amber after 8, red after 15), the client, **Unpaid**, and the **order note** on all looks; allergy and diet words (nut, gluten, Jain, no onion…) show in the warning tone with ⚠. Line notes get a pencil and normal text; the station name is a small chip on All only. One colour dot per line. "Kitchen · 3" and "Momos · 12" counts. Bigger kitchen text.
+- **Safe taps (PK-4).** A double or triple tap moves a line one step only; every step and every Priority change says what happened with **Undo** (5 s). Hold a Done? line to take it back to Preparing; the Counter's order sheet has **Send back to the kitchen**. An Undo never pulls back a line that has moved on since.
+- **No swaps under the finger (W-28/29/41).** A Station keeps the order it shows; a Priority order elsewhere gets a banner "Priority #006 · Open". When the shown order leaves, its veil shows first, then "Now #002". A leaving card is inert from its first frame, and taps rest for a moment after the list reorders.
+- **Veils (PK-10).** "Handed over · 2 left at other stations" joins Completed and Cancelled.
+- **Kitchen device.** Reopens as the Kitchen or its Station after a reload (Counter phones still open on Launch); the screen stays awake where the browser allows. New tickets glow quietly for a few seconds; no sound (chime off; Q-KITCHEN-ALERT is still Steve's call).
+- **200 % text and small screens.** Station pills wrap instead of running off-screen; header, pills and tickets scroll together; the Priority hold target and every kitchen button are at least 44 px; a phone on its side gets a compact header. The tablet grid is P3b.
+
 ### 2.1.0 P2 — Counter (17 Nov 2026, Beta only; F-54..F-57)
 - **Two phones, one order (s127, locked).** The phone with an order on screen holds it. Another phone that opens it sees "#012 is open on Counter 1" with **Check now**, a 10 s countdown, and **Take over** · **New order** · **Back**. Leaving the order (Back, another order, cancel, complete, or 30 s in the background) hands it over at once; a phone not heard from for 90 s lets go by itself. The phone that was taken over goes view-only ("Taken over by Counter 2") with its own Take over. If this phone is busy with another order when the waited-for one comes free, a calm toast offers **Open** instead of switching.
 - **Unpaid tab (s120).** Third Counter tab with a red count and "₹X to collect". Tap a row for the order: **Take payment**, or press and hold the yellow bar to complete without payment (the amount stays on record).
