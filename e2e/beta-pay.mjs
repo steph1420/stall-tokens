@@ -28,7 +28,7 @@ for (const theme of (process.env.THEMES ?? 'night,day').split(',')) {
   const T = (n) => `[${theme}] ${n}`;
   const shot = (n) => p.screenshot({ path: `${out}/pay-${n}-${theme}.png` });
   const box = async (n) => rupees(await p.getByRole('button', { name: new RegExp(`^${n}`) }).first().innerText());
-  const total = async () => rupees(await p.evaluate(() => [...document.querySelectorAll('div')].find((d) => d.textContent === 'To collect')?.nextElementSibling?.textContent ?? ''));
+  const total = async () => rupees(await p.evaluate(() => [...globalThis.document.querySelectorAll('div')].find((d) => d.textContent === 'To collect')?.nextElementSibling?.textContent ?? ''));
   const type = async (n, digits) => {
     await p.getByRole('button', { name: new RegExp(`^${n}`) }).first().click();
     for (const k of digits.split('')) await p.getByRole('button', { name: k, exact: true }).click();
