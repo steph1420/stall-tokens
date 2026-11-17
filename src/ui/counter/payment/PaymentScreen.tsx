@@ -178,9 +178,6 @@ function QrBlock({ d, o }: { d: Draft; o: Order }) {
     <div className={s.qrBlock}>
       <div className={s.qrMeta}>
         <button type="button" className={s.qrWho} onClick={() => { openSheet({ kind: 'payee' }); }}>{payee ? payee.name : 'Add a UPI ID'} <Icon name="chevron" className={s.chev} /></button>
-      </div>
-      <div className={s.qrRow}>
-        {payee && facts ? <div className={s.qrTile}><Qr text={link} label={`Payment QR, ${facts.amountText}, ${facts.upiId}`} /></div> : null}
         {facts ? (
           <div className={s.qrFacts} role="group" aria-label="UPI ID and amount on this QR">
             <span className={s.qrId} title={facts.upiId}>{facts.upiId}</span>
@@ -188,6 +185,7 @@ function QrBlock({ d, o }: { d: Draft; o: Order }) {
           </div>
         ) : null}
       </div>
+      {payee && facts ? <div className={s.qrTile}><Qr text={link} label={`Payment QR, ${facts.amountText}, ${facts.upiId}`} /></div> : null}
       {payees.length > 1 ? <div className={s.payeePick}>{payees.map((p) => <button type="button" key={p.id} className={p.id === payee?.id ? s.payeeOn : s.payee} onClick={() => { d.setPayeeId(p.id); }}>{p.name}</button>)}</div> : null}
     </div>
   );
