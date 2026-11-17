@@ -48,6 +48,9 @@ export const CONFIG = Object.freeze({
   layout: { twoPaneMinRem: 48, twoPaneMinHeightRem: 30, baseFontPx: 16, bigTextScale: 1.5 },
   money: { paisePerRupee: 100, sliderSnapPaise: 1000, roundOffSteps: [500, 1000] as const },
   payment: {
+    waiveChips: [1000, 2000] as const, // pay2: − Waive quick chips ₹10, ₹20 (+ Other)
+    givenNotes: [10000, 20000, 50000] as const, // pay2: one-tap "cash given" ₹100 / ₹200 / ₹500
+    adjustUndoMs: 5000, // pay2: Undo toast after + Tip / − Waive
     denominations: [5, 10, 20, 50, 100, 200, 500] as const,
     moreDenominations: [1000, 2000] as const,
     tipChips: [1000, 2000] as const, // ₹10, ₹20 (D-TIP)

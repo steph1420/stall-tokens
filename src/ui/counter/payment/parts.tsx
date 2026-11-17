@@ -2,65 +2,66 @@
 import { useState } from 'react';
 import { CONFIG } from '../../../config';
 import type { Paise } from '../../../contract';
-import { amounts, pay, useApp } from '../../../store';
+import { amounts, useApp } from '../../../store';
 import { AmountsEdit } from '../../kit/AmountsEdit';
 import { Icon } from '../../kit/Icon';
 import { Money } from '../../kit/Money';
 import s from './Payment.module.css';
 
-export function TipRow({ tip, onTip, onOther }: { tip: Paise; onTip: (t: Paise) => void; onOther: () => void }) {
-  const chips = useApp((x) => amounts.amounts(x.folded.settings, 'tipChips'));
+type Adj = 'tip' | 'waive';
+
+/** pay2 (locked): the amount due changes only here. Two small pills, "+ Tip" and "− Waive"; a tap opens quick chips
+ * (₹10, ₹20, Other). Kept small on purpose (rare, and they change what is owed). */
+export function AdjustRow({ tip, waived, onPick, onOther, onWho }: { tip: Paise; waived: Paise; onPick: (k: Adj, p: Paise) => void; onOther: (k: Adj) => void; onWho: () => void }) {
+  const tipChips = useApp((x) => amounts.amounts(x.folded.settings, 'tipChips'));
+  const [open, setOpen] = useState<Adj | null>(null);
   const [edit, setEdit] = useState(false);
-  const other = tip > 0 && !chips.includes(tip);
+  const chips = open === 'tip' ? tipChips : CONFIG.payment.waiveChips;
+  const now = open === 'tip' ? tip : waived;
+  const pick = (k: Adj, p: Paise) => { onPick(k, p); setOpen(null); };
   return (
-    <div className={s.tipBlock}>
-      <div className={s.tipLab}>Tip</div>
-      <div className={s.tips} role="radiogroup" aria-label="Tip">
-        <button type="button" role="radio" aria-checked={tip === 0} className={tip === 0 ? s.chipOn : s.chip} onClick={() => { onTip(0); }}>None</button>
-        {chips.map((c) => (
-          <button type="button" role="radio" aria-checked={tip === c} key={c} className={tip === c ? s.chipOn : s.chip} onClick={() => { onTip(c); }}><Money p={c} /></button>
-        ))}
-        <button type="button" role="radio" aria-checked={other} className={other ? s.chipOn : s.chip} onClick={onOther}>{other ? <Money p={tip} /> : 'Other'}</button>
-        <button type="button" className={s.chip} aria-label="Edit tip choices" aria-expanded={edit} onClick={() => { setEdit(!edit); }}><Icon name="pencil" className={s.chipIcon} /></button>
+    <div className={s.adjBlock}>
+      <div className={s.adjPills}>
+        <button type="button" className={tip > 0 || open === 'tip' ? s.pillTipOn : s.pillTip} aria-expanded={open === 'tip'} onClick={() => { setOpen(open === 'tip' ? null : 'tip'); }}>+ Tip{tip > 0 ? <> <Money p={tip} /></> : null}</button>
+        <button type="button" className={waived > 0 || open === 'waive' ? s.pillWaiveOn : s.pillWaive} aria-expanded={open === 'waive'} onClick={() => { setOpen(open === 'waive' ? null : 'waive'); }}>− Waive{waived > 0 ? <> <Money p={waived} /></> : null}</button>
       </div>
-      {edit ? <AmountsEdit k="tipChips" onDone={() => { setEdit(false); }} /> : null}
+      {open ? (
+        <div className={s.adjChips} role="group" aria-label={open === 'tip' ? 'Tip' : 'Waive'}>
+          {chips.map((p) => <button type="button" key={p} aria-pressed={now === p} className={now === p ? s.chipOn : s.chip} onClick={() => { pick(open, p); }}><Money p={p} /></button>)}
+          <button type="button" className={s.chip} onClick={() => { onOther(open); setOpen(null); }}>Other</button>
+          {now > 0 ? <button type="button" className={s.chip} onClick={() => { pick(open, 0); }}>{open === 'tip' ? 'No tip' : 'No waive'}</button> : null}
+          {open === 'tip' ? <button type="button" className={s.chip} aria-label="Edit tip choices" aria-expanded={edit} onClick={() => { setEdit(!edit); }}><Icon name="pencil" className={s.chipIcon} /></button>
+            : <button type="button" className={s.chip} onClick={onWho}>Who · note</button>}
+        </div>
+      ) : null}
+      {edit && open === 'tip' ? <AmountsEdit k="tipChips" onDone={() => { setEdit(false); }} /> : null}
     </div>
   );
 }
 
-export function Waived({ amount, who, onEdit }: { amount: Paise; who: string; onEdit: () => void }) {
+/** pay2: one-tap "cash given" (₹100 / ₹200 / ₹500) and a big "Give back ₹X". */
+export function GivenRow({ given, cash, onGiven }: { given: Paise; cash: Paise; onGiven: (p: Paise) => void }) {
   return (
-    <button type="button" className={s.adj} onClick={onEdit} aria-label={`Waived ₹${String(amount / 100)}${who ? `, allowed by ${who}` : ''}, edit`}>
-      <span className={s.adjLab}>Waived</span>
-      <Money p={amount} className={s.adjAmt} />
-      <Icon name="pencil" className={s.adjPencil} />
-    </button>
-  );
-}
-
-/** The only way to waive or round off part of the bill (explicit; typing Cash or UPI never leaves a gap). */
-export function RoundOff({ on, onOpen }: { on: boolean; onOpen: () => void }) {
-  return <button type="button" className={s.roundOff} onClick={onOpen}>{on ? 'Change round-off' : 'Round off / waive'}</button>;
-}
-
-/** Cash typed above the amount: shown as change due, not as an error. */
-export function ChangeDue({ tendered, cash }: { tendered: Paise; cash: Paise }) {
-  if (tendered <= cash) return null;
-  return (
-    <div className={s.changeDue} role="status">
-      <span>Cash given <Money p={tendered} /></span><span className={s.tChgLab}>Change</span><Money p={pay.change(tendered, cash)} className={s.tChg} />
-    </div>
+    <section className={s.given} aria-label="Cash given">
+      {cash > 0 ? (
+        <div className={s.givenBtns}>
+          <span className={s.givenLab}>Cash given</span>
+          {CONFIG.payment.givenNotes.map((p) => <button type="button" key={p} aria-label={`₹${String(p / 100)} given`} aria-pressed={given === p} className={given === p ? s.noteOn : s.note} onClick={() => { onGiven(given === p ? 0 : p); }}><Money p={p} /></button>)}
+        </div>
+      ) : null}
+      {cash > 0 && given > cash ? <div className={s.giveBack} role="status"><span>{`Cash given ₹${String(given / 100)} for ₹${String(cash / 100)}`}</span><b>Give back <Money p={given - cash} /></b></div> : null}
+      {cash > 0 && given > 0 && given < cash ? <div className={s.giveShort} role="status">Take <Money p={cash - given} /> more</div> : null}
+    </section>
   );
 }
 
 const SWATCH_OF: Readonly<Record<number, number>> = { 5: 7, 10: 1, 20: 5, 50: 3, 100: 0, 200: 2, 500: 4, 1000: 6, 2000: 1 };
 
-export function CountNotes({ notes, onNotes, cash }: { notes: Record<string, number>; onNotes: (n: Record<string, number>) => void; cash: Paise }) {
+export function CountNotes({ notes, onNotes }: { notes: Record<string, number>; onNotes: (n: Record<string, number>) => void }) {
   const [showMore, setShowMore] = useState(false);
   const more = showMore || Object.keys(notes).some((k) => (CONFIG.payment.moreDenominations as readonly number[]).includes(Number(k)) && (notes[k] ?? 0) > 0);
   const list: readonly number[] = more ? [...CONFIG.payment.denominations, ...CONFIG.payment.moreDenominations] : CONFIG.payment.denominations;
   const set = (d: number, n: number) => { onNotes({ ...notes, [String(d)]: Math.max(0, Math.min(CONFIG.limits.qtyMax, n)) }); };
-  const given = pay.notesTotal(notes);
   return (
     <section className={s.notes} aria-label="Count notes">
       <div className={s.notesH}>Count notes <em>· optional</em></div>
@@ -84,13 +85,6 @@ export function CountNotes({ notes, onNotes, cash }: { notes: Record<string, num
         })}
         {!more ? <button type="button" className={s.moreNotes} onClick={() => { setShowMore(true); }}>More notes</button> : null}
       </div>
-      {given > 0 ? (
-        <div className={s.tally}>
-          <span className={s.tLab}>Cash received</span><Money p={given} className={s.tAmt} />
-          <span className={given >= cash ? s.tChgLab : s.tShortLab}>{given >= cash ? 'Change' : 'Short'}</span>
-          <Money p={given >= cash ? pay.change(given, cash) : cash - given} className={given >= cash ? s.tChg : s.tShort} />
-        </div>
-      ) : null}
     </section>
   );
 }

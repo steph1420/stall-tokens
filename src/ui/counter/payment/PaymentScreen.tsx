@@ -1,5 +1,5 @@
-// F-14..F-17 Payment (20-polish/payment.html p1 + tip row, D-TIP). Manual UPI confirm (Q-UPI-1 A).
-import { useRef, useState } from 'react';
+// F-14..F-17, F-62 Payment (20-polish/payment.html p1; pay2 locked 17 Nov: + Tip / − Waive, cash given). Manual UPI confirm (Q-UPI-1 A).
+import { useEffect, useRef, useState } from 'react';
 import { CONFIG } from '../../../config';
 import type { Order, Paise } from '../../../contract';
 import { bill, formatToken, pay, upiLink, useApp } from '../../../store';
@@ -10,7 +10,7 @@ import { Qr } from '../../kit/Qr';
 import { Sheet } from '../../kit/Sheet';
 import k from '../../kit/kit.module.css';
 import { Numpad } from './Numpad';
-import { ChangeDue, CountNotes, RoundOff, TipRow, Waived } from './parts';
+import { AdjustRow, CountNotes, GivenRow } from './parts';
 import s from './Payment.module.css';
 
 type Box = 'cash' | 'upi' | 'tip' | 'waive';
@@ -108,8 +108,23 @@ function useDraft(o: Order | undefined) {
     else setSplit(pay.setBox(cur, box, rupees * R, toCollect));
   };
   const waived = cur.waived ?? 0;
-  return { tip, setTipTo, cur, setSplit, notes, setNotes, waiver, setWaiver, payeeId, setPayeeId, owed, toCollect, typed, waived,
-    check: pay.checkPayment(cur.cash, cur.upi, toCollect, tip, waived) };
+  const setBoth = (t: Paise, w: Paise) => { setTip(t); setSplit(pay.setWaived(pay.addTip(cur, t - tip, Math.max(0, owed) + t), w, Math.max(0, owed) + t, t)); };
+  const [quick, setQuick] = useState<Paise>(0); // pay2: one-tap cash given (₹100 / ₹200 / ₹500)
+  const given = quick || pay.notesTotal(notes) || (cur.tendered ?? 0);
+  useUndo(o?.id, setBoth);
+  return { tip, setTipTo, setBoth, cur, setSplit, notes, setNotes: (n: Record<string, number>) => { setQuick(0); setNotes(n); }, waiver, setWaiver, payeeId, setPayeeId,
+    owed, toCollect, typed, waived, given, setQuick, check: pay.checkPayment(cur.cash, cur.upi, toCollect, tip, waived) };
+}
+
+/** pay2: the toast's Undo (+ Tip / − Waive) puts the old amounts back. */
+function useUndo(orderId: string | undefined, setBoth: (t: Paise, w: Paise) => void) {
+  const u = useApp((st) => st.ui.payUndo);
+  const seen = useRef(u?.seq ?? 0);
+  useEffect(() => {
+    if (!u || u.seq === seen.current) return;
+    seen.current = u.seq;
+    if (u.orderId === orderId) setBoth(u.tip, u.waived);
+  }, [u, orderId, setBoth]);
 }
 type Draft = ReturnType<typeof useDraft>;
 
@@ -155,9 +170,9 @@ function useConfirm(d: Draft) {
     if (busy.current) return; // double tap guard; the store also refuses a second payment
     busy.current = true;
     const payee = payees.find((p) => p.id === d.payeeId) ?? payees[0];
-    const g = d.waived; // only the explicit Round off / waive amount, never a leftover gap
+    const g = d.waived; // only the explicit − Waive amount, never a leftover gap
     const err = c.pay({ cash: d.cur.cash, upi: d.cur.upi, upiPayeeId: d.cur.upi > 0 ? payee?.id ?? null : null, tip: d.tip, waived: g,
-      waivedBy: g > 0 ? d.waiver.by : '', waivedNote: g > 0 ? d.waiver.note : '', cashGiven: Math.max(pay.notesTotal(d.notes), d.cur.tendered ?? 0), notes: d.notes });
+      waivedBy: g > 0 ? d.waiver.by : '', waivedNote: g > 0 ? d.waiver.note : '', cashGiven: Math.max(d.given, d.cur.cash > 0 ? d.cur.tendered ?? 0 : 0), notes: d.notes });
     busy.current = false;
     if (err) { c.toast(err); buzz(haptics, 'error'); return; }
     buzz(haptics, 'confirm');
@@ -170,16 +185,20 @@ function padRupees(pad: Box, d: Draft): number {
   return (pad === 'cash' && (d.cur.tendered ?? 0) > 0 ? d.cur.tendered ?? 0 : d.cur[pad]) / R;
 }
 
-/** Change due, any problem, the explicit waive / round-off. */
-function Adjust({ d, onRoundOff }: { d: Draft; onRoundOff: () => void }) {
+/** pay2: + Tip / − Waive change the amount due (with an Undo toast); any problem shows under them. */
+function Adjust({ d, onOther }: { d: Draft; onOther: (k: 'tip' | 'waive') => void }) {
   const openSheet = useApp((st) => st.openSheet);
+  const c = useApp((st) => st.counter);
+  const pick = (k: 'tip' | 'waive', p: Paise) => {
+    const prev = { tip: d.tip, waived: d.waived };
+    if (k === 'tip') d.setBoth(p, d.waived); else d.setBoth(d.tip, Math.min(p, Math.max(0, d.owed)));
+    const r = (x: Paise) => `₹${String(x / R)}`;
+    c.adjustToast(k === 'tip' ? (p > 0 ? `Tip ${r(p)} added` : 'Tip removed') : (p > 0 ? `Waived ${r(Math.min(p, Math.max(0, d.owed)))}` : 'Waive removed'), prev);
+  };
   return (
     <>
-      <ChangeDue tendered={d.cur.tendered ?? 0} cash={d.cur.cash} />
-      {d.check.over > 0 ? <div className={s.over} role="alert">More than the bill by <Money p={d.check.over} /></div> : null}
-      {!d.check.ok && d.check.over === 0 && d.toCollect > 0 ? <div className={s.over} role="alert">{d.check.reason}</div> : null}
-      {d.waived > 0 ? <Waived amount={d.waived} who={d.waiver.by} onEdit={() => { openSheet({ kind: 'waived' }); }} /> : null}
-      <RoundOff on={d.waived > 0} onOpen={() => { onRoundOff(); }} />
+      <AdjustRow tip={d.tip} waived={d.waived} onPick={pick} onOther={onOther} onWho={() => { openSheet({ kind: 'waived' }); }} />
+      {!d.check.ok && d.toCollect > 0 ? <div className={s.over} role="alert">{d.check.reason}</div> : null}
     </>
   );
 }
@@ -200,15 +219,15 @@ export function PaymentScreen() {
         <div className={s.body}>
           <div className={s.due}>
             <div className={s.dueLab}>To collect</div>
-            <Money p={d.toCollect} className={s.dueAmt} />
-            {tip > 0 ? <div className={s.tipNote}>incl. <Money p={tip} /> tip</div> : null}
+            <Money p={d.toCollect - d.waived} className={s.dueAmt} />
+            {tip > 0 || d.waived > 0 ? <div className={s.tipNote}>bill <Money p={Math.max(0, d.owed)} />{tip > 0 ? <> · tip +<Money p={tip} /></> : null}{d.waived > 0 ? <> · waived −<Money p={d.waived} /></> : null}</div> : null}
           </div>
+          <Adjust d={d} onOther={(k2) => { setPad(k2); }} />
           <SplitBoxes d={d} pad={pad} setPad={setPad} />
           <Slider split={cur} covered={cur.cash + cur.upi} onSlide={(f) => { d.setSplit(pay.slide(f, cur.cash + cur.upi, CONFIG.money.sliderSnapPaise, d.waived)); }} />
-          <Adjust d={d} onRoundOff={() => { setPad('waive'); }} />
-          <TipRow tip={tip} onTip={d.setTipTo} onOther={() => { setPad('tip'); }} />
+          <GivenRow given={d.given} cash={cur.cash} onGiven={d.setQuick} />
           <QrBlock d={d} o={o} />
-          <CountNotes notes={d.notes} onNotes={d.setNotes} cash={cur.cash} />
+          {cur.cash > 0 ? <CountNotes notes={d.notes} onNotes={d.setNotes} /> : null}
         </div>
       </main>
       <footer className={s.bar}>

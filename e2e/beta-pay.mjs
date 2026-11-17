@@ -1,5 +1,6 @@
 // Payment balance hotfix e2e (local demo data only). Usage: node e2e/beta-pay.mjs <outdir>  (BETA_URL to point at a local preview)
-// Typing Cash or UPI moves the other to the balance; the slider follows; a waive only comes from "Round off / waive".
+// pay2 (locked 17 Nov): Cash + UPI always equal the amount due; + Tip / − Waive (quick chips, Undo) are the only way to change it;
+// ₹100 / ₹200 / ₹500 cash given with a big Give back.
 import { chromium } from '@playwright/test';
 import { demoOps } from './seed-plain.mjs';
 
@@ -40,7 +41,7 @@ for (const theme of (process.env.THEMES ?? 'night,day').split(',')) {
     await p.getByRole('button', { name: 'Done', exact: true }).click(); await p.waitForTimeout(150);
   };
   const slideTo = async (f) => { const r = await p.getByRole('slider').boundingBox(); await p.mouse.click(r.x + r.width * f, r.y + r.height / 2); await p.waitForTimeout(150); };
-  const waivedShown = async () => (await p.getByRole('button', { name: /^Waived ₹/ }).count()) > 0;
+  const waivedShown = async () => /₹/.test(await p.getByRole('button', { name: /^− Waive/ }).innerText());
   const state = async () => { const [c, u, t] = [await box('Cash'), await box('UPI'), await total()]; return { c, u, t, ok: c + u === t && !(await waivedShown()) }; };
   const ev = (x) => `₹${String(x.c)} cash + ₹${String(x.u)} UPI = ₹${String(x.t)}, no waive`;
 
@@ -60,18 +61,27 @@ for (const theme of (process.env.THEMES ?? 'night,day').split(',')) {
   await step(T('type then slider: still adds up'), async () => { await type('UPI', '20'); await slideTo(0.3); const x = await state(); return x.ok ? ev(x) : false; });
   await step(T('Cash over the total shows change due; Confirm stays allowed'), async () => {
     await type('Cash', String(t0 + 100)); const x = await state(); await shot('02-change-due');
-    const chg = await p.getByRole('status').filter({ hasText: 'Change' }).innerText();
+    const chg = await p.getByRole('status').filter({ hasText: 'Give back' }).innerText();
     const enabled = await p.getByRole('button', { name: 'Confirm payment' }).isEnabled();
     return x.ok && x.c === t0 && x.u === 0 && /100/.test(chg) && enabled ? `${ev(x)}; "${chg.replace(/\s+/g, ' ')}"` : false;
   });
   await step(T('UPI over the total is clamped to the total'), async () => { await type('UPI', String(t0 + 500)); const x = await state(); return x.ok && x.u === t0 && x.c === 0 ? ev(x) : false; });
   await step(T('clear a field: the other takes the whole amount'), async () => { await clear('UPI'); const x = await state(); return x.ok && x.c === t0 && x.u === 0 ? ev(x) : false; });
-  await step(T('waive only through "Round off / waive"; boxes rebalance'), async () => {
-    await type('UPI', '30'); await p.getByRole('button', { name: 'Round off / waive' }).click();
-    for (const k of '10'.split('')) await p.getByRole('button', { name: k, exact: true }).click();
-    await p.getByRole('button', { name: 'Done', exact: true }).click(); await p.waitForTimeout(150); await shot('03-round-off');
-    const [c, u] = [await box('Cash'), await box('UPI')];
-    return (await waivedShown()) && u === 30 && c === t0 - 40 ? `Waived ₹10 shown; ₹${String(c)} + ₹${String(u)} + ₹10 = ₹${String(t0)}` : false;
+  await step(T('− Waive ₹10: amount due drops, boxes still add up; Undo puts it back'), async () => {
+    await type('UPI', '30'); await p.getByRole('button', { name: /^− Waive/ }).click();
+    await p.getByRole('group', { name: 'Waive' }).getByRole('button').first().click(); await p.waitForTimeout(150); await shot('03-waive');
+    const t1 = await total(); const [c1, u1] = [await box('Cash'), await box('UPI')];
+    await p.getByRole('status').getByRole('button', { name: 'Undo' }).click(); await p.waitForTimeout(150);
+    const t2 = await total();
+    return t1 === t0 - 10 && c1 + u1 === t1 && u1 === 30 && t2 === t0 ? `due ₹${String(t0)} → ₹${String(t1)} (₹${String(c1)} + ₹${String(u1)}) → Undo ₹${String(t2)}` : false;
+  });
+  await step(T('+ Tip ₹10 raises the amount due; ₹500 given shows Give back'), async () => {
+    await p.getByRole('button', { name: /^\+ Tip/ }).click();
+    await p.getByRole('group', { name: 'Tip' }).getByRole('button').first().click(); await p.waitForTimeout(150);
+    const t1 = await total(); await clear('UPI');
+    await p.getByRole('button', { name: '₹500 given' }).click(); await p.waitForTimeout(150); await shot('04-tip-give-back');
+    const gb = await p.getByRole('status').filter({ hasText: 'Give back' }).innerText();
+    return t1 === t0 + 10 && new RegExp(String(500 - t1)).test(gb) ? `due ₹${String(t1)}; "${gb.replace(/\s+/g, ' ')}"` : false;
   });
   await step(T('Confirm payment records it'), async () => {
     await p.getByRole('button', { name: 'Confirm payment' }).click(); await p.waitForTimeout(400);

@@ -3,6 +3,12 @@ All notable changes to Stall Tokens. SemVer. Times IST.
 
 ## [Unreleased]
 
+### pay2 payment (F-62), 17 Nov 2026 — Steve's locked rule
+- Cash + UPI always equal the amount due; whichever box is typed or slid, the other is the rest. A shortfall can't happen.
+- The amount due changes only with **+ Tip** and **− Waive** (₹10, ₹20, Other; Undo toast). Waive can't go above the bill. These replace the Tip row and "Round off / waive".
+- **Cash given** ₹100 / ₹200 / ₹500 in one tap, with a big **Give back ₹X**.
+- Tip and waive show on the slip and in Money (new Waived tile); the Sheet already records both.
+
 ### P3b tablet layout (F-61), 17 Nov 2026
 - **Two panes on a tablet** (48 rem wide and 30 rem tall, so 820×1180, 1180×820, 1024×768, 768×1024): Menu beside the bill or payment; Open Orders list beside the order card; Unpaid list beside the order. The number pad stays in its pane.
 - **Kitchen:** tickets in columns (3 across at 1180, 2 at 820).
