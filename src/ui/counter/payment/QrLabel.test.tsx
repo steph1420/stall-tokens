@@ -66,7 +66,7 @@ describe('QR label is tied to the encoded link (F-15)', () => {
     typeUpi('45');
     expect(expectLabelMatchesQr().shown.amount).toBe('₹45');
     const slider = screen.getByRole('slider', { name: 'Cash and UPI split' });
-    act(() => { fireEvent.keyDown(slider, { key: 'ArrowLeft' }); });
+    act(() => { fireEvent.keyDown(slider, { key: 'ArrowRight' }); });
     const after = expectLabelMatchesQr();
     expect(after.shown.amount).not.toBe('₹45');
     expect(Number(after.parsed?.amount)).toBeGreaterThan(45);

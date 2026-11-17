@@ -21,26 +21,26 @@ function Slider({ split, covered, onSlide, locked }: { split: pay.Split; covered
   const ref = useRef<HTMLDivElement>(null);
   const f = covered > 0 ? split.cash / covered : 0;
   const upiF = covered > 0 ? split.upi / covered : 0;
-  const move = (x: number) => { const r = ref.current?.getBoundingClientRect(); if (r && r.width > 0) onSlide((x - r.left) / r.width); };
+  const move = (x: number) => { const r = ref.current?.getBoundingClientRect(); if (r && r.width > 0) onSlide(1 - (x - r.left) / r.width); }; // D-SLIDE-1: dragging right gives more to UPI
   const step = CONFIG.money.sliderSnapPaise / Math.max(covered, 1);
   return (
     <>
       {/* D-PAY3-2: while a side is locked the slider rests (dimmed, not draggable); the lock says why. */}
       <div className={locked ? s.trackLocked : s.track} ref={ref} role="slider" tabIndex={locked ? -1 : 0} aria-label="Cash and UPI split" aria-disabled={locked || undefined}
-        aria-valuemin={0} aria-valuemax={covered / R} aria-valuenow={split.cash / R}
+        aria-valuemin={0} aria-valuemax={covered / R} aria-valuenow={split.upi / R} aria-valuetext={`UPI ₹${(split.upi / R).toLocaleString('en-IN')}, Cash ₹${(split.cash / R).toLocaleString('en-IN')}`}
         onPointerDown={(e) => { if (locked) return; e.currentTarget.setPointerCapture(e.pointerId); move(e.clientX); }}
         onPointerMove={(e) => { if (!locked && e.currentTarget.hasPointerCapture(e.pointerId)) move(e.clientX); }}
-        onKeyDown={(e) => { if (locked) return; if (e.key === 'ArrowLeft') onSlide(f - step); if (e.key === 'ArrowRight') onSlide(f + step); }}>
+        onKeyDown={(e) => { if (locked) return; if (e.key === 'ArrowLeft') onSlide(f + step); if (e.key === 'ArrowRight') onSlide(f - step); }}>
         <div className={s.trackIn}>
-          <div className={s.fillCash} style={{ width: `${String(f * 100)}%` }} />
-          <div className={s.fillUpi} style={{ left: `${String(f * 100)}%`, width: `${String(upiF * 100)}%` }} />
+          <div className={s.fillUpi} style={{ width: `${String(upiF * 100)}%` }} />
+          <div className={s.fillCash} style={{ left: `${String(upiF * 100)}%`, width: `${String(f * 100)}%` }} />
         </div>
-        <div className={s.thumb} style={{ left: `${String(f * 100)}%` }} />
+        <div className={s.thumb} style={{ left: `${String(upiF * 100)}%` }} />
       </div>
       <div className={s.ticks} aria-hidden="true">{Array.from({ length: 19 }, (_, i) => <i key={i} className={i % 5 === 0 || i === 18 ? s.maj : undefined} />)}</div>
       <div className={s.tickLabs} aria-hidden="true">
         <span className={s.t0}>₹0</span>
-        {f > CONFIG.payment.sliderLabelEdge && f < 1 - CONFIG.payment.sliderLabelEdge ? <span className={s.tMid} style={{ left: `${String(f * 100)}%` }}>{`₹${(split.cash / R).toLocaleString('en-IN')}`}</span> : null}
+        {upiF > CONFIG.payment.sliderLabelEdge && upiF < 1 - CONFIG.payment.sliderLabelEdge ? <span className={s.tMid} style={{ left: `${String(upiF * 100)}%` }}>{`₹${(split.upi / R).toLocaleString('en-IN')}`}</span> : null}
         <span className={s.tEnd}>{`₹${(covered / R).toLocaleString('en-IN')}`}</span>
       </div>
     </>
