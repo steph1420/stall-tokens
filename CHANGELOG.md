@@ -3,6 +3,15 @@ All notable changes to Stall Tokens. SemVer. Times IST.
 
 ## [Unreleased]
 
+### 2.1.0 P0 — Beta / Stable channel (17 Nov 2026, Beta only; F-49, Q-CHANNEL A, Q-BETA-PATH B)
+- Version 2.1.0 on `feat/v2.1.0` (Stable stays 2.0.0 on `main`).
+- The app knows its channel: Beta when served under `/stall-tokens-beta/` or built with `VITE_CHANNEL=beta`, else Stable.
+- Beta keeps its own storage (`stall-tokens-beta.v2`: orders, device settings, receipt photos, tab channel), so Beta and Stable never share data on the same phone. Stable storage names are unchanged.
+- Beta never carries a baked-in sync link or key.
+- Beta's home-screen name and page title are "Stall Tokens Beta" ("Stall β" short).
+- Settings › About › Version shows the version and channel, e.g. "2.1.0 · Beta".
+- Fixed: receipt photos used a fixed DB name; they now follow the channel prefix.
+
 ## [2.0.0] — 16 Nov 2026
 Released to https://steph1420.github.io/stall-tokens/, replacing v1 (never used in the stall). 92 tests. Rollback: redeploy tag `v1.0.0` (branch `backup/pre-v2.0.0`). Footer stamp is `v2.0.0 · <short hash> · <build date IST>`; tap it for What's New (Q-HARM-7). GitHub Pages now deploys the Vite `dist/` from `deploy-pages.yml` on `main` (v1 was served from the repo root).
 

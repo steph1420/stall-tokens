@@ -1,5 +1,13 @@
 # Status
 
+## 2.1.0 build (branch `feat/v2.1.0`, Beta only) — P0 done 17 Nov 2026
+- **P0 channel plumbing (F-49, Q-CHANNEL A, Q-BETA-PATH B):** `src/config/index.ts` detects Beta from the `/stall-tokens-beta/` path or `VITE_CHANNEL=beta`; storage prefix by channel (`stall-tokens-beta.v2` on Beta, Stable unchanged `stall-tokens.v2`, receipts DB now follows it); no baked sync on Beta; `vite.config.ts` names manifest + title by channel; Settings › About › Version shows "2.1.0 · Beta/Stable". Test: `src/config/channel.test.ts`. Version 2.1.0. `npm run check` green (94 tests).
+- Beta workflow (`steph1420/stall-tokens-beta`): the sed rewrite became a check only (title, manifest name, Beta prefix in the JS).
+- Stable / `main` untouched. Mockups s119–s126 approved by Steve 17 Nov 06:15 IST.
+- **Next: P1 data + rules (no UI)** per `docs/BUILD_PLAN_2.1.0.md` §1. Not started.
+- Not in P0: the launch "Beta" tag under the stall name (FEATURES §1) and the full Settings regroup (About with device id / Help / 7-tap Developer) are P5 / P2 work.
+
+
 **v2.0.0 released** 16 Nov 2026 to https://steph1420.github.io/stall-tokens/, replacing v1 (never used). Rollback: redeploy tag `v1.0.0` / branch `backup/pre-v2.0.0`. Pages builds `dist/` from `main` via `.github/workflows/deploy-pages.yml`. The Sheet bridge web app is live (Steve pasted Code.gs 2.0.0); do not put the `/exec` URL or `STALL_KEY` in this repo.
 
 Still later, only when Steve says go: verify + break-it run, loophole review, walk-through test. Q-SHEET-COMPACT A and Q-INFO-EDITORS B are recorded, not in this release. The log below is the build history.

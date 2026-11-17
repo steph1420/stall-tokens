@@ -52,7 +52,7 @@ Every op: `{ v, opId = writer:seq, writer, seq, lamport, vv, kind, body, wallAt 
 
 ### 4.2 Data source interface (Q-HARM-1)
 `data/index.ts` exposes one `DataSource` = `{ ops: OpStore, device: DeviceStore, channel: TabChannel, transports: Transport[] }`.
-- `OpStore`: `load()`, `append(ops)`. Adapters: `LocalIdb` (always, DB name prefixed `stall-tokens.v2`), `MemoryOpStore` (tests).
+- `OpStore`: `load()`, `append(ops)`. Adapters: `LocalIdb` (always, DB name prefixed with `CONFIG.storage.prefix`: `stall-tokens.v2` on Stable, `stall-tokens-beta.v2` on Beta, §4.7), `MemoryOpStore` (tests).
 - `Transport`: `push(ops) → acked opIds`, `pull(cursor) → { ops, cursor }`, `name`, `health()`. Adapters: `FakeTransport` (tests and dev, replays delay, loss, duplicates, errors, timeouts) and `SheetBridge` (Apps Script; built last, TEST Sheet first).
 - `TabChannel`: BroadcastChannel between tabs on one device.
 
@@ -63,7 +63,7 @@ The op log does not know how ops travel. The sync engine (`data/sync/engine.ts`)
 `data/join.ts` reads `#join=<base64url JSON {v,u,k,r,n}>` before the data source picks transports, writes the device prefs (sync URL, key, role, serving name) and strips the fragment with `history.replaceState`. The fragment never reaches a server. `prefs.role` picks the first screen (`store/core.ts` uiForRole). Revocation = new STALL_KEY. The passcode gate (D-ACCESS) stays in code, off by default.
 
 ### 4.5 Device-only stores and devices (pass 3)
-- Receipt photos: `data/adapters/receipts.ts`, own IndexedDB `stall-tokens.v2.receipts`, keyed by entry id; never in the op log or the Sheet (F-47).
+- Receipt photos: `data/adapters/receipts.ts`, own IndexedDB `<prefix>.receipts` (`stall-tokens.v2.receipts` on Stable), keyed by entry id; never in the op log or the Sheet (F-47).
 - Bluetooth printer: `data/adapters/btPrinter.ts` (Web Bluetooth, writable characteristic on common ESC/POS services, 100-byte chunks); bytes from the pure `store/rules/escpos.ts` (F-41).
 - Shared settings via `setting.set`: `tipChips`, `roundOffSteps` (F-45), `splitMode`, `splitExact:<personId>` (F-47).
 
@@ -73,6 +73,13 @@ The op log does not know how ops travel. The sync engine (`data/sync/engine.ts`)
 - Conflicts. `store/fold/lww.ts` returns `{state, conflict, apply}`. A true clash (vv-concurrent) normally goes to the later sort order; if the earlier write came from `sheet` the Sheet keeps it (D-SHEET-WINS). Every clash is a `Conflict {rule}` in state and a row in the hidden `conflicts` tab. Settings > Sync > Review (`ui/stall/ReviewSheet.tsx`, `store/conflicts.ts`) flips one with a new op.
 - Transport. Ops carry `recvAt` (set by the bridge on pull; tiebreak and display only). `push` returns `{stored, resend}`; a seq gap per writer (`gaps_`) makes the bridge ask for the missing ops, and the engine re-queues them from the local log. Ops with an older contract `v` are refused with "update the app".
 - Units: logs keep paise; info tabs show rupees (`*_inr`) for hand editing (D-INFO-INR).
+
+### 4.7 Channels: Stable and Beta (F-49, Q-CHANNEL A, Q-BETA-PATH B; 2.1.0 P0, 17 Nov 2026)
+- `config/index.ts` decides the channel once at load: **Beta** when the build has `VITE_CHANNEL=beta` or the page is under `/stall-tokens-beta/`; otherwise **Stable**. Beta wins either way, so a Beta page can never open Stable data.
+- Every storage name comes from `CONFIG.storage.prefix` (`stall-tokens.v2` Stable, `stall-tokens-beta.v2` Beta): op log IDB, receipts IDB, device prefs key and the tab BroadcastChannel. Stable names are unchanged. Both channels share the `steph1420.github.io` origin; the service workers are scoped by path, so they cannot cross.
+- Beta never has a baked sync URL or key (`CONFIG.sync.bakedUrl/bakedKey` are empty); it only talks to a bridge typed in on that phone (a TEST Sheet).
+- `vite.config.ts` reads `VITE_CHANNEL` to name the manifest and `<title>` ("Stall Tokens Beta", short name "Stall β"). Settings › About shows `version · channel`.
+- Beta is built and published only by the workflow in `steph1420/stall-tokens-beta` (checks out `feat/v2.1.0`). Since P0 its step only checks the build; it no longer rewrites files.
 
 ## 5. Interaction owners
 | Screen | Interaction owner | Gestures (one per direction) |

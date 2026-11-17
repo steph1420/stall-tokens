@@ -201,8 +201,8 @@ The full design is in `docs/SYNC_SERVER.md`: `server/` in Go with JSON endpoints
 - [x] Q-GO-HOST locked (t80u, 16 Nov 23:28 IST): Sheet hidden `ops` log = durable store; no server DB as truth; Render free. SYNC_SERVER.md revised 16 Nov 23:36 IST.
 - [x] Q-UNPAID-ROW B, Q-GO-PUSH B and Q-GO-WHEN B locked (16 Nov 23:44 IST). The Go server and SSE are 2.2.0; 2.1.0 adds the digest freshness check to the Code.gs bridge (P6). Layout for Unpaid is s120.
 - [x] Q-HOLD-RING A locked (16 Nov 23:49 IST): unpaid Complete hold is a wide bar along the top of the action bar, no ring on the button. New pair `s121-complete-hold-bar.png`; the ring pair `s121-complete-toast-ring.png` is superseded and kept.
-- [ ] **STOPPED here (16 Nov 23:53 IST).** Next: Steve approves the mockups (including the new s121), then P0. No app code until then.
-- [ ] P0 channel plumbing (base-path detection, Beta storage prefix, About shows the channel; no Stable change)
+- [x] Steve approved mockups s119–s126 (17 Nov 06:15 IST; s120 Unpaid, s121-complete-hold-bar) and said go for P0, Beta only (06:18 IST).
+- [x] P0 channel plumbing (base-path detection, Beta storage prefix, About shows the channel; no Stable change) — 17 Nov 2026, F-49. Beta workflow step is now a check only.
 - [ ] P1 data + rules + unit tests
 - [ ] P2 Counter (Unpaid tab = Q-UNPAID-ROW B, s120)
 - [ ] P3 Kitchen + Station
