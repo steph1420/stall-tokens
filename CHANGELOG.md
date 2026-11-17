@@ -3,6 +3,9 @@ All notable changes to Stall Tokens. SemVer. Times IST.
 
 ## [Unreleased]
 
+### P4 follow-up — Stock at large text, 17 Nov 2026
+- On a phone at 200 % text, Stock names and "Not counted" no longer run off the row. Categories become a wrapping chip row, and the count sits under the name when the line is tight. The size e2e now fails (instead of a false pass) if anything is off-screen.
+
 ### QR label (F-15), 17 Nov 2026 — Steve
 - Next to the payee selector, above the Payment QR, the UPI ID and the amount are shown (the ID is selectable). Both are read back from the same `upi://pay` link the QR encodes (`pa` and `am`), so the number on screen is the number that will be scanned. The QR still sits below the split, and still hides while UPI is ₹0.
 
