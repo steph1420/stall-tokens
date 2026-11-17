@@ -2,7 +2,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { CONFIG } from '../../../config';
 import type { Order, Paise } from '../../../contract';
-import { bill, formatToken, pay, upiLink, useApp } from '../../../store';
+import { bill, formatToken, pay, upiLink, upiQrFacts, useApp } from '../../../store';
 import { buzz } from '../../kit/haptics';
 import { Icon } from '../../kit/Icon';
 import { Money } from '../../kit/Money';
@@ -171,13 +171,23 @@ function QrBlock({ d, o }: { d: Draft; o: Order }) {
   const upi = d.cur.upi;
   if (upi <= 0) return null;
   const note = `${stallName} ${formatToken(o.token, CONFIG.tokens.pad)}`.slice(0, CONFIG.payment.upiNoteMaxChars);
+  // Single source: the same link the QR encodes; the label is parsed back from pa= and am=.
+  const link = payee ? upiLink(payee.upiId, payee.name, upi, note) : '';
+  const facts = link ? upiQrFacts(link) : null;
   return (
     <div className={s.qrBlock}>
       <div className={s.qrMeta}>
         <button type="button" className={s.qrWho} onClick={() => { openSheet({ kind: 'payee' }); }}>{payee ? payee.name : 'Add a UPI ID'} <Icon name="chevron" className={s.chev} /></button>
-        <Money p={upi} className={s.qrAmt} />
       </div>
-      {payee ? <div className={s.qrTile}><Qr text={upiLink(payee.upiId, payee.name, upi, note)} label={`Payment QR, ₹${String(upi / R)}, ${payee.name}`} /></div> : null}
+      <div className={s.qrRow}>
+        {payee && facts ? <div className={s.qrTile}><Qr text={link} label={`Payment QR, ${facts.amountText}, ${facts.upiId}`} /></div> : null}
+        {facts ? (
+          <div className={s.qrFacts} role="group" aria-label="UPI ID and amount on this QR">
+            <span className={s.qrId} title={facts.upiId}>{facts.upiId}</span>
+            <span className={s.qrAmt}>{facts.amountText}</span>
+          </div>
+        ) : null}
+      </div>
       {payees.length > 1 ? <div className={s.payeePick}>{payees.map((p) => <button type="button" key={p.id} className={p.id === payee?.id ? s.payeeOn : s.payee} onClick={() => { d.setPayeeId(p.id); }}>{p.name}</button>)}</div> : null}
     </div>
   );

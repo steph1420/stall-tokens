@@ -13,6 +13,7 @@
 - **pay3 payment (F-63), done 17 Nov 2026:** split lock + calculator; Cash given row removed. `Pay3.test.tsx`, `pay.test.ts`, `calc.test.ts`, `e2e/beta-pay.mjs`. s128 restyle and P4 not started.
 - **pay2 payment (F-62), done 17 Nov 2026:** Steve's locked rule; current style (s128 not locked yet). `Pay2.test.tsx`, `e2e/beta-pay.mjs`.
 - **P4 History, Money, Close the day, Day notes, Stock (F-64..F-68), done 17 Nov 2026 (branch `feat/v2.1.0-p4`):** History Orders · Money with every sent order and tags (W-08/10/18/21), search and Close the day behind Settings › Extras (default off), Money Unpaid / Refunds / Written off tiles, Day notes, Stock All rail + chips, W-23 count-only paste; fix D-P4-REFUND-DUE. `src/store/p4.test.ts`, `src/ui/stall/P4Stall.test.tsx`, `e2e/beta-p4.mjs`.
+- **QR label (F-15), 17 Nov 2026:** UPI ID and amount next to the Payment QR are parsed from the link the QR encodes (`readUpiLink` / `upiQrFacts`). `upi.test.ts`, `QrLabel.test.tsx`.
 - **Next:** Steve's call on mockup s128 (tiles) and the P4 proposals; then P5 Settings + Data.
 - Not in P0: the launch "Beta" tag under the stall name (FEATURES §1) and the full Settings regroup (About with device id / Help / 7-tap Developer) are P5 / P2 work.
 
