@@ -85,3 +85,35 @@ describe('pay3 calculator', () => {
     expect(screen.getByRole('button', { name: 'Unlock UPI' })).toBeTruthy();
   });
 });
+
+describe('pay4 tip like waive (D-PAY4-1)', () => {
+  const pillClass = (n: RegExp) => screen.getByRole('button', { name: n }).className.split(' ').filter((x) => !/Tip|Waive/.test(x)).length;
+  const chips = (g: string) => within(screen.getByRole('group', { name: g })).getAllByRole('button').map((b) => b.textContent.replace(/\s+/g, ''));
+  it('+ Tip opens the same chips as − Waive (₹10, ₹20, Other), no extra tip UI', async () => {
+    await payScreen();
+    expect(pillClass(/^\+ Tip/)).toBe(pillClass(/^− Waive/));
+    tap(/^\+ Tip/);
+    const tip = chips('Tip');
+    expect(tip).toEqual(['₹10', '₹20', 'Other']);
+    expect(screen.queryByRole('button', { name: /No tip|Edit tip/ })).toBeNull();
+    tap(/^− Waive/);
+    expect(chips('Waive').slice(0, 3)).toEqual(tip);
+  });
+  it('tap a lit chip to take the tip off; an Other tip shows as its own lit chip', async () => {
+    await payScreen();
+    const d0 = due();
+    tap(/^\+ Tip/); chip('Tip', 1);
+    expect(due()).toBe(d0 + 20);
+    tap(/^\+ Tip/);
+    expect(within(screen.getByRole('group', { name: 'Tip' })).getAllByRole('button')[1]?.getAttribute('aria-pressed')).toBe('true');
+    chip('Tip', 1);
+    expect(due()).toBe(d0);
+    tap(/^\+ Tip/); tap('Other');
+    for (const k of ['1', '5']) tap(k);
+    tap('Done');
+    expect(due()).toBe(d0 + 15);
+    tap(/^\+ Tip/);
+    expect(chips('Tip')).toEqual(['₹10', '₹20', '₹15', 'Other']);
+    expect(within(screen.getByRole('group', { name: 'Tip' })).getAllByRole('button')[2]?.getAttribute('aria-pressed')).toBe('true');
+  });
+});

@@ -8,7 +8,7 @@ const BETA = process.env.BETA_URL ?? 'https://steph1420.github.io/stall-tokens-b
 const V = [['421x927', 421, 927, ''], ['421x927-text200', 421, 927, 't'], ['ipad-820x1180', 820, 1180, ''], ['ipad-1180x820', 1180, 820, ''], ['ipad-820x1180-text200', 820, 1180, 't'], ['ipad-1180x820-text200', 1180, 820, 't']];
 const b = await chromium.launch({ executablePath: '/usr/bin/google-chrome', args: ['--no-sandbox'] });
 let fails = 0;
-for (const theme of ['night', 'day']) for (const [label, w, h, t] of V) {
+async function one(theme, [label, w, h, t]) {
   const ctx = await b.newContext({ viewport: { width: w, height: h }, deviceScaleFactor: 1, hasTouch: true, serviceWorkers: 'block' });
   const p = await ctx.newPage(); p.setDefaultTimeout(8000);
   const errors = []; p.on('pageerror', (e) => errors.push(e.message));
@@ -35,10 +35,11 @@ for (const theme of ['night', 'day']) for (const [label, w, h, t] of V) {
     const res = await p.getByLabel('Result').innerText();
     // every key and both Use buttons are reachable (scroll inside the sheet allowed) and no sideways scroll
     const keys = ['Clear', 'Delete', 'Divide', 'Times', '7', '0', 'Point', 'Equals', 'Use as Cash', 'Use as UPI'];
-    let small = 0; for (const k of keys) { const bb = await p.getByRole('button', { name: k, exact: true }).boundingBox(); if (!bb || bb.height < 44 || bb.width < 44) small++; }
+    const boxes = []; for (const k of keys) boxes.push(await p.getByRole('button', { name: k, exact: true }).boundingBox());
+    const small = boxes.filter((bb) => !bb || bb.height < 44 || bb.width < 44).length;
     // sideways scroll on the page or inside the calculator sheet (clipped text inside overflow:hidden cards doesn't scroll)
     const hs = await p.evaluate(() => { const d = globalThis.document; const sheet = d.querySelector('[role="dialog"]');
-      return d.documentElement.scrollWidth > d.documentElement.clientWidth + 1 || (!!sheet && [sheet, ...sheet.querySelectorAll('*')].some((e) => e.scrollWidth > e.clientWidth + 1 && getComputedStyle(e).overflowX !== 'visible' && getComputedStyle(e).overflowX !== 'hidden')); });
+      return d.documentElement.scrollWidth > d.documentElement.clientWidth + 1 || (!!sheet && [sheet, ...sheet.querySelectorAll('*')].some((e) => e.scrollWidth > e.clientWidth + 1 && globalThis.getComputedStyle(e).overflowX !== 'visible' && globalThis.getComputedStyle(e).overflowX !== 'hidden')); });
     await p.screenshot({ path: `${out}/calc-${label}-${theme}.png` });
     const ok = res === '56' && small === 0 && !hs && lockBox && lockBox.width >= 44 && lockBox.height >= 44 && errors.length === 0;
     if (!ok) fails++;
@@ -46,6 +47,7 @@ for (const theme of ['night', 'day']) for (const [label, w, h, t] of V) {
   } catch (e) { fails++; console.log(`FAIL | ${label} ${theme} | ${String(e.message ?? e).split('\n')[0]}`); }
   await ctx.close();
 }
+for (const theme of ['night', 'day']) for (const v of V) await one(theme, v);
 await b.close();
 console.log(`SUMMARY ${String(V.length * 2 - fails)}/${String(V.length * 2)} pass`);
 process.exit(fails ? 1 : 0);
