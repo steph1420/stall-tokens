@@ -3,7 +3,7 @@
 import { describe, expect, it } from 'vitest';
 import { CONFIG } from '../config';
 import { DEMO_MENU } from '../mock/fixtures';
-import { bill, closing, history, liveOrders, money } from '.';
+import { bill, closing, extraOn, history, liveOrders, money } from '.';
 import { makeTestStore } from './testkit';
 
 async function ready() {
@@ -120,13 +120,18 @@ describe('P4 Money and Close the day (F-65, F-66)', () => {
     s().settle.setPartner(p, true, 100);
     expect(s().close.lockDay(dayId)).toBe(true);
   });
-  it('Extras switches are shared settings, off until switched on', async () => {
+  it('Extras are on by default when never touched; an explicit off stays off (Q-P4-EXTRAS-ON A)', async () => {
     const s = await ready();
     expect(s().folded.settings[CONFIG.extras.closeDay]).toBeUndefined();
-    s().close.setExtra('closeDay', true); s().close.setExtra('historySearch', true);
-    expect([s().folded.settings[CONFIG.extras.closeDay], s().folded.settings[CONFIG.extras.historySearch]]).toEqual(['1', '1']);
+    expect(extraOn(s().folded.settings, 'closeDay')).toBe(true);
+    expect(extraOn(s().folded.settings, 'historySearch')).toBe(true);
     s().close.setExtra('closeDay', false);
     expect(s().folded.settings[CONFIG.extras.closeDay]).toBe('0');
+    expect(extraOn(s().folded.settings, 'closeDay')).toBe(false);
+    expect(extraOn(s().folded.settings, 'historySearch')).toBe(true);
+    s().close.setExtra('closeDay', true);
+    expect(s().folded.settings[CONFIG.extras.closeDay]).toBe('1');
+    expect(extraOn(s().folded.settings, 'closeDay')).toBe(true);
   });
 });
 

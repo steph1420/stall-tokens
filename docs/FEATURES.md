@@ -67,12 +67,12 @@ This sheet lists every screen and every UI element: what it does, its states, ni
 
 ---
 
-## 0.2 Pos gaps — top 4 (each **default off**; Steve switches on or vetoes)
-Steve asked (16 Nov) for only the strongest gaps to lead. Each one ships behind a shared setting that is **off** until he turns it on.
-1. **Close the day** (§21): a checklist (unpaid, refunds due, cash count, notes, lock) and a day summary. Why: a stall day needs an end, not just a start.
-2. **Keep data safe** (Settings › Data › Storage, `navigator.storage.persist()`). Why: Android can evict a PWA's storage under pressure.
-3. **Waiting to sync n** (Settings › Sync). Why: before a reset or a phone swap, staff must see what hasn't reached the server or Sheet.
-4. **History search** (§24): by token number, name or item. Why: "the boy in the red shirt's order from 6 pm" has to be findable.
+## 0.2 Pos gaps — top 4
+Steve asked (16 Nov) for only the strongest gaps to lead. Each one ships behind a shared setting.
+1. **Close the day** (§21): a checklist (unpaid, refunds due, cash count, notes, lock) and a day summary. Why: a stall day needs an end, not just a start. **On by default** (Q-P4-EXTRAS-ON A, locked 17 Nov 2026, 21:47 IST). Settings › Extras can turn it off; a phone that never touched the toggle is on; an explicit off stays off.
+2. **Keep data safe** (Settings › Data › Storage, `navigator.storage.persist()`). Why: Android can evict a PWA's storage under pressure. Still **default off**.
+3. **Waiting to sync n** (Settings › Sync). Why: before a reset or a phone swap, staff must see what hasn't reached the server or Sheet. Still **default off**.
+4. **History search** (§24): by token number, name or item. Why: "the boy in the red shirt's order from 6 pm" has to be findable. **On by default** (Q-P4-EXTRAS-ON A). Same toggle rule as Close the day.
 
 ### Later — Pos ideas (not in 2.1.0 unless Steve picks one)
 - Menu search (magnifier in the sort row)
@@ -98,7 +98,7 @@ Steve asked (16 Nov) for only the strongest gaps to lead. Each one ships behind 
 | Kitchen tile | Opens the Kitchen. | — | existing |
 | Station tiles | One tile per **active station from data** (PK-6). Shows the station's colour and icon and opens its Station page. | No stations yet: a "Set up stations" link to Settings › Stations. Renaming a station keeps its id (PK-6, W-34). | fix 2.1.0 (W-34) |
 | Stall list (Money, Settle up, Stock, History, Open the stall, Settings) | Opens each Stall screen. | No bullets; "Open the stall" fits on one line (W-04). The last row has no border. | fix 2.1.0 (W-04) |
-| Close the day row | Opens Close day (§21). Shown once a day has started. | — | **Pos gap, top 4 (default off)**: a stall day needs an end, not just a start (unpaid, refunds and cash checked before going home) |
+| Close the day row | Opens Close day (§21). Shown once a day has started, when the shared switch is on. | — | **Pos gap, top 4 (on by default, Q-P4-EXTRAS-ON A)**: a stall day needs an end, not just a start (unpaid, refunds and cash checked before going home) |
 | Sync dot | Top right. Shows nothing when synced, a cloud with a slash when offline, and a brief saving ring then a tick after each sync (Lippy kit). A tap opens Settings › Sync. | Only shown when sync is set up. | kept — Steve: Sync as a dot only: phones in a fair lose signal; staff must know if their orders have reached the Sheet |
 | Device resume | A device last used as Kitchen or a Station reopens there (screen place is a §0.1 exception). Counter devices still see Launch (PK-5 A, changes Q-LAUNCH-1 B for kitchen devices only). | A sign-in-link role still wins (F-44). | new 2.1.0 (PK-5) |
 | Channel tag | On Beta builds only, a small "Beta" word under the stall name. | Stable shows nothing. | new 2.1.0 (Q-CHANNEL A) |
@@ -285,8 +285,8 @@ Reached from the Open Orders sheet, Unpaid, History and Billing (after an edit).
 | Where | Counter ⋯ › **Order History**, and Stall › History (one screen with a segment **Orders · Money**). | — | new 2.1.0 (see **Q-HISTORY-1**) |
 | Day sections | Newest first. "Today", then dates (en-GB, IST). | — | existing |
 | Rows | **Every sent order** (W-08), with token `#004` (W-18), time, items, ₹, and a tag: Unpaid ₹X · Paid cash/UPI/Mixed · Refunded ₹X · Refund due ₹X · Cancelled · Written off · Edited. | — | fix 2.1.0 (W-08, W-18, W-21) |
-| **Search** | Token number, client name or item. | — | **Pos gap, top 4 (default off)**: "the boy in the red shirt's order from 6 pm" has to be findable |
-| **Filter chips** | All · Unpaid · Refunded · Cancelled. | — | Later — Pos idea: quick to check the day's problems |
+| **Search** | Token number, client name or item. Behind the shared "History search" switch, on by default. | — | **Pos gap, top 4 (on by default, Q-P4-EXTRAS-ON A)**: "the boy in the red shirt's order from 6 pm" has to be findable |
+| **Filter chips** | All · Unpaid · Refunded · Cancelled. | — | Later — Pos idea (Q-P4-HFILTER A, locked 17 Nov 2026): once search is in use |
 | Row tap → History sheet | Edit (Billing), **Refund** (always enabled when money is held, W-10), Take payment (if due), Print token, Hold to cancel. | — | fix 2.1.0 (W-10, W-19) |
 | Money segment | The existing entries list (Spent/Received, Hold to void). | — | existing |
 | Empty | "Nothing yet today". | — | existing |
@@ -314,14 +314,14 @@ Unchanged in 2.1.0 (existing). The Close day screen (§21) links to it.
 | Element | What it does | States / edge cases | Status |
 | --- | --- | --- | --- |
 | Open the stall | Float keypad, Start day. | **Day rollover:** on the first order of a new IST date while the old day is still open, ask "Start today (tokens from #001) or keep yesterday's day?" (W-22). The "Last fair closed with" wording is only used when a day was really closed. | fix 2.1.0 (W-22) |
-| **Close day** (new screen) | A checklist with five steps. 1) **Unpaid** orders (n, ₹): take payment / complete. 2) **Refunds due**. 3) **Cash count**: count notes (the Payment tiles) vs Register by the book, showing the difference ("₹20 short"). 4) **Day notes** (§22). 5) **Settle up**, then Lock day (F-29). | Every step can be skipped with a reason, but it's shown in the day summary. | **Pos gap, top 4 (default off)**: the report found no close-day checklist (§4); cash short/over is the most common stall dispute |
-| Day summary | Totals, by item (top sellers), by payment type, refunds, write-offs. Shared with **hold to share** (LFPS-SOW kit). | — | **Pos gap, top 4 (default off)**: the partners ask "how did we do" every evening |
+| **Close day** (new screen) | A checklist with five steps. 1) **Unpaid** orders (n, ₹): take payment / complete. 2) **Refunds due**. 3) **Cash count**: count notes (the Payment tiles) vs Register by the book, showing the difference ("₹20 short"). 4) **Day notes** (§22). 5) **Settle up**, then Lock day (F-29). Behind the shared "Close the day" switch, on by default. | Every step can be skipped with a reason, but it's shown in the day summary. | **Pos gap, top 4 (on by default, Q-P4-EXTRAS-ON A)**: the report found no close-day checklist (§4); cash short/over is the most common stall dispute |
+| Day summary | Totals, by item (top sellers), by payment type, refunds, write-offs. Shared with **hold to share** (LFPS-SOW kit). | — | **Pos gap, top 4 (on by default, Q-P4-EXTRAS-ON A)**: the partners ask "how did we do" every evening |
 
 ## 22. Day notes (new, Q-SPLIT A)
 | Element | What it does | Status |
 | --- | --- | --- |
 | Notes per day | Free text plus quick chips (Weather, Crowd, Sold out early, Issue, Idea). `record.set day_note {day_id, text, tags}`. Editable any day later. | new 2.1.0 (P-13) |
-| Where | Close day step 4, History day header ("Notes ›") and the Sheet info tab `day_notes` (an editable `sheet` op). | new 2.1.0 |
+| Where | Close day step 4, History day header ("Notes ›") and the Sheet info tab `day_notes` (an editable `sheet` op). Counted / skipped fields go to the Sheet in P6 (Q-P4-SHEET A, locked 17 Nov 2026). | new 2.1.0 |
 
 ## 23. Settings (F-34), regrouped to the Q-HARM-5 shell and LFPS S1 (quiet grouped rows with chevrons)
 | Group › Row | What it does | Status |

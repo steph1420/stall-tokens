@@ -1,7 +1,6 @@
 // D-NAV: the quiet "Stall" list, on the launch screen (third section) and in the Counter ⋯ sheet. Same rows in both.
 import type { StallScreen } from '../../store';
-import { useApp } from '../../store';
-import { CONFIG } from '../../config';
+import { extraOn, useApp } from '../../store';
 import kit from '../kit/kit.module.css';
 
 export const STALL_SCREENS: readonly { id: StallScreen; label: string; hint: string }[] = [
@@ -16,8 +15,8 @@ export const STALL_SCREENS: readonly { id: StallScreen; label: string; hint: str
 
 export function StallNav({ className, onGo }: { className?: string | undefined; onGo?: () => void }) {
   const open = useApp((s) => s.openStall);
-  // F-66: "Close the day" shows once a day has started and the shared switch is on (FEATURES §0.2, default off).
-  const closeOn = useApp((s) => s.folded.settings[CONFIG.extras.closeDay] === '1' && s.folded.days.length > 0);
+  // F-66: "Close the day" shows once a day has started and the shared switch is on (FEATURES §0.2, Q-P4-EXTRAS-ON A).
+  const closeOn = useApp((s) => extraOn(s.folded.settings, 'closeDay') && s.folded.days.length > 0);
   return (
     <ul className={className ?? kit.list} aria-label="Stall">
       {STALL_SCREENS.filter((x) => x.id !== 'close' || closeOn).map((x) => (

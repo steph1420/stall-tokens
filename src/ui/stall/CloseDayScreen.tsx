@@ -1,4 +1,4 @@
-// F-66 Close the day (FEATURES §21, Pos top-4 gap behind the shared "Close the day" switch, default off). No locked mockup:
+// F-66 Close the day (FEATURES §21, Pos top-4 gap behind the shared "Close the day" switch, on by default; Q-P4-EXTRAS-ON A). No locked mockup:
 // built in the Stall list style (D-P4-CLOSE). Five steps: 1 Unpaid, 2 Refunds due, 3 Cash in the box (count notes vs the book),
 // 4 Day notes, 5 Lock the day; then the Day summary. Steps 1-3 can be left for later with one tap (D-P4-SKIP).
 import { useState, type ReactNode } from 'react';

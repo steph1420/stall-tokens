@@ -6,7 +6,7 @@ import { useState, type ReactNode } from 'react';
 import { appStamp, CONFIG } from '../../config';
 import { formatInr } from '../../contract';
 import type { DevicePrefs, Extra } from '../../store';
-import { amounts, istClock, isSheetUrl, useApp } from '../../store';
+import { amounts, extraOn, istClock, isSheetUrl, useApp } from '../../store';
 import { AmountsEdit } from '../kit/AmountsEdit';
 import { Sheet } from '../kit/Sheet';
 import kit from '../kit/kit.module.css';
@@ -127,11 +127,11 @@ export function SettingsScreen() {
   );
 }
 
-/** FEATURES §0.2 top-4 gaps (F-64 search, F-66 Close the day): shared switches, off until Steve turns them on. */
+/** FEATURES §0.2 top-4 gaps (F-64 search, F-66 Close the day): shared switches, on by default (Q-P4-EXTRAS-ON A). */
 function Extras() {
   const set = useApp((x) => x.folded.settings);
   const c = useApp((x) => x.close);
-  const on = (k: Extra) => set[CONFIG.extras[k]] === '1';
+  const on = (k: Extra) => extraOn(set, k);
   return (
     <Group label="Extras · every phone">
       <Opt t="Close the day" sub="A checklist and summary at the end of the day, in the Stall list" sw={on('closeDay')} onClick={() => { c.setExtra('closeDay', !on('closeDay')); }} />
