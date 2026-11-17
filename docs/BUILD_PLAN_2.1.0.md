@@ -203,7 +203,7 @@ The full design is in `docs/SYNC_SERVER.md`: `server/` in Go with JSON endpoints
 - [x] Q-HOLD-RING A locked (16 Nov 23:49 IST): unpaid Complete hold is a wide bar along the top of the action bar, no ring on the button. New pair `s121-complete-hold-bar.png`; the ring pair `s121-complete-toast-ring.png` is superseded and kept.
 - [x] Steve approved mockups s119–s126 (17 Nov 06:15 IST; s120 Unpaid, s121-complete-hold-bar) and said go for P0, Beta only (06:18 IST).
 - [x] P0 channel plumbing (base-path detection, Beta storage prefix, About shows the channel; no Stable change) — 17 Nov 2026, F-49. Beta workflow step is now a check only.
-- [ ] P1 data + rules + unit tests
+- [x] P1 data + rules + unit tests — 17 Nov 2026 (F-50..F-53; Steve's go 06:53 IST). 136 tests on both channels.
 - [ ] P2 Counter (Unpaid tab = Q-UNPAID-ROW B, s120)
 - [ ] P3 Kitchen + Station
 - [ ] P4 History / Money / Close day / Day notes / Stock

@@ -3,6 +3,18 @@ All notable changes to Stall Tokens. SemVer. Times IST.
 
 ## [Unreleased]
 
+### 2.1.0 P1 — data and rules, no new screens (17 Nov 2026, Beta only; F-50..F-53)
+- **Unpaid orders no longer vanish (W-05, W-08).** Handing over an unpaid order keeps it on Open Orders as Unpaid. Only Handover + paid, or Complete, finishes an order (Q-COMPLETE-2 A).
+- **Ready never finishes an order (W-06, W-27).** A line the Counter marks Ready stays on the Kitchen and Station, muted ("Marked by counter"), until it is handed over.
+- Complete: one tap when paid; when unpaid the store asks for the press-and-hold (the bar comes in P2) and records it as written off. A later payment clears the write-off.
+- Refunds (data): whole / lines / custom, reason, optional back to stock (once, never more than was sent), instant with Undo. Never more than was paid; a refund never cancels the order.
+- Cancelling an order gives its stock back on the Menu (W-32). Drafts on every Counter hold stock and show whose they are.
+- + New order reuses an empty order (no burnt tokens, W-07/W-14). Reload reopens the order in progress (W-12). A closed day rolls over to today by itself; an open one waits for the Counter's question (W-22, asked in P2).
+- Kitchen station filter shows only what that station still has to do (W-36).
+- Categories and stations are data (rename keeps the id); day notes; device registry with a clash warning for two Counters on one token range; snapshot notes; newer-app ops are kept, not refused.
+- Fixed: a winning Sheet edit to an order's note, client, priority, discount or round-off could be overwritten in the fold (latent bug, now honours last-writer-wins).
+- Tests: in Vitest the channel now also follows `VITE_CHANNEL` (it only followed the page path before), so the Beta CI really runs as Beta.
+
 ### 2.1.0 P0 — Beta / Stable channel (17 Nov 2026, Beta only; F-49, Q-CHANNEL A, Q-BETA-PATH B)
 - Version 2.1.0 on `feat/v2.1.0` (Stable stays 2.0.0 on `main`).
 - The app knows its channel: Beta when served under `/stall-tokens-beta/` or built with `VITE_CHANNEL=beta`, else Stable.
