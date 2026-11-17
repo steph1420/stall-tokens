@@ -11,8 +11,9 @@ type Adj = 'tip' | 'waive';
 /** pay2 (locked): the amount due changes only here. Two small pills, "+ Tip" and "− Waive"; a tap opens quick chips
  * (₹10, ₹20, Other). Kept small on purpose (rare, and they change what is owed). */
 /** pay4 (D-PAY4-1): + Tip and − Waive are twins: same pill, same chips (₹10, ₹20, Other), Undo toast.
- *  Tap a lit chip to take it off (no "No tip" / "No waive" chips); an Other amount shows as its own lit chip. */
-export function AdjustRow({ tip, waived, onPick, onOther, onWho }: { tip: Paise; waived: Paise; onPick: (k: Adj, p: Paise) => void; onOther: (k: Adj) => void; onWho: () => void }) {
+ *  Tap a lit chip to take it off; an Other amount shows as its own lit chip. Other keeps the chips open (the pad
+ *  must not collapse the picker). Who / Allowed by lives on a note under the amounts, not on the picker. */
+export function AdjustRow({ tip, waived, onPick, onOther }: { tip: Paise; waived: Paise; onPick: (k: Adj, p: Paise) => void; onOther: (k: Adj) => void }) {
   const tipChips = useApp((x) => amounts.amounts(x.folded.settings, 'tipChips'));
   const [open, setOpen] = useState<Adj | null>(null);
   const base: readonly Paise[] = open === 'tip' ? tipChips : CONFIG.payment.waiveChips;
@@ -31,8 +32,7 @@ export function AdjustRow({ tip, waived, onPick, onOther, onWho }: { tip: Paise;
       {open ? (
         <div className={s.adjChips} role="group" aria-label={open === 'tip' ? 'Tip' : 'Waive'}>
           {chips.map((p) => <button type="button" key={p} aria-pressed={now === p} className={now === p ? s.chipOn : s.chip} onClick={() => { pick(open, now === p ? 0 : p); }}><Money p={p} /></button>)}
-          <button type="button" className={s.chip} onClick={() => { onOther(open); setOpen(null); }}>Other</button>
-          {open === 'waive' ? <button type="button" className={s.chip} onClick={onWho}>Who · note</button> : null}
+          <button type="button" className={s.chip} onClick={() => { onOther(open); }}>Other</button>
         </div>
       ) : null}
     </div>

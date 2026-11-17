@@ -1,5 +1,6 @@
 // Number pad (03-payment v5): 1–9, 00, 0, ⌫, Done. Whole rupees; capped at the money limit.
 import { useState } from 'react';
+import { useSheetDrag } from '../../kit/sheetDrag';
 import { Icon } from '../../kit/Icon';
 import { KEYS, nextAmount, type Key } from '../../kit/keypad';
 import s from './Payment.module.css';
@@ -11,9 +12,12 @@ export function Numpad({ rupees, onChange, onDone }: { rupees: number; onChange:
     setFresh(false);
     if (n !== null) onChange(n);
   };
+  const { y, handle } = useSheetDrag(onDone);
   return (
-    <div className={s.pad} role="dialog" aria-label="Number pad">
-      <div className={s.padGrab} />
+    <div className={s.padWrap}>
+      <button type="button" className={s.padScrim} aria-label="Close" onClick={onDone} />
+      <div className={s.pad} role="dialog" aria-label="Number pad" style={{ transform: `translateY(${String(y)}px)` }}>
+      <div className={s.padGrab} aria-hidden="true" {...handle} />
       <div className={s.keys}>
         {KEYS.map((k) => (
           <button type="button" key={k} className={k === 'del' || k === '00' ? s.keyUtil : s.key} aria-label={k === 'del' ? 'Delete' : k} onClick={() => { press(k); }}>
@@ -22,6 +26,7 @@ export function Numpad({ rupees, onChange, onDone }: { rupees: number; onChange:
         ))}
       </div>
       <button type="button" className={s.padDone} onClick={onDone}>Done</button>
+      </div>
     </div>
   );
 }

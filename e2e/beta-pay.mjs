@@ -61,7 +61,25 @@ for (const theme of (process.env.THEMES ?? 'night,day').split(',')) {
     const wChips = (await p.getByRole('group', { name: 'Waive' }).getByRole('button').allInnerTexts()).map((x) => x.replace(/\s+/g, ''));
     await waiveP.click();
     const same = Math.abs(a.height - w.height) < 1 && Math.abs(a.width - w.width) < 1 && Math.abs(a.y - w.y) < 1;
-    return same && extra === 0 && tipChips.join() === '₹10,₹20,Other' && wChips.slice(0, 3).join() === tipChips.join() ? `side by side, both ${String(Math.round(a.width))}×${String(Math.round(a.height))}px; Tip: ${tipChips.join(' ')}; Waive: ${wChips.join(' ')}` : false;
+    return same && extra === 0 && tipChips.join() === '₹10,₹20,Other' && wChips.join() === tipChips.join() ? `side by side, both ${String(Math.round(a.width))}×${String(Math.round(a.height))}px; Tip: ${tipChips.join(' ')}; Waive: ${wChips.join(' ')}` : false;
+  });
+  await step(T('waive Other keeps the picker open; Allowed by is a note, not on the chips'), async () => {
+    await p.getByRole('button', { name: /^− Waive/ }).click(); await p.waitForTimeout(150);
+    const who = await p.getByRole('button', { name: /Who/ }).count();
+    await p.getByRole('button', { name: 'Other', exact: true }).click(); await p.waitForTimeout(150);
+    const openPad = await p.getByRole('group', { name: 'Waive' }).count() && await p.getByRole('dialog', { name: 'Number pad' }).count();
+    await p.getByRole('button', { name: '3', exact: true }).click();
+    await p.getByRole('button', { name: '0', exact: true }).click();
+    const still = await p.getByRole('group', { name: 'Waive' }).count();
+    await shot('02-waive-other');
+    await p.getByRole('button', { name: 'Done' }).click(); await p.waitForTimeout(200);
+    const note = p.getByRole('button', { name: /₹30 waived · Allowed by Choose/ });
+    await note.waitFor();
+    await shot('03-waive-note');
+    const label = await note.getAttribute('aria-label');
+    // clear the waive so later cash/UPI steps still use the original total
+    await p.getByRole('button', { name: '₹30', exact: true }).click(); await p.waitForTimeout(150);
+    return who === 0 && openPad && still === 1 && label === '₹30 waived · Allowed by Choose' ? label : false;
   });
 
   await step(T('type Cash: UPI becomes the balance'), async () => { await type('Cash', '50'); const x = await state(); return x.ok && x.c === 50 && x.u === t0 - 50 ? ev(x) : false; });

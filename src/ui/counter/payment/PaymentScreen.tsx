@@ -94,12 +94,11 @@ function NothingDue({ o }: { o: Order }) {
 
 /** The payment draft is local to this screen (never in the log until Confirm). */
 function useDraft(o: Order | undefined) {
-  const servingName = useApp((st) => st.prefs.servingName);
   const due0 = o ? bill.due(o) : 0;
   const [tip, setTip] = useState<Paise>(0);
   const [split, setSplit] = useState<pay.Split>({ cash: Math.max(0, due0), upi: 0, pinned: null, waived: 0, locked: null });
   const [notes, setNotes] = useState<Record<string, number>>({});
-  const [waiver, setWaiver] = useState({ by: servingName, note: '' });
+  const [waiver, setWaiver] = useState({ by: '', note: '' });
   const [payeeId, setPayeeId] = useState<string | null>(null);
   const owed = o ? bill.due(o) : 0;
   const toCollect = Math.max(0, owed) + tip;
@@ -227,9 +226,18 @@ function Adjust({ d, onOther }: { d: Draft; onOther: (k: 'tip' | 'waive') => voi
     // pay3: a locked side above the new amount comes down to it; say so calmly in the same toast.
     c.adjustToast(clamped ? `${said} · ${d.cur.locked === 'upi' ? 'UPI' : 'Cash'} lowered to fit` : said, prev);
   };
+  const by = d.waiver.by.trim();
+  const reason = d.waiver.note.trim();
+  const who = by || 'Choose';
+  const label = d.waived > 0 ? `₹${String(d.waived / R)} waived · Allowed by ${who}${reason ? ` · ${reason}` : ''}` : '';
   return (
     <>
-      <AdjustRow tip={d.tip} waived={d.waived} onPick={pick} onOther={onOther} onWho={() => { openSheet({ kind: 'waived' }); }} />
+      <AdjustRow tip={d.tip} waived={d.waived} onPick={pick} onOther={onOther} />
+      {d.waived > 0 ? (
+        <button type="button" className={s.waiveNote} aria-label={label} onClick={() => { openSheet({ kind: 'waived' }); }}>
+          <Money p={d.waived} /> waived · Allowed by <em>{who}</em>{reason ? <> · {reason}</> : null} <Icon name="chevron" className={s.chev} />
+        </button>
+      ) : null}
       {!d.check.ok && d.toCollect > 0 ? <div className={s.over} role="alert">{d.check.reason}</div> : null}
     </>
   );
