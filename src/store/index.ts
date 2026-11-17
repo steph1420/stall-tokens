@@ -51,7 +51,7 @@ export { devKey, holding, phoneLabel, type Holding } from './rules/handling';
 export { focusOf } from './handling';
 export { formatToken } from './rules/tokens';
 export { ago, istClock, istDay } from './rules/time';
-export { upiLink } from './rules/upi';
+export { formatQrAmount, readUpiLink, upiLink, upiQrFacts } from './rules/upi';
 export { liveOrders } from './fold/fold';
 
 export interface AppState extends CoreState {

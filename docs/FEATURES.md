@@ -171,7 +171,7 @@ Steve asked (16 Nov) for only the strongest gaps to lead. Each one ships behind 
 | To collect | Due plus tip. | — | existing |
 | Cash / UPI split, numpad, slider | — | — | existing |
 | Tip chips | Shared settings (F-45). | — | existing |
-| UPI QR + payee | — | — | existing |
+| UPI QR + payee | QR stays below the split (hidden at ₹0 UPI). The UPI ID and amount beside it are parsed from the same link the QR encodes. | — | existing + 2.1.0 (QR label) |
 | Count notes | Note tiles are made shorter: 3 per row on a 390 px screen, so Confirm is reachable (report §3). | — | fix 2.1.0 (UX) |
 | Status line | "Adds up ✓" (it was "Paid ✓" before confirming, W-15). | — | fix 2.1.0 (W-15) |
 | Confirm payment | Hold is not needed. A tap guard of `CONFIG.gesture.confirmGuardMs` (800 ms) stops a double tap reaching "New order" (W-14). | Paying an order that was already handed over **completes** it (Q-HANDOVER-PAY). | fix 2.1.0 (W-14) |
