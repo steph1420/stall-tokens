@@ -1,10 +1,13 @@
 // F-43 Counter Open Orders actions (Q-ORDERS-1 rough v3, locked 16 Nov 18:21 IST). Screens only call these.
 // Lines: Mark ready (store/kitchen finishLine), Ready + Confirm, Confirm all, hidden tap; Cards: tap; bar: Handover.
 import { CONFIG } from '../config';
+import { formatInr } from '../contract';
 import type { Core, Log } from './core';
 import { liveOrders } from './fold/fold';
 import { makeCtx, type Ctx } from './kitchen';
+import { due } from './rules/bill';
 import { counterNext, openOrders } from './rules/kitchen';
+import { completed } from './rules/status';
 import type { CounterTab } from './ui';
 
 function navActions(core: Core, { st, ui, order, log }: Ctx) {
@@ -32,6 +35,8 @@ function navActions(core: Core, { st, ui, order, log }: Ctx) {
   };
 }
 
+const tok = (n: number) => String(n).padStart(CONFIG.tokens.pad, '0');
+
 function lineActions({ order, setLines, toast, log }: Ctx) {
   return {
     /** Hidden tap (Lines) or card tap (Cards): one step on (D-OPEN-TAP). */
@@ -50,19 +55,46 @@ function lineActions({ order, setLines, toast, log }: Ctx) {
       return true;
     },
     confirmAll(orderId: string): boolean { const o = order(orderId); return o ? setLines(o, (s) => s === 'done?', 'ready') > 0 : false; },
-    /** Bottom bar Handover: delivers every line still not handed over, whatever its status (Q-ORDERS-1). */
+    /** Bottom bar Handover: delivers every line still not handed over, whatever its status (Q-ORDERS-1).
+     * Q-HANDOVER-PAY revised: allowed while unpaid, but it does not complete the order; it stays open as Unpaid (W-05). */
     handOverAll(orderId: string): boolean {
       const o = order(orderId);
       if (!o) return false;
       const n = setLines(o, (s) => s !== 'handed', 'handed');
-      if (n > 0) toast(`Handed over #${String(o.token).padStart(CONFIG.tokens.pad, '0')}`);
+      const owed = due(order(orderId) ?? o);
+      if (n > 0) toast(owed > 0 ? `Handed over #${tok(o.token)} · ${formatInr(owed)} still to collect` : `Handed over #${tok(o.token)}`);
       return n > 0;
+    },
+  };
+}
+
+/** Complete (Q-HANDOVER-PAY revised, Q-COMPLETE-2 A, Q-HOLD-RING A). */
+function completeActions({ order, toast, log }: Ctx) {
+  return {
+    /** Complete (Q-COMPLETE-2 A). Paid: one tap completes. Unpaid: refused with 'unpaid' so the screen shows the yellow
+     * button + "Order unpaid · Press and hold to complete without payment" (the hold calls completeUnpaid). */
+    complete(orderId: string): 'done' | 'unpaid' | 'none' {
+      const o = order(orderId);
+      if (!o || o.cancel || !o.sent || completed(o)) return 'none';
+      if (due(o) > 0) { toast('Order unpaid · Press and hold to complete without payment'); return 'unpaid'; }
+      log.dispatch('order.complete', { orderId, unpaid: false, dueAt: 0, reason: '' });
+      toast(`Completed #${tok(o.token)}`);
+      return 'done';
+    },
+    /** The finished press-and-hold (Q-HOLD-RING A bar): complete without payment. The due amount is kept on record. */
+    completeUnpaid(orderId: string, reason = ''): boolean {
+      const o = order(orderId);
+      if (!o || o.cancel || !o.sent || completed(o)) return false;
+      const owed = Math.max(0, due(o));
+      log.dispatch('order.complete', { orderId, unpaid: owed > 0, dueAt: owed, reason: reason.trim().slice(0, CONFIG.limits.noteMaxChars) });
+      toast(owed > 0 ? `Completed #${tok(o.token)} · ${formatInr(owed)} not collected` : `Completed #${tok(o.token)}`);
+      return true;
     },
   };
 }
 
 export function openActions(core: Core, log: Log) {
   const x = makeCtx(core, log);
-  return { ...navActions(core, x), ...lineActions(x) };
+  return { ...navActions(core, x), ...lineActions(x), ...completeActions(x) };
 }
 export type OpenActions = ReturnType<typeof openActions>;

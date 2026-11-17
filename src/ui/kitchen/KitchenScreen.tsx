@@ -24,7 +24,8 @@ export function KitchenScreen() {
   const k = useApp((st) => st.kitchen);
   const go = useApp((st) => st.go);
   const all = liveOrders(folded);
-  const list = kitchen.kitchenOrders(all).filter((o) => filter === null || kitchen.linesAt(o, filter).length > 0);
+  // W-36: one rule for the station filter (stationOrders), so a station's finished orders drop off its filter.
+  const list = filter === null ? kitchen.kitchenOrders(all) : kitchen.stationOrders(all, filter);
   const shown = withGone<{ o: (typeof list)[number]; gone?: Why }>(list, useLeaving(list, folded.orders));
   return (
     <div className={s.phone}>

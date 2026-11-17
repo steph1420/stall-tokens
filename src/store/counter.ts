@@ -3,13 +3,16 @@ import { CONFIG } from '../config';
 import type { Discount, Line, Order, PaySource, PaymentBody } from '../contract';
 import type { Core, Log } from './core';
 import { liveOrders } from './fold/fold';
-import { due, preRound, total } from './rules/bill';
+import { due, held, preRound, total } from './rules/bill';
 import { checkPayment } from './rules/pay';
 import { isOpen, type Page } from './rules/status';
+import { istDate, rollover } from './rules/day';
 import { nextToken } from './rules/tokens';
 import type { UiState } from './ui';
 
-const istDate = (ms: number): string => new Date(ms + 330 * 60_000).toISOString().slice(0, 10);
+/** Q-DRAFT-SYNC device label: serving name + short device id, e.g. "Ravi · 3f9a". */
+export const deviceLabel = (servingName: string, deviceId: string): string =>
+  [servingName.trim(), deviceId.slice(0, 4)].filter(Boolean).join(' · ');
 
 function makeCtx(core: Core, log: Log) {
   const st = () => core.get();
@@ -22,42 +25,68 @@ function makeCtx(core: Core, log: Log) {
     const o = id ? st().folded.orders[id] : undefined;
     return o && !o.deleted && !o.cancel ? o : null;
   };
-  const currentDay = (): string => {
-    const days = st().folded.days;
-    const last = days[days.length - 1];
-    if (last) return last.id;
+  const startDay = (): string => {
     const now = core.env.now();
     const dayId = `${istDate(now)}-${core.env.makeId().slice(0, 4)}`;
     log.dispatch('day.start', { dayId, label: istDate(now) });
     return dayId;
   };
-  /** Stock left for new taps: count minus what is already in draft lines anywhere. */
+  /** W-22: today's day. A closed (locked) day from an earlier date rolls over by itself; an open one is kept until the
+   * Counter's question is answered (`startToday`, P2 asks it). */
+  const currentDay = (): string => {
+    const { days, locks } = st().folded;
+    const last = days[days.length - 1];
+    const r = rollover(days, locks, core.env.now());
+    return !last || r === 'none' || r === 'new' ? startDay() : last.id;
+  };
+  /** Stock left for new taps: count minus what draft lines of live orders still hold. Cancelled orders hold nothing
+   * (W-32); sent lines are already out of the count (committed). Drafts from every Counter hold stock (Q-DRAFT-SYNC). */
   const available = (itemId: string): number => {
     const it = st().folded.items[itemId];
     if (!it || it.removed || it.soldOut || it.supply) return 0;
     if (it.count === null) return Number.POSITIVE_INFINITY;
-    const drafts = liveOrders(st().folded).reduce((n, o) => n + o.lines.filter((l) => l.itemId === itemId).reduce((m, l) => m + l.qty - l.committed, 0), 0);
+    const drafts = liveOrders(st().folded).filter((o) => !o.cancel)
+      .reduce((n, o) => n + o.lines.filter((l) => l.itemId === itemId).reduce((m, l) => m + Math.max(0, l.qty - l.committed), 0), 0);
     return it.count - drafts;
   };
   const editable = (l: Line) => l.status === 'draft' || l.status === 'waiting';
-  return { core, log, st, toast, ui, current, currentDay, available, editable };
+  return { core, log, st, toast, ui, current, currentDay, startDay, available, editable };
 }
 type Ctx = ReturnType<typeof makeCtx>;
 
 function navActions(x: Ctx) {
-  const { core, log, st, ui, current, currentDay } = x;
+  const { core, log, st, ui, current, currentDay, startDay } = x;
   const ensure = (): Order | null => { const id = self.newOrder(); return st().folded.orders[id] ?? null; };
+  /** An order nothing has been put in yet: no lines with qty, no payments, not sent. */
+  const empty = (o: Order) => !o.sent && o.payments.length === 0 && o.lines.every((l) => l.qty === 0);
   const self = {
+    /** + New order. W-07/W-14: an empty current draft is reused, so taps never burn tokens or strand drafts. */
     newOrder(): string {
+      const cur = current();
+      if (cur && empty(cur) && cur.dayId === currentDay()) {
+        core.set((s) => ({ ui: { ...s.ui, orderId: cur.id, counterTab: 'new', pages: { ...s.ui.pages, [cur.id]: 'menu' } } }));
+        return cur.id;
+      }
       const dayId = currentDay();
       const range = CONFIG.tokens.ranges[st().prefs.rangeIndex] ?? CONFIG.tokens.ranges[0];
       const token = nextToken(Object.values(st().folded.orders), dayId, range); // deleted orders keep their numbers
       const orderId = core.env.makeId();
-      log.dispatch('order.create', { orderId, dayId, token, servedBy: st().prefs.servingName });
+      const p = st().prefs;
+      log.dispatch('order.create', { orderId, dayId, token, servedBy: p.servingName, device: deviceLabel(p.servingName, p.deviceId) });
       core.set((s) => ({ ui: { ...s.ui, orderId, counterTab: 'new', pages: { ...s.ui.pages, [orderId]: 'menu' } } }));
       return orderId;
     },
     selectOrder(orderId: string) { ui({ orderId }); },
+    /** W-22: what the next new order does about the day ('ask' = the Counter asks; P2 shows the question). */
+    dayCheck() { const f = st().folded; return rollover(f.days, f.locks, core.env.now()); },
+    /** W-22 answer "Start today": a new day, tokens from #001. */
+    startToday(): string {
+      const d = startDay();
+      const cur = current();
+      // An empty draft left on yesterday's day is discarded, so the next tap starts today's #001 (no stranded drafts).
+      if (cur && empty(cur) && cur.dayId !== d) { log.dispatch('order.delete', { orderId: cur.id }); ui({ orderId: null }); }
+      return d;
+    },
     setPage(page: Page) {
       const o = current() ?? ensure();
       if (!o) return;
@@ -163,7 +192,7 @@ function flowActions(x: Ctx) {
     deleteOrder(): boolean {
       const o = current();
       if (!o) return false;
-      const net = o.payments.reduce((t, p) => t + p.cash + p.upi, 0) - o.refunds.reduce((t, r) => t + r.amount, 0);
+      const net = held(o);
       if (net > 0) { toast('Refund the payment before deleting'); return false; }
       if (o.lines.some((l) => !editable(l))) { toast('The kitchen has started this order'); return false; }
       log.dispatch('order.delete', { orderId: o.id });

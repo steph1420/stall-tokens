@@ -1,5 +1,5 @@
 // F-02 Folded state: everything shared is derived from the op log; nothing here is written by screens.
-import type { Conflict, Day, DayLock, Entry, InfoRecord, Item, Order, Payee, Person, RecordTable, Settlement, VV } from '../../contract';
+import type { Conflict, Day, DayLock, DeviceInfo, Entry, InfoRecord, Item, Order, Payee, Person, RecordTable, Settlement, SnapshotNote, VV } from '../../contract';
 
 export interface LastWrite { readonly writer: string; readonly seq: number; readonly opId: string }
 export interface Folded {
@@ -16,6 +16,10 @@ export interface Folded {
   /** F-48 info records per table (business, event, source, …). */
   readonly records: Readonly<Partial<Record<RecordTable, Readonly<Record<string, InfoRecord>>>>>;
   readonly conflicts: readonly Conflict[];
+  /** Q-SYNC-ALL device registry (deviceId → label, token range, role). */
+  readonly devices: Readonly<Record<string, DeviceInfo>>;
+  /** Q-SYNC-ALL snapshot metadata, oldest first, one per snapshotId. */
+  readonly snapshots: readonly SnapshotNote[];
   readonly seen: VV; // highest seq per writer (the local version vector)
   readonly gaps: Readonly<Record<string, number>>; // writer -> count of missing seqs
   readonly lamport: number;
@@ -24,6 +28,6 @@ export interface Folded {
 }
 
 export const emptyFolded = (): Folded => ({
-  items: {}, orders: {}, orderIds: [], days: [], payees: {}, settings: {}, people: {}, entries: [], settlements: [], locks: {}, records: {}, conflicts: [],
+  items: {}, orders: {}, orderIds: [], days: [], payees: {}, settings: {}, people: {}, entries: [], settlements: [], locks: {}, records: {}, conflicts: [], devices: {}, snapshots: [],
   seen: {}, gaps: {}, lamport: 0, applied: new Set(), lastWrite: {},
 });

@@ -1,6 +1,9 @@
 // The one config module (06 rule 3): every timing, limit, key and range lives here, never inline.
 /** Build-time env (absent when vite.config.ts itself loads this file). */
-const envStr = (k: string): string => { const v = (import.meta as { env?: Record<string, unknown> }).env?.[k]; return typeof v === 'string' ? v : ''; };
+// Plain `import.meta.env` (not a cast) so Vite and Vitest both rewrite it; undefined when vite.config.ts loads this file.
+// eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- absent under the config loader
+const ENV = (import.meta.env ?? {}) as Record<string, unknown>;
+const envStr = (k: string): string => { const v = ENV[k]; return typeof v === 'string' ? v : ''; };
 
 /** Q-CHANNEL A / Q-BETA-PATH B: Stable (root repo) or Beta (`steph1420/stall-tokens-beta`). */
 export type Channel = 'stable' | 'beta';

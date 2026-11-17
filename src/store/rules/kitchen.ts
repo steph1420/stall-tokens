@@ -10,8 +10,10 @@ const FINISHED: ReadonlySet<LineStatus> = new Set<LineStatus>(['done?', 'ready',
 const live = (o: Order): Line[] => o.lines.filter((l) => l.qty > 0 && l.status !== 'draft');
 export const linesAt = (o: Order, station: string | null): Line[] => live(o).filter((l) => station === null || l.stationId === station);
 
-/** A line kitchen views count as completed, whoever marked it: handed over, or marked by the Counter (Q-COUNTER-FINISH). */
-export const lineComplete = (l: Line): boolean => l.status === 'handed' || (l.status === 'ready' && l.byCounter);
+/** Q-COMPLETE-2 A (W-06, W-27): a line is complete only when handed over. Ready never completes, whoever marked it. */
+export const lineComplete = (l: Line): boolean => l.status === 'handed';
+/** Shown muted on kitchen and station views: handed over, or Ready marked by the Counter ("Marked by counter"). */
+export const lineMuted = (l: Line): boolean => l.status === 'handed' || (l.status === 'ready' && l.byCounter);
 /** Completed for kitchen views once every sent line is complete (Q-OVERLAY veil, then it drops off). */
 export const orderComplete = (o: Order): boolean => live(o).length > 0 && live(o).every(lineComplete);
 
@@ -121,8 +123,8 @@ export function pauseMoves(orders: readonly Order[]): StatusMove[] {
   return moves;
 }
 
-/** Q-ORDERS-1 Open Orders: the same orders the kitchen shows (sent, not cancelled, not yet all delivered). */
-export const openOrders = kitchenOrders;
+/** Q-ORDERS-1 Open Orders (2.1.0, W-05/W-08): sent orders until completed, so an unpaid handed-over order stays. */
+export { openOrders } from './status';
 
 /** D-OPEN-TAP (Pos): the Counter's hidden tap / card tap moves a line on: Waiting, On hold or Paused → Preparing →
  * Ready → Handed over; a station's proposed Ready (Done?) is confirmed to Ready. Handed over stays. */

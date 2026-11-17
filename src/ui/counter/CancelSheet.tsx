@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { CONFIG } from '../../config';
 import type { Order } from '../../contract';
-import { formatToken, useApp } from '../../store';
+import { bill, formatToken, useApp } from '../../store';
 import { Money } from '../kit/Money';
 import { Sheet } from '../kit/Sheet';
 import kit from '../kit/kit.module.css';
@@ -19,7 +19,7 @@ function CancelBody({ o }: { o: Order }) {
   const close = useApp((st) => st.openSheet);
   const c = useApp((st) => st.counter);
   const [reason, setReason] = useState('');
-  const paid = o.payments.reduce((t, p) => t + p.cash + p.upi, 0) - o.refunds.reduce((t, r) => t + r.amount, 0);
+  const paid = bill.held(o);
   return (
     <Sheet title={`Cancel ${formatToken(o.token, CONFIG.tokens.pad)}?`} onClose={() => { close(null); }}>
       <p className={kit.hint}>Kitchen and stations show it as Cancelled, then it drops off. Lines not started go back to stock.</p>

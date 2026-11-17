@@ -7,7 +7,9 @@ import { createBrowserDataSource, createSyncEngine, type DataSource, type Device
 import { catalogActions } from './catalog';
 import { conflictActions } from './conflicts';
 import { createLog, initialCore, type Core, type CoreState } from './core';
-import { counterActions } from './counter';
+import { counterActions, deviceLabel } from './counter';
+import { refundActions } from './refund';
+import { completed } from './rules/status';
 import { kitchenActions } from './kitchen';
 import { openActions } from './open';
 import { moneyActions } from './money';
@@ -32,8 +34,11 @@ export { isSheetUrl, joinUrl, readJoin, type JoinLink, bluetoothPrint, canBlueto
 export { escposSlip, type SlipText } from './rules/escpos';
 export type { OrderStatus, Page } from './rules/status';
 export * as bill from './rules/bill';
+export * as cats from './rules/catalog';
+export * as day from './rules/day';
+export { planRefund, type RefundAsk, type RefundRequest, type RefundResult } from './refund';
 export * as pay from './rules/pay';
-export { orderStatus, isOpen } from './rules/status';
+export { orderStatus, isOpen, completed, writtenOff, unpaid, unpaidOrders, allHanded } from './rules/status';
 export { formatToken } from './rules/tokens';
 export { ago, istClock, istDay } from './rules/time';
 export { upiLink } from './rules/upi';
@@ -45,6 +50,7 @@ export interface AppState extends CoreState {
   readonly conflicts: ReturnType<typeof conflictActions>;
   readonly kitchen: ReturnType<typeof kitchenActions>;
   readonly open: ReturnType<typeof openActions>;
+  readonly refund: ReturnType<typeof refundActions>;
   readonly money: ReturnType<typeof moneyActions>;
   readonly settle: ReturnType<typeof settleActions>;
   readonly stock: ReturnType<typeof stockActions>;
@@ -93,6 +99,7 @@ export function createAppStore(ds: DataSource, opts: StoreOptions = {}): AppStor
       conflicts: conflictActions(l),
       kitchen: kitchenActions(core, l),
       open: openActions(core, l),
+      refund: refundActions(core, l),
       money: moneyActions(core, l),
       settle: settleActions(core, l),
       stock: stockActions(core, l, (amount, label, note, parts) => get().money.addEntry({ dir: 'spent', amount, label, kind: 'normal', parts, note, personId: null })),
@@ -100,20 +107,48 @@ export function createAppStore(ds: DataSource, opts: StoreOptions = {}): AppStor
       setPrefs(patch) { const next = { ...get().prefs, ...patch }; ds.device.write(next); set({ prefs: next }); },
       retrySave() { l.retrySave(); },
       async start() {
-        l.load(await ds.ops.load());
+        l.load(await ds.ops.load()); resume21(core); migrate21(core, l); // W-12 resume, Q-SYNC-ALL first start
         ds.channel.subscribe((ops) => { l.intake(ops, false); });
         if (ds.transports.length === 0) return;
         const tick = () => { void get().syncNow().finally(() => { setTimeout(tick, engine.nextDelayMs()); }); };
         tick();
       },
-      async syncNow() {
-        const fresh = await engine.round();
-        l.intake(fresh, true);
-        set({ sync: engine.status() });
-      },
+      async syncNow() { l.intake(await engine.round(), true); set({ sync: engine.status() }); },
     };
   });
+  persistPlace(store);
   return store;
+}
+
+/** W-12: keep "which order is on screen" (and its page) in this device's prefs, so a reload reopens it. */
+function persistPlace(store: AppStore) {
+  store.subscribe((s, prev) => {
+    if (!s.ready) return;
+    const id = s.ui.orderId ?? '';
+    const page = (id && s.ui.pages[id]) || 'menu';
+    if (id !== (prev.ui.orderId ?? '') || page !== ((id && prev.ui.pages[id]) || 'menu')) {
+      if (id !== s.prefs.orderId || page !== s.prefs.page) s.setPrefs({ orderId: id, page });
+    }
+  });
+}
+
+/** W-12: reopen the Counter's order in progress after a reload or an Android kill (prefs.orderId / page). */
+function resume21(core: Core) {
+  const { prefs, folded } = core.get();
+  const o = prefs.orderId ? folded.orders[prefs.orderId] : undefined;
+  if (!o || o.deleted || o.cancel || completed(o)) return;
+  core.set((s) => ({ ui: { ...s.ui, orderId: o.id, pages: { ...s.ui.pages, [o.id]: prefs.page } } }));
+}
+
+/** Q-SYNC-ALL first 2.1.0 start: register this device once, and share its old local Kitchen / Open Orders looks only
+ * when no shared value exists yet (the first device's choice wins; later devices adopt it). Local copies stay until the
+ * screens read the shared values (P2 / P5). */
+const SHARED_FROM_PREFS = ['autoPrep', 'stationLook', 'openLook'] as const;
+function migrate21(core: Core, l: ReturnType<typeof createLog>) {
+  const { prefs, folded } = core.get();
+  if (folded.devices[prefs.deviceId]) return;
+  l.dispatch('device.set', { deviceId: prefs.deviceId, label: deviceLabel(prefs.servingName, prefs.deviceId), rangeIndex: prefs.rangeIndex, role: prefs.role });
+  for (const k of SHARED_FROM_PREFS) if (core.get().folded.settings[k] === undefined) l.dispatch('setting.set', { key: k, value: String(prefs[k]) });
 }
 
 export const createDefaultStore = (): AppStore => createAppStore(createBrowserDataSource(() => crypto.randomUUID()));

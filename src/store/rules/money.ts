@@ -33,7 +33,7 @@ const sumBy = (es: readonly Entry[], src: MoneyPart['source']) => es.reduce((t, 
 export function dayMoney(orders: readonly Order[], entries: readonly Entry[], dayId: string): DayMoney {
   const os = orders.filter((o) => o.dayId === dayId && !o.deleted);
   const pays = os.flatMap((o) => o.payments);
-  const refs = os.flatMap((o) => o.refunds);
+  const refs = os.flatMap((o) => o.refunds).filter((r) => r.voided === null); // Undo (refund.void) gives nothing back
   const cashSales = pays.reduce((t, p) => t + p.cash, 0);
   const upiSales = pays.reduce((t, p) => t + p.upi, 0);
   const refunds = { cash: refs.filter((r) => r.source === 'cash').reduce((t, r) => t + r.amount, 0), upi: refs.filter((r) => r.source === 'upi').reduce((t, r) => t + r.amount, 0) };

@@ -18,7 +18,7 @@ const ST: Record<Mark, string | undefined> = {
 const markOf = (l: Line): Mark => (l.status === 'draft' ? 'waiting' : l.status);
 /** No "Done?" wording at the Counter (Q-ORDERS-1 v3): a station's proposed-done line reads "Ready". */
 const textOf = (l: Line): string | undefined => (l.byCounter && l.status === 'ready' ? 'Marked by counter' : l.status === 'done?' ? 'Ready' : undefined);
-const muted = (l: Line) => kitchen.lineComplete(l);
+const muted = (l: Line) => kitchen.lineMuted(l);
 const canMark = (l: Line) => l.status !== 'handed' && l.status !== 'done?' && l.status !== 'ready';
 
 export function useNow(): number {

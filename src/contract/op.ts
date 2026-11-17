@@ -21,7 +21,11 @@ export interface ItemFields {
   count: number | null; unit: string; lowAt: number; soldOut: boolean; order: number; removed: boolean;
   /** D-STOCK-SUPPLY: stock-only things (straws, cups) from Paste stock; never on the Menu. Additive, default false. */
   supply: boolean;
+  /** P-3 A (2.1.0): category record id (`name:<text>` for a virtual one). '' = use the legacy `category` text. Additive. */
+  categoryId: string;
 }
+/** Q-REFUND-1 A: one refunded line (qty of that line). */
+export interface RefundLine { lineId: string; qty: number }
 export interface DiscountBody { orderId: string; kind: 'amount' | 'pct'; value: number; allowedBy: string; note: string }
 export interface PaymentBody {
   paymentId: string; orderId: string; cash: Paise; upi: Paise; upiPayeeId: string | null;
@@ -32,7 +36,8 @@ export interface Bodies {
   'item.set': { itemId: string; fields: Partial<ItemFields> };
   'stock.adjust': { itemId: string; delta: number; reason: string };
   'day.start': { dayId: string; label: string };
-  'order.create': { orderId: string; dayId: string; token: number; servedBy: string };
+  /** `device` (2.1.0, optional, Q-DRAFT-SYNC): the device label, so every Counter sees whose draft it is. */
+  'order.create': { orderId: string; dayId: string; token: number; servedBy: string; device?: string };
   'line.add': { orderId: string; lineId: string; itemId: string; name: string; price: Paise; category: string; stationId: string; qty: number };
   'line.qty': { orderId: string; lineId: string; qty: number };
   'line.note': { orderId: string; lineId: string; note: string };
@@ -50,7 +55,17 @@ export interface Bodies {
   /** F-43 Q-ORDERS-1: client name shown on the Open Orders header (row kept even when empty). Additive. */
   'order.client': { orderId: string; name: string };
   'payment.add': PaymentBody;
-  'refund.add': { refundId: string; orderId: string; amount: Paise; source: PaySource };
+  /** Q-REFUND-1 A (2.1.0 optional fields): reason chip, refunded lines, and whether those lines go back to stock.
+   * Old refunds have none: reason '', no lines, no restock. A refund never cancels the order. */
+  'refund.add': { refundId: string; orderId: string; amount: Paise; source: PaySource; reason?: string; lines?: RefundLine[]; restock?: boolean };
+  /** Q-REFUND-INSTANT: Undo of an instant refund, as a compensating op (never a delete). Reverses its restock. */
+  'refund.void': { refundId: string; orderId: string; reason: string };
+  /** Q-HANDOVER-PAY revised / Q-COMPLETE-2 A: Complete. `unpaid` = completed without payment (written off while due > 0). */
+  'order.complete': { orderId: string; unpaid: boolean; dueAt: Paise; reason: string };
+  /** Q-SYNC-ALL device registry: label (serving name + short id), token range and role of one device. */
+  'device.set': { deviceId: string; label: string; rangeIndex: number; role: string };
+  /** Q-SYNC-ALL backup metadata: every device and the Sheet see when snapshots were made. */
+  'snapshot.note': { snapshotId: string; at: number; reason: string; opCount: number; hash: string };
   'payee.set': { payeeId: string; name: string; upiId: string; removed: boolean };
   'setting.set': { key: string; value: string };
   /** F-23..F-29 Money and settlement (additive kinds; contract stays v2). */
@@ -67,7 +82,7 @@ export interface Bodies {
    * Additive kind; also what a hand edit on a Sheet info tab becomes (writer `sheet`, Q-HARM-10). */
   'record.set': { table: RecordTable; id: string; fields: Record<string, RecordValue>; removed: boolean };
 }
-export const RECORD_TABLES = ['business', 'event', 'event_day', 'source', 'source_item', 'station', 'person_info', 'item_info'] as const;
+export const RECORD_TABLES = ['business', 'event', 'event_day', 'source', 'source_item', 'station', 'person_info', 'item_info', 'category', 'day_note'] as const;
 export type RecordTable = (typeof RECORD_TABLES)[number];
 export type RecordValue = string | number | boolean;
 export type ClearReason = 'gifted' | 'paid-directly' | 'written-off' | 'shared-cost';
@@ -76,8 +91,12 @@ export const OP_KINDS = [
   'item.set', 'stock.adjust', 'day.start', 'order.create', 'line.add', 'line.qty', 'line.note', 'line.status', 'line.finish',
   'order.note', 'order.discount', 'order.roundoff', 'order.send', 'order.delete', 'order.priority', 'order.cancel', 'order.client', 'payment.add', 'refund.add',
   'payee.set', 'setting.set', 'person.set', 'entry.add', 'entry.void', 'settle.pay', 'settle.clear', 'settle.undo', 'day.lock',
-  'record.set',
+  'record.set', 'refund.void', 'order.complete', 'device.set', 'snapshot.note',
 ] as const satisfies readonly OpKind[];
+/** True for a kind this app version knows how to fold. */
+export const isKnownKind = (kind: string): kind is OpKind => (OP_KINDS as readonly string[]).includes(kind);
+/** Forward compatibility (2.1.0): a well-formed op of a kind from a newer app is kept in the log and folds as a no-op. */
+const KIND_SHAPE = /^[a-z][a-z_]{0,30}\.[a-z][a-z_]{0,30}$/;
 
 /** Version vector: highest seq seen per writer. */
 export type VV = Readonly<Record<string, number>>;
@@ -105,7 +124,7 @@ export function isOp(value: unknown): value is Op {
   if (v !== CONTRACT_VERSION || typeof writer !== 'string' || !writer || !isInt(seq) || seq < 1) return false;
   if (opId !== `${writer}:${String(seq)}` || !isInt(lamport) || lamport < 1 || typeof wallAt !== 'number') return false;
   if (!isRecord(vv) || !Object.values(vv).every(isInt)) return false;
-  return typeof kind === 'string' && (OP_KINDS as readonly string[]).includes(kind) && isRecord(body);
+  return typeof kind === 'string' && KIND_SHAPE.test(kind) && isRecord(body);
 }
 
 /** Total order for the fold: lamport, then writer, then seq. Same log, same order, on every device. */
@@ -146,7 +165,18 @@ const S: Record<OpKind, Record<string, FieldType>> = {
   'settle.undo': { targetId: 's', reason: 's' },
   'day.lock': { dayId: 's', locked: 'b', split: 'o' },
   'record.set': { table: 's', id: 's', fields: 'o', removed: 'b' },
+  'refund.void': { refundId: 's', orderId: 's', reason: 's' },
+  'order.complete': { orderId: 's', unpaid: 'b', dueAt: 'n', reason: 's' },
+  'device.set': { deviceId: 's', label: 's', rangeIndex: 'n', role: 's' },
+  'snapshot.note': { snapshotId: 's', at: 'n', reason: 's', opCount: 'n', hash: 's' },
 };
+/** Optional fields (additive, 2.1.0): absent is fine; present must have the right type. */
+const OPTIONAL: Partial<Record<OpKind, Record<string, FieldType>>> = {
+  'order.create': { device: 's' },
+  'refund.add': { reason: 's', lines: 'a', restock: 'b' },
+};
+const isRefundLines = (x: unknown): boolean =>
+  Array.isArray(x) && x.every((l) => isRecord(l) && typeof l.lineId === 'string' && isInt(l.qty) && l.qty > 0);
 const okField = (t: FieldType, x: unknown): boolean =>
   t === 's' ? typeof x === 'string'
     : t === 'n' ? typeof x === 'number' && Number.isFinite(x)
@@ -158,6 +188,10 @@ const okField = (t: FieldType, x: unknown): boolean =>
 /** Body check per kind (F-02). Money and counts must be finite numbers; strings must be strings. */
 export function isValidOp(value: unknown): value is Op {
   if (!isOp(value)) return false;
+  if (!isKnownKind(value.kind)) return true; // unknown kind from a newer app: kept, folds as a no-op
   const body = value.body as unknown as Record<string, unknown>;
-  return Object.entries(S[value.kind]).every(([k, t]) => okField(t, body[k]));
+  if (!Object.entries(S[value.kind]).every(([k, t]) => okField(t, body[k]))) return false;
+  const opt = OPTIONAL[value.kind] ?? {};
+  if (!Object.entries(opt).every(([k, t]) => body[k] === undefined || okField(t, body[k]))) return false;
+  return value.kind !== 'refund.add' || body.lines === undefined || isRefundLines(body.lines);
 }

@@ -6,6 +6,7 @@ export const PREFS_KEY = `${CONFIG.storage.prefix}.device`;
 
 export const defaultPrefs = (makeId: () => string): DevicePrefs => ({
   deviceId: makeId(), theme: 'night', servingName: '', rangeIndex: 0, haptics: 'normal', autoPrep: true, stationLook: 'full', openLook: 'lines', passcode: '', passcodeOff: true, syncUrl: CONFIG.sync.bakedUrl, syncKey: CONFIG.sync.bakedKey, role: '',
+  orderId: '', page: 'menu', lastRole: '', kitchenText: 'normal', quiet: false,
 });
 
 function merge(base: DevicePrefs, raw: unknown): DevicePrefs {
@@ -26,6 +27,11 @@ function merge(base: DevicePrefs, raw: unknown): DevicePrefs {
     syncUrl: pick('syncUrl', (v) => typeof v === 'string'),
     syncKey: pick('syncKey', (v) => typeof v === 'string'),
     role: pick('role', (v) => typeof v === 'string' && (v === '' || /^(counter|kitchen|launch|station:\S{1,40})$/.test(v))),
+    orderId: pick('orderId', (v) => typeof v === 'string' && v.length <= 80),
+    page: pick('page', (v) => v === 'menu' || v === 'billing' || v === 'payment'),
+    lastRole: pick('lastRole', (v) => typeof v === 'string' && (v === '' || /^(counter|kitchen|station:\S{1,40})$/.test(v))),
+    kitchenText: pick('kitchenText', (v) => v === 'normal' || v === 'large' || v === 'xl'),
+    quiet: pick('quiet', (v) => typeof v === 'boolean'),
   };
 }
 

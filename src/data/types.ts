@@ -48,6 +48,14 @@ export interface DevicePrefs {
   syncKey: string;
   /** F-44 role this phone opens on ('' = launch screen): counter, kitchen, launch or station:<id>. */
   role: string;
+  /** W-12 resume (2.1.0, FEATURES §0.1 "which order is on screen"): the Counter's current order and its page. '' = none. */
+  orderId: string;
+  page: 'menu' | 'billing' | 'payment';
+  /** PK-5: the screen this device was last used as ('' = launch), so a Kitchen or Station device reopens there. */
+  lastRole: string;
+  /** Per-device display (FEATURES §0.1): kitchen text size and Quiet (no alert sound). */
+  kitchenText: 'normal' | 'large' | 'xl';
+  quiet: boolean;
 }
 
 /** Per-device settings (not synced on purpose). */

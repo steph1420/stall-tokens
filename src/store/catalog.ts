@@ -39,6 +39,35 @@ function itemActions(core: Core, log: Log) {
   };
 }
 
+/** P-3 A / PK-6 A: edit a category or station by id (a virtual one becomes a record with the same id; rename keeps it). */
+function recordActions(log: Log) {
+  const name = (t: string) => t.trim().replace(/\s+/g, ' ').slice(0, CONFIG.limits.nameMaxChars);
+  return {
+    setCategory(id: string, f: { name?: string; sortOrder?: number; defaultStation?: string; defaultSwatch?: number }, removed = false): string | null {
+      const fields: Record<string, string | number> = {};
+      if (f.name !== undefined) { if (!name(f.name)) return 'Give the category a name'; fields.name = name(f.name); }
+      if (f.sortOrder !== undefined) fields.sort_order = Math.trunc(f.sortOrder);
+      if (f.defaultStation !== undefined) fields.default_station = f.defaultStation;
+      if (f.defaultSwatch !== undefined) fields.default_swatch = Math.abs(Math.trunc(f.defaultSwatch)) % CONFIG.swatchCount;
+      log.dispatch('record.set', { table: 'category', id, fields, removed });
+      return null;
+    },
+    setStation(id: string, f: { name?: string; icon?: string; colour?: string; sortOrder?: number }, removed = false): string | null {
+      const fields: Record<string, string | number> = {};
+      if (f.name !== undefined) { if (!name(f.name)) return 'Give the station a name'; fields.name = name(f.name); }
+      if (f.icon !== undefined) fields.icon = f.icon.slice(0, 8);
+      if (f.colour !== undefined) fields.colour = f.colour.slice(0, 20);
+      if (f.sortOrder !== undefined) fields.sort_order = Math.trunc(f.sortOrder);
+      log.dispatch('record.set', { table: 'station', id, fields, removed });
+      return null;
+    },
+    /** P-13 day note (id = dayId; text and tags). */
+    setDayNote(dayId: string, text: string, tags: string) {
+      log.dispatch('record.set', { table: 'day_note', id: dayId, fields: { text: text.trim().slice(0, CONFIG.limits.recordTextMax), tags: tags.trim().slice(0, CONFIG.limits.noteMaxChars) }, removed: false });
+    },
+  };
+}
+
 /** F-15 UPI IDs and shared settings. */
 function payeeActions(core: Core, log: Log) {
   const st = () => core.get();
@@ -68,4 +97,4 @@ function payeeActions(core: Core, log: Log) {
   };
 }
 
-export function catalogActions(core: Core, log: Log) { return { ...itemActions(core, log), ...payeeActions(core, log) }; }
+export function catalogActions(core: Core, log: Log) { return { ...itemActions(core, log), ...payeeActions(core, log), ...recordActions(log) }; }

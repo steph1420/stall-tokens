@@ -1,16 +1,21 @@
 // F-09..F-18 Order ops in the fold. Stock moves when lines are committed (sent or paid) and moves back
 // when committed qty drops or the order is deleted. Sales may push stock below 0 (offline oversell):
 // the count clamps at 0 and the item is flagged `oversold` (plan §8).
-import type { Item, Line, Op, Order } from '../../contract';
+import type { Item, Line, Op, Order, Refund, RefundLine } from '../../contract';
+import { held } from '../rules/bill';
 import type { Folded } from './state';
 import { lww } from './lww';
 
 type OrderKind = 'order.create' | 'line.add' | 'line.qty' | 'line.note' | 'line.status' | 'line.finish' | 'order.note'
-  | 'order.discount' | 'order.roundoff' | 'order.send' | 'order.delete' | 'order.priority' | 'order.cancel' | 'order.client' | 'payment.add' | 'refund.add';
+  | 'order.discount' | 'order.roundoff' | 'order.send' | 'order.delete' | 'order.priority' | 'order.cancel' | 'order.client' | 'payment.add' | 'refund.add'
+  | 'refund.void' | 'order.complete';
 const ORDER_KINDS: ReadonlySet<string> = new Set<OrderKind>([
   'order.create', 'line.add', 'line.qty', 'line.note', 'line.status', 'line.finish', 'order.note', 'order.discount',
   'order.roundoff', 'order.send', 'order.delete', 'order.priority', 'order.cancel', 'order.client', 'payment.add', 'refund.add',
+  'refund.void', 'order.complete',
 ]);
+/** Kinds a cancelled order still takes: money going back, and its Undo. */
+const AFTER_CANCEL: ReadonlySet<string> = new Set(['refund.add', 'refund.void']);
 export const isOrderOp = (op: Op): op is Op<OrderKind> => ORDER_KINDS.has(op.kind);
 
 function moveStock(items: Folded['items'], itemId: string, sold: number): Folded['items'] {
@@ -41,6 +46,7 @@ function create(s: Folded, op: Op<'order.create'>): Folded {
   const o: Order = {
     id: op.body.orderId, dayId: op.body.dayId, token: Math.trunc(op.body.token), servedBy: op.body.servedBy, createdAt: op.wallAt,
     lines: [], note: '', discount: null, roundOff: null, sent: false, deleted: false, priority: false, client: '', cancel: null, payments: [], refunds: [], revision: 0,
+    complete: null, device: typeof op.body.device === 'string' ? op.body.device : '',
   };
   return { ...withOrder(s, o), orderIds: [...s.orderIds, o.id] };
 }
@@ -60,7 +66,7 @@ function setQty(s: Folded, o: Order, lineId: string, rawQty: number): Folded {
 function addLine(s: Folded, o: Order, b: Op<'line.add'>['body']): Folded {
   if (o.lines.some((l) => l.lineId === b.lineId)) return s;
   const line: Line = { lineId: b.lineId, itemId: b.itemId, name: b.name, price: Math.trunc(b.price), category: b.category,
-    stationId: b.stationId, qty: 0, note: '', status: 'draft', committed: 0, byCounter: false };
+    stationId: b.stationId, qty: 0, note: '', status: 'draft', committed: 0, byCounter: false, restocked: 0 };
   const next = { ...o, lines: [...o.lines, line] };
   return setQty(withOrder(s, next), next, b.lineId, b.qty);
 }
@@ -75,7 +81,7 @@ function cancel(s: Folded, o: Order, op: Op<'order.cancel'>): Folded {
   let items = s.items;
   for (const l of o.lines) if (NOT_STARTED.has(l.status)) items = moveStock(items, l.itemId, -l.committed);
   const lines = o.lines.map((l) => (NOT_STARTED.has(l.status) ? { ...l, committed: 0 } : l));
-  const refundDue = o.payments.reduce((t, p) => t + p.cash + p.upi, 0) - o.refunds.reduce((t, r) => t + r.amount, 0);
+  const refundDue = held(o);
   return withOrder({ ...s, items }, { ...o, lines, cancel: { reason: op.body.reason.trim(), at: op.wallAt, by: op.writer, refundDue: Math.max(0, refundDue) } });
 }
 
@@ -92,43 +98,98 @@ function lineStatus(s: Folded, o: Order, op: Op<'line.status'> | Op<'line.finish
   return mapLine(s, o, op.body.lineId, (l) => (l.status === 'draft' ? l : { ...l, status, byCounter: l.byCounter && (status === 'ready' || status === 'handed') }));
 }
 
+/** Q-REFUND-1 A back-to-stock: applied once per refund (the refundId is unique on the order), and only up to what the
+ * line still has out of stock (committed − already restocked). Returns what was actually put back. */
+function restock(s: Folded, o: Order, want: readonly RefundLine[]): { state: Folded; order: Order; done: RefundLine[] } {
+  let items = s.items;
+  const done: RefundLine[] = [];
+  const lines = o.lines.map((l) => {
+    const ask = want.filter((w) => w.lineId === l.lineId).reduce((t, w) => t + Math.max(0, Math.trunc(w.qty)), 0);
+    const qty = Math.min(ask, Math.max(0, l.committed - l.restocked));
+    if (qty <= 0) return l;
+    items = moveStock(items, l.itemId, -qty);
+    done.push({ lineId: l.lineId, qty });
+    return { ...l, restocked: l.restocked + qty };
+  });
+  return { state: { ...s, items }, order: { ...o, lines }, done };
+}
+
+function addRefund(s: Folded, o: Order, op: Op<'refund.add'>): Folded {
+  if (o.refunds.some((x) => x.refundId === op.body.refundId)) return s;
+  // Never give back more than the stall holds for this order (two phones refunding at once: the later one is capped).
+  const amount = Math.max(0, Math.min(Math.trunc(op.body.amount), held(o)));
+  const lines = (op.body.lines ?? []).map((l) => ({ lineId: l.lineId, qty: Math.trunc(l.qty) }));
+  const r = op.body.restock === true ? restock(s, o, lines) : { state: s, order: o, done: [] };
+  const refund: Refund = { refundId: op.body.refundId, amount, source: op.body.source, at: op.wallAt, reason: (op.body.reason ?? '').trim(), lines, restocked: r.done, voided: null };
+  return withOrder(r.state, { ...r.order, refunds: [...r.order.refunds, refund] });
+}
+
+/** Q-REFUND-INSTANT Undo: the refund stays, marked voided; its back-to-stock is taken out again. Once only. */
+function voidRefund(s: Folded, o: Order, op: Op<'refund.void'>): Folded {
+  const ref = o.refunds.find((x) => x.refundId === op.body.refundId);
+  if (!ref || ref.voided !== null) return s;
+  let items = s.items;
+  const lines = o.lines.map((l) => {
+    const qty = ref.restocked.filter((x) => x.lineId === l.lineId).reduce((t, x) => t + x.qty, 0);
+    if (qty <= 0) return l;
+    items = moveStock(items, l.itemId, qty);
+    return { ...l, restocked: Math.max(0, l.restocked - qty) };
+  });
+  const refunds = o.refunds.map((x) => (x.refundId === ref.refundId ? { ...x, voided: op.body.reason.trim() || 'Undo' } : x));
+  return withOrder({ ...s, items }, { ...o, lines, refunds });
+}
+
+/** Q-COMPLETE-2 A: Complete. Recorded through lww(order, 'complete') so a concurrent payment is a Conflict row (never
+ * silent); the payment's money is kept either way, and a later payment clears the write-off (see rules/status). */
+function completeOrder(s: Folded, o: Order, op: Op<'order.complete'>): Folded {
+  const w = lww(s, `order:${o.id}`, 'complete', op);
+  if (!w.apply) return w.state;
+  const complete = { unpaid: op.body.unpaid, dueAt: Math.trunc(op.body.dueAt), reason: op.body.reason.trim(), at: op.wallAt, by: op.writer };
+  return withOrder(w.state, { ...o, complete });
+}
+
+/** Order fields set by last-writer-wins honour `apply` (a Sheet edit that wins keeps its value; plan §3 latent bug). */
+function setField<K extends 'note' | 'client' | 'priority' | 'discount' | 'roundOff'>(s: Folded, o: Order, field: K, op: Op, value: Order[K]): Folded {
+  const w = lww(s, `order:${o.id}`, field, op);
+  return w.apply ? withOrder(w.state, { ...o, [field]: value }) : w.state;
+}
+
 export function applyOrderOp(s: Folded, op: Op<OrderKind>): Folded {
   if (op.kind === 'order.create') return create(s, op);
   const o = s.orders[op.body.orderId];
   if (!o || o.deleted) return s; // ops for unknown or deleted orders are kept in the log but change nothing
-  if (o.cancel && op.kind !== 'refund.add') return s; // a cancelled order only takes refunds
+  if (o.cancel && !AFTER_CANCEL.has(op.kind)) return s; // a cancelled order only takes refunds (and their Undo)
   switch (op.kind) {
     case 'line.add': return addLine(s, o, op.body);
     case 'line.qty': return setQty(s, o, op.body.lineId, op.body.qty);
-    case 'line.note': return mapLine(lww(s, `line:${op.body.lineId}`, 'note', op).state, o, op.body.lineId, (l) => ({ ...l, note: op.body.note }));
+    case 'line.note': {
+      const w = lww(s, `line:${op.body.lineId}`, 'note', op);
+      return w.apply ? mapLine(w.state, o, op.body.lineId, (l) => ({ ...l, note: op.body.note })) : w.state;
+    }
     case 'line.status': case 'line.finish': return lineStatus(s, o, op);
-    case 'order.note': return withOrder(lww(s, `order:${o.id}`, 'note', op).state, { ...o, note: op.body.note });
+    case 'order.note': return setField(s, o, 'note', op, op.body.note);
     case 'order.discount': {
-      const st = lww(s, `order:${o.id}`, 'discount', op).state;
       const { kind, value, allowedBy, note } = op.body;
-      const discount = value > 0 ? { kind, value: Math.trunc(value), allowedBy, note } : null;
-      return withOrder(st, { ...o, discount });
+      return setField(s, o, 'discount', op, value > 0 ? { kind, value: Math.trunc(value), allowedBy, note } : null);
     }
-    case 'order.roundoff': {
-      const st = lww(s, `order:${o.id}`, 'roundOff', op).state;
-      const roundOff = op.body.amount === 0 ? null : { amount: Math.trunc(op.body.amount), forTotal: Math.trunc(op.body.forTotal) };
-      return withOrder(st, { ...o, roundOff });
-    }
+    case 'order.roundoff':
+      return setField(s, o, 'roundOff', op, op.body.amount === 0 ? null : { amount: Math.trunc(op.body.amount), forTotal: Math.trunc(op.body.forTotal) });
     case 'order.send': { const r = commit(s, o); return withOrder(r.state, r.order); }
     case 'order.delete': return remove(s, o);
     case 'order.cancel': return cancel(s, o, op);
-    case 'order.client': return withOrder(lww(s, `order:${o.id}`, 'client', op).state, { ...o, client: op.body.name });
-    case 'order.priority': return withOrder(lww(s, `order:${o.id}`, 'priority', op).state, { ...o, priority: op.body.on });
+    case 'order.client': return setField(s, o, 'client', op, op.body.name);
+    case 'order.priority': return setField(s, o, 'priority', op, op.body.on);
     case 'payment.add': {
       if (o.payments.some((p) => p.paymentId === op.body.paymentId)) return s;
       const { orderId: _o, ...b } = op.body;
-      const r = commit(s, o);
+      // Touches the 'complete' target so a payment made without having seen a concurrent Complete is recorded as a
+      // Conflict row (Q-HARM-10). Money ops only add: the payment always lands, whatever the order of the two.
+      const st = lww(s, `order:${o.id}`, 'complete', op).state;
+      const r = commit(st, o);
       return withOrder(r.state, { ...r.order, payments: [...o.payments, { ...b, at: op.wallAt, writer: op.writer }] });
     }
-    case 'refund.add': {
-      if (o.refunds.some((x) => x.refundId === op.body.refundId)) return s;
-      const refund = { refundId: op.body.refundId, amount: op.body.amount, source: op.body.source, at: op.wallAt };
-      return withOrder(s, { ...o, refunds: [...o.refunds, refund] });
-    }
+    case 'refund.add': return addRefund(s, o, op);
+    case 'refund.void': return voidRefund(s, o, op);
+    case 'order.complete': return completeOrder(s, o, op);
   }
 }

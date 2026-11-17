@@ -8,7 +8,7 @@ import { lww } from './lww';
 import { applyMoneyOp, MONEY_KINDS, type MoneyKind } from './money';
 
 const ITEM_DEFAULTS: ItemFields = {
-  name: '', price: 0, swatch: 0, category: '', stationId: '', count: null, unit: '', lowAt: 0, soldOut: false, order: 0, removed: false, supply: false,
+  name: '', price: 0, swatch: 0, category: '', stationId: '', count: null, unit: '', lowAt: 0, soldOut: false, order: 0, removed: false, supply: false, categoryId: '',
 };
 
 function fieldOk(key: keyof ItemFields, value: unknown): boolean {
@@ -61,6 +61,31 @@ function applyStock(s: Folded, op: Op<'stock.adjust'>): Folded {
   return { ...s, items: { ...s.items, [item.id]: { ...item, count, oversold: false } } };
 }
 
+/** Q-SYNC-ALL device registry. Each device's row is last-writer-wins. Two different devices on the same token range is
+ * a clash: a Conflict row (rule `range-clash`), never silent, so the Counter can warn "Range 1–500 is also used by …". */
+function applyDevice(s: Folded, op: Op<'device.set'>): Folded {
+  const { deviceId, label, role } = op.body;
+  const rangeIndex = Math.trunc(op.body.rangeIndex);
+  if (!deviceId || rangeIndex < 0 || rangeIndex >= CONFIG.tokens.ranges.length) return s;
+  const w = lww(s, `device:${deviceId}`, 'all', op);
+  if (!w.apply) return w.state;
+  let st = w.state;
+  const prev = st.devices[deviceId];
+  const other = Object.values(st.devices).find((d) => d.id !== deviceId && d.rangeIndex === rangeIndex && d.role !== 'kitchen' && !d.role.startsWith('station:'));
+  const counterLike = role !== 'kitchen' && !role.startsWith('station:');
+  if (other && counterLike && prev?.rangeIndex !== rangeIndex) {
+    const loser = st.lastWrite[`device:${other.id}|all`]?.opId ?? other.id;
+    st = { ...st, conflicts: [...st.conflicts, { target: `range:${String(rangeIndex)}`, field: 'rangeIndex', winner: op.opId, loser, at: op.wallAt, rule: 'range-clash' }] };
+  }
+  return { ...st, devices: { ...st.devices, [deviceId]: { id: deviceId, label: label.trim().slice(0, CONFIG.limits.nameMaxChars), rangeIndex, role, at: op.wallAt } } };
+}
+
+function applySnapshot(s: Folded, op: Op<'snapshot.note'>): Folded {
+  const b = op.body;
+  if (!b.snapshotId || s.snapshots.some((x) => x.id === b.snapshotId)) return s;
+  return { ...s, snapshots: [...s.snapshots, { id: b.snapshotId, at: b.at, reason: b.reason, opCount: Math.trunc(b.opCount), hash: b.hash, by: op.writer }] };
+}
+
 function applyOne(s: Folded, op: Op): Folded {
   switch (op.kind) {
     case 'item.set': return applyItem(s, op);
@@ -83,6 +108,8 @@ function applyOne(s: Folded, op: Op): Folded {
       return w.apply ? { ...w.state, settings: { ...w.state.settings, [op.body.key]: op.body.value } } : w.state;
     }
     case 'record.set': return applyRecord(s, op);
+    case 'device.set': return applyDevice(s, op);
+    case 'snapshot.note': return applySnapshot(s, op);
     default:
       if (MONEY_KINDS.has(op.kind)) return applyMoneyOp(s, op as Op<MoneyKind>);
       return isOrderOp(op) ? applyOrderOp(s, op) : s;
