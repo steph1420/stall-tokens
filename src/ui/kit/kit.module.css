@@ -42,13 +42,13 @@
 /* While a hold runs, its own label speaks: an older toast steps aside so the two never overlap. */
 body:has(.holdLabOn) .toast { visibility: hidden; }
 .holdTrack { height: 0.375rem; margin: 0 -1rem 0.75rem; background: var(--dl-color-track); overflow: hidden; }
-.holdRun { display: block; height: 100%; width: 100%; background: var(--dl-color-warning); transform: scaleX(0); transform-origin: left; }
+.holdRun { display: block; height: 100%; width: 100%; background: var(--dl-stall-hold-fill); transform: scaleX(0); transform-origin: left; }
 .holdRunOn { composes: holdRun; transform: scaleX(1); transition: transform var(--dl-dur-deliberate) linear; }
 .holdBtns { display: flex; flex-wrap: wrap; gap: var(--dl-hit-gap); }
 .holdBtns > button { flex: 1 1 8rem; min-height: var(--dl-hit-comfortable); }
 .holdWarn {
   border-radius: var(--dl-radius-md); font-family: var(--dl-stall-font-display); font-size: 1rem; font-weight: 700;
-  color: var(--dl-stall-on-warn); background: var(--dl-color-warning); user-select: none; touch-action: none;
+  color: var(--dl-stall-on-warn); background: var(--dl-stall-hold-fill); user-select: none; touch-action: none;
 }
 .banner {
   position: fixed; left: 0.75rem; right: 0.75rem; top: calc(0.5rem + env(safe-area-inset-top)); z-index: var(--dl-z-toast);

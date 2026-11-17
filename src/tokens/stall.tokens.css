@@ -61,6 +61,7 @@
   --dl-stall-cta-shadow: inset 0 1px 0 rgba(255,255,255,.45), 0 0 18px rgba(69,238,248,.22);
   --dl-stall-on-cta: #041018;
   --dl-stall-on-warn: #1a1300; /* P2 text on the yellow warning Complete (s121) */
+  --dl-stall-hold-fill: #F2C418; /* s121 yellow Complete + hold bar (night) */
   --dl-stall-blue: #2a76e0;
   --dl-stall-on-blue: #ffffff;
   --dl-stall-paste-bg: #fff4c2;
@@ -98,6 +99,7 @@
   --dl-stall-cta-shadow: inset 0 1px 0 rgba(255,255,255,.6), 0 4px 14px rgba(6,182,212,.35);
   --dl-stall-on-cta: #031620;
   --dl-stall-on-warn: #1a1300; /* P2 text on the yellow warning Complete (s121) */
+  --dl-stall-hold-fill: #EDBF08; /* s121 yellow Complete + hold bar (day) */
   --dl-stall-blue: #1f6fd9;
   --dl-stall-on-blue: #ffffff;
   --dl-stall-paste-bg: #fff4c2;

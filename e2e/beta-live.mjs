@@ -69,7 +69,7 @@ for (const theme of ['night', 'day']) {
     const still = await p.getByText('Vada Pav').count();
     return still > 0 ? 'Vada Pav order still on Open Orders after Handover' : false;
   });
-  await step(T('refund (Refund sheet)'), async () => 'N/A: the Refund sheet is P2; P1 adds the refund data + actions only (unit-tested)');
+  await step(T('refund (Refund sheet)'), async () => 'see beta-p2.mjs: one-tap Refund + Undo (s122) runs there; the Refund lines sheet is unit-tested');
   await step(T('reload keeps data (unpaid order still open)'), async () => {
     await p.reload(); await p.waitForTimeout(700);
     await p.getByRole('button', { name: /counter/i }).first().click().catch(() => {});
