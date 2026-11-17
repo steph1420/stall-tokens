@@ -32,7 +32,7 @@ const chip = (g: string, i: number) => { act(() => { fireEvent.click(within(scre
 describe('pay3 split lock', () => {
   it('locked UPI stays; Cash absorbs + Tip and − Waive', async () => {
     await payScreen();
-    for (let i = 0; i < 4; i++) act(() => { fireEvent.keyDown(slider(), { key: 'ArrowLeft' }); });
+    for (let i = 0; i < 4; i++) act(() => { fireEvent.keyDown(slider(), { key: 'ArrowRight' }); });
     const upi = box('UPI');
     expect(upi).toBeGreaterThan(0);
     tap('Lock UPI');
@@ -57,7 +57,7 @@ describe('pay3 split lock', () => {
     tap('Lock Cash');
     expect(slider().getAttribute('aria-disabled')).toBe('true');
     const cash = box('Cash');
-    act(() => { fireEvent.keyDown(slider(), { key: 'ArrowLeft' }); });
+    act(() => { fireEvent.keyDown(slider(), { key: 'ArrowRight' }); });
     expect(box('Cash')).toBe(cash);
     tap(/^UPI ₹/);
     expect(screen.getByRole('status').textContent).toMatch(/UPI is the rest while Cash is locked/);
