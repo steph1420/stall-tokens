@@ -3,10 +3,13 @@
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it } from 'vitest';
 import { DEMO_MENU } from '../../../mock/fixtures';
-import { kitchen, StoreProvider } from '../../../store';
+import { bill, isOpen, kitchen, orderStatus, StoreProvider } from '../../../store';
 import { makeTestStore } from '../../../store/testkit';
 import { CancelSheet } from '../CancelSheet';
 import { OpenOrdersScreen } from './OpenOrdersScreen';
+
+/** Test-only: fail loudly instead of a non-null assertion. */
+const must = <T,>(x: T | null | undefined): T => { if (x === null || x === undefined) throw new Error('missing'); return x; };
 
 afterEach(cleanup);
 
@@ -41,11 +44,18 @@ describe('Open Orders', () => {
     expect(s().folded.orders[oid]?.client).toBe('Asha');
   });
 
-  it('Handover delivers every line, so the order is Completed', async () => {
+  it('Handover while unpaid delivers every line but keeps the order open as Unpaid (W-05, Q-HANDOVER-PAY)', async () => {
     const { s, oid } = await setup();
     fireEvent.click(screen.getByRole('button', { name: 'Handover' }));
     const o = s().folded.orders[oid];
-    expect(o && kitchen.orderComplete(o)).toBe(true);
+    expect(o && kitchen.orderComplete(o)).toBe(true); // every line handed over (kitchen views drop it)
+    expect(o && orderStatus(o, undefined)).toBe('Unpaid');
+    expect(o && isOpen(o)).toBe(true);
+    expect(screen.queryByText('Completed')).toBeNull();
+    expect(s().open.complete(oid)).toBe('unpaid'); // one tap is refused while money is due
+    const due = o ? bill.due(o) : 0;
+    act(() => { expect(s().counter.pay({ cash: due, upi: 0, upiPayeeId: null, tip: 0, waived: 0, waivedBy: '', waivedNote: '', cashGiven: due, notes: {} })).toBeNull(); });
+    expect(isOpen(must(s().folded.orders[oid]))).toBe(false); // handed over + paid = completed
     expect(screen.getByText('Completed')).toBeTruthy();
   });
 });

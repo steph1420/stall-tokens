@@ -141,6 +141,8 @@ describe('counter flow (F-06..F-18)', () => {
 
   it('storage full is shown, the change is kept, and Retry saves it', async () => {
     const { s, ops } = await ready();
+    await flush(); // the first-start device.set / setting.set ops (Q-SYNC-ALL) are saved first
+    const before = ops.all.length;
     ops.failNext = 2;
     s().counter.newOrder();
     await flush();
@@ -149,7 +151,7 @@ describe('counter flow (F-06..F-18)', () => {
     s().retrySave();
     await flush();
     expect(s().saveError).toBeNull();
-    expect(ops.all).toHaveLength(2);
+    expect(ops.all).toHaveLength(before + 2);
   });
 
   it('two counters offline then synced: different token ranges, same state everywhere', async () => {

@@ -46,8 +46,10 @@ describe('Kitchen and Station screens', () => {
     vi.useFakeTimers();
     const o = Object.values(store.getState().folded.orders)[0];
     act(() => { for (const l of o?.lines ?? []) store.getState().kitchen.finishLine(o?.id ?? '', l.lineId); });
-    expect(screen.getAllByText('Marked by counter').length).toBe(2); // every line complete: veil over the last view
-    expect(screen.getByRole('status').textContent).toBe('Completed');
+    expect(screen.getAllByText('Marked by counter').length).toBe(2);
+    expect(screen.queryByRole('status')).toBeNull(); // Q-COMPLETE-2 A: Ready never completes; the card stays
+    act(() => { for (const l of o?.lines ?? []) store.getState().kitchen.advance(o?.id ?? '', l.lineId); }); // hand over
+    expect(screen.getByRole('status').textContent).toBe('Completed'); // every line handed over: veil over the last view
     act(() => { vi.advanceTimersByTime(3000); });
     expect(screen.queryByText('Completed')).toBeNull();
     expect(screen.getByText('Nothing to make right now')).toBeTruthy();

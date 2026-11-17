@@ -4,6 +4,9 @@ import { DEMO_MENU } from '../mock/fixtures';
 import { bill, isOpen, kitchen, liveOrders } from '.';
 import { makeTestStore } from './testkit';
 
+/** Test-only: fail loudly instead of a non-null assertion. */
+const must = <T,>(x: T | null | undefined): T => { if (x === null || x === undefined) throw new Error('missing'); return x; };
+
 async function ready() {
   const t = makeTestStore();
   await t.store.getState().start();
@@ -105,7 +108,7 @@ describe('kitchen and station (F-19..F-22)', () => {
     expect(statuses(a)).toEqual(['Tea:handed']);
     expect(s().kitchen.advance(a, tea)).toBe(false);
   });
-  it('the Counter marks any line finished (Ready, Marked by counter); the order completes when every line is, by anyone (Q-COUNTER-FINISH)', async () => {
+  it('the Counter marks any line finished (Ready, Marked by counter); Ready never completes, only handover does (Q-COUNTER-FINISH, Q-COMPLETE-2 A)', async () => {
     const { s, send, order, statuses } = await ready();
     const a = send('Tea');
     const b = send('Coffee', 'Samosa');
@@ -125,13 +128,17 @@ describe('kitchen and station (F-19..F-22)', () => {
     expect(order(a).lines[0]?.byCounter).toBe(true);
     expect(s().kitchen.finishLine(a, tea)).toBe(false);
     expect(order(b).lines[1]?.byCounter).toBe(false);
-    // Completion counts every line, whoever marked it: Counter-marked Coffee + station-handed Samosa.
+    // Q-COMPLETE-2 A (W-06, W-27): Ready never completes, whoever marked it; only handed-over lines do.
     const orders = () => kitchen.kitchenOrders(liveOrders(s().folded)).map((o) => o.id);
     expect(orders()).toEqual([b]);
     const samosa = order(b).lines[1]?.lineId ?? '';
     s().kitchen.advance(b, samosa); s().kitchen.advance(b, samosa); s().kitchen.confirmDone(b);
     expect(orders()).toEqual([b]); // Samosa Ready, not yet handed over
     s().kitchen.advance(b, samosa);
+    expect(kitchen.orderComplete(order(b))).toBe(false); // Coffee is only "Marked by counter", not handed over
+    expect(kitchen.lineMuted(must(order(b).lines[0]))).toBe(true);
+    expect(orders()).toEqual([b]);
+    s().kitchen.advance(b, coffee); // a tap hands the Counter-marked line over
     expect(kitchen.orderComplete(order(b))).toBe(true);
     expect(orders()).toEqual([]);
   });
