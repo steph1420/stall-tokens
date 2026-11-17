@@ -3,8 +3,13 @@
 import type { Op } from '../../contract';
 import type { Transport } from '../types';
 
-export interface FakeHub { readonly log: Op[]; offline: boolean; failNext: number; duplicatePulls: boolean }
-export const createFakeHub = (): FakeHub => ({ log: [], offline: false, failNext: 0, duplicatePulls: false });
+/** `beats`: presence by deviceId with the hub's own time (s127); `presence: false` acts like a 2.0 bridge. */
+export interface FakeHub {
+  readonly log: Op[]; offline: boolean; failNext: number; duplicatePulls: boolean;
+  readonly beats: Map<string, { label: string; orderId: string; at: number }>; presence: boolean; now: () => number;
+}
+export const createFakeHub = (now: () => number = () => Date.now()): FakeHub =>
+  ({ log: [], offline: false, failNext: 0, duplicatePulls: false, beats: new Map(), presence: true, now });
 
 /** Same gap rule as the bridge: a writer whose stored seqs are not 1..max is asked to resend from the first hole. */
 function gaps(log: readonly Op[]): { writer: string; fromSeq: number }[] {
@@ -30,6 +35,14 @@ export function createFakeTransport(hub: FakeHub, name = 'fake'): Transport {
       const ids = new Set(hub.log.map((o) => o.opId));
       for (const op of ops) if (!ids.has(op.opId)) { ids.add(op.opId); hub.log.push(op); }
       return Promise.resolve({ stored: ops.map((o) => o.opId), resend: gaps(hub.log) });
+    },
+    beat(b) {
+      const err = trouble();
+      if (err) return Promise.reject(err);
+      if (!hub.presence) return Promise.resolve(null);
+      const t = hub.now();
+      hub.beats.set(b.deviceId, { label: b.label, orderId: b.orderId, at: t });
+      return Promise.resolve([...hub.beats].map(([deviceId, x]) => ({ deviceId, label: x.label, orderId: x.orderId, ageMs: t - x.at })));
     },
     pull(cursor) {
       const err = trouble();

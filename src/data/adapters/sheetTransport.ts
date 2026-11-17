@@ -3,13 +3,25 @@
 // shared word typed on each phone and checked by the script; it keeps strangers from writing, it is not a login.
 import { CONFIG } from '../../config';
 import type { Op } from '../../contract';
-import type { Transport } from '../types';
+import type { Seen, Transport } from '../types';
 
 export interface SheetConfig { readonly url: string; readonly key: string }
 type Fetch = (input: string, init: { method: string; headers: Record<string, string>; body: string; signal: AbortSignal; redirect: 'follow' }) => Promise<{ ok: boolean; status: number; text: () => Promise<string> }>;
 
 /** A web-app URL we are willing to call: https only (the script's /exec URL in practice). */
 export const isSheetUrl = (u: string): boolean => /^https:\/\/[^\s/]+\/\S+$/.test(u.trim());
+
+function toSeen(x: unknown): Seen[] {
+  const r = x as Partial<Record<keyof Seen, unknown>>;
+  return typeof r.deviceId === 'string' && typeof r.ageMs === 'number'
+    ? [{ deviceId: r.deviceId, label: typeof r.label === 'string' ? r.label : '', orderId: typeof r.orderId === 'string' ? r.orderId : '', ageMs: Math.max(0, r.ageMs) }]
+    : [];
+}
+
+function toGap(r: unknown): { writer: string; fromSeq: number }[] {
+  const x = r as { writer?: unknown; fromSeq?: unknown };
+  return typeof x.writer === 'string' && typeof x.fromSeq === 'number' ? [{ writer: x.writer, fromSeq: x.fromSeq }] : [];
+}
 
 export function createSheetTransport(cfg: SheetConfig, doFetch: Fetch = (i, init) => fetch(i, init), name = 'sheet'): Transport {
   async function call(body: Record<string, unknown>): Promise<Record<string, unknown>> {
@@ -31,11 +43,18 @@ export function createSheetTransport(cfg: SheetConfig, doFetch: Fetch = (i, init
       if (!ops.length) return { stored: [], resend: [] };
       const d = await call({ action: 'push', ops });
       const stored = Array.isArray(d.stored) ? d.stored.filter((x): x is string => typeof x === 'string') : [];
-      const resend = Array.isArray(d.resend) ? (d.resend as unknown[]).flatMap((r) => {
-        const x = r as { writer?: unknown; fromSeq?: unknown };
-        return typeof x.writer === 'string' && typeof x.fromSeq === 'number' ? [{ writer: x.writer, fromSeq: x.fromSeq }] : [];
-      }) : [];
+      const resend = Array.isArray(d.resend) ? (d.resend as unknown[]).flatMap(toGap) : [];
       return { stored, resend };
+    },
+    /** s127 presence. A 2.0 bridge answers "unknown action": no presence there (null), the app falls back to ops. */
+    async beat(b) {
+      try {
+        const d = await call({ action: 'beat', deviceId: b.deviceId, label: b.label, orderId: b.orderId });
+        return Array.isArray(d.seen) ? (d.seen as unknown[]).flatMap(toSeen) : [];
+      } catch (e) {
+        if (e instanceof Error && e.message.includes('unknown action')) return null;
+        throw e;
+      }
     },
     async pull(cursor: string) {
       const d = await call({ action: 'pull', cursor });

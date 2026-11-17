@@ -8,14 +8,14 @@ import { lww } from './lww';
 
 type OrderKind = 'order.create' | 'line.add' | 'line.qty' | 'line.note' | 'line.status' | 'line.finish' | 'order.note'
   | 'order.discount' | 'order.roundoff' | 'order.send' | 'order.delete' | 'order.priority' | 'order.cancel' | 'order.client' | 'payment.add' | 'refund.add'
-  | 'refund.void' | 'order.complete';
+  | 'refund.void' | 'order.complete' | 'order.handle' | 'order.release';
 const ORDER_KINDS: ReadonlySet<string> = new Set<OrderKind>([
   'order.create', 'line.add', 'line.qty', 'line.note', 'line.status', 'line.finish', 'order.note', 'order.discount',
   'order.roundoff', 'order.send', 'order.delete', 'order.priority', 'order.cancel', 'order.client', 'payment.add', 'refund.add',
-  'refund.void', 'order.complete',
+  'refund.void', 'order.complete', 'order.handle', 'order.release',
 ]);
-/** Kinds a cancelled order still takes: money going back, and its Undo. */
-const AFTER_CANCEL: ReadonlySet<string> = new Set(['refund.add', 'refund.void']);
+/** Kinds a cancelled order still takes: money going back, its Undo, and the take-over release (s127). */
+const AFTER_CANCEL: ReadonlySet<string> = new Set(['refund.add', 'refund.void', 'order.release']);
 export const isOrderOp = (op: Op): op is Op<OrderKind> => ORDER_KINDS.has(op.kind);
 
 function moveStock(items: Folded['items'], itemId: string, sold: number): Folded['items'] {
@@ -46,7 +46,7 @@ function create(s: Folded, op: Op<'order.create'>): Folded {
   const o: Order = {
     id: op.body.orderId, dayId: op.body.dayId, token: Math.trunc(op.body.token), servedBy: op.body.servedBy, createdAt: op.wallAt,
     lines: [], note: '', discount: null, roundOff: null, sent: false, deleted: false, priority: false, client: '', cancel: null, payments: [], refunds: [], revision: 0,
-    complete: null, device: typeof op.body.device === 'string' ? op.body.device : '',
+    complete: null, device: typeof op.body.device === 'string' ? op.body.device : '', handler: null,
   };
   return { ...withOrder(s, o), orderIds: [...s.orderIds, o.id] };
 }
@@ -148,6 +148,16 @@ function completeOrder(s: Folded, o: Order, op: Op<'order.complete'>): Folded {
   return withOrder(w.state, { ...o, complete });
 }
 
+/** s127 lease: claim / take over / release through lww(order, 'handler'), so two phones taking over at once end the
+ * same way on every device (causal order) and the clash is a Conflict row. A release only clears its own claim. */
+function handleOrder(s: Folded, o: Order, op: Op<'order.handle' | 'order.release'>): Folded {
+  if (op.kind === 'order.release' && o.handler?.deviceId !== op.body.deviceId) return s;
+  const w = lww(s, `order:${o.id}`, 'handler', op);
+  if (!w.apply) return w.state;
+  const handler = op.kind === 'order.handle' ? { deviceId: op.body.deviceId, label: op.body.label, at: op.wallAt, takeover: op.body.takeover } : null;
+  return withOrder(w.state, { ...o, handler });
+}
+
 /** Order fields set by last-writer-wins honour `apply` (a Sheet edit that wins keeps its value; plan §3 latent bug). */
 function setField<K extends 'note' | 'client' | 'priority' | 'discount' | 'roundOff'>(s: Folded, o: Order, field: K, op: Op, value: Order[K]): Folded {
   const w = lww(s, `order:${o.id}`, field, op);
@@ -191,5 +201,6 @@ export function applyOrderOp(s: Folded, op: Op<OrderKind>): Folded {
     case 'refund.add': return addRefund(s, o, op);
     case 'refund.void': return voidRefund(s, o, op);
     case 'order.complete': return completeOrder(s, o, op);
+    case 'order.handle': case 'order.release': return handleOrder(s, o, op);
   }
 }

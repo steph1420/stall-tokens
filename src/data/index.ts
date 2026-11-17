@@ -7,8 +7,8 @@ import { createSheetTransport, isSheetUrl } from './adapters/sheetTransport';
 import { applyJoinFromLocation } from './join';
 import type { DataSource, Transport } from './types';
 
-export type { DataSource, DevicePrefs, OpStore, Transport, TabChannel, DeviceStore } from './types';
-export { createSyncEngine, type SyncEngine, type SyncStatus } from './sync/engine';
+export type { Beat, DataSource, DevicePrefs, OpStore, Seen, Transport, TabChannel, DeviceStore } from './types';
+export { createSyncEngine, type Presence, type SyncEngine, type SyncStatus } from './sync/engine';
 export { createMemoryOpStore, createMemoryChannelHub } from './adapters/memory';
 export { createFakeHub, createFakeTransport, type FakeHub } from './adapters/fakeTransport';
 export { createDeviceStore } from './adapters/deviceStore';

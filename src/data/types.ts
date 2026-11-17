@@ -14,8 +14,15 @@ export interface OpStore {
 export interface Resend { readonly writer: string; readonly fromSeq: number }
 export interface PushResult { readonly stored: string[]; readonly resend: readonly Resend[] }
 
+/** s127 presence beat (Q-TAKE-ALIVE A): who this phone is and which order it has open ('' = none). */
+export interface Beat { readonly deviceId: string; readonly label: string; readonly orderId: string }
+/** A phone the bridge heard from, with its age by the bridge's clock (skew-free). Outside the op log. */
+export interface Seen { readonly deviceId: string; readonly label: string; readonly orderId: string; readonly ageMs: number }
+
 /** One way ops travel between devices (Sheet bridge now; Bluetooth / local peer later). ARCHITECTURE §4.3. */
 export interface Transport {
+  /** Optional presence: send this phone's beat, get every phone heard from. null = this bridge keeps no presence. */
+  beat?(b: Beat): Promise<readonly Seen[] | null>;
   readonly name: string;
   /** Send ops; resolves with the opIds the other side has stored, and any seq gaps it wants resent (Q-HARM-10). */
   push(ops: readonly Op[]): Promise<PushResult>;

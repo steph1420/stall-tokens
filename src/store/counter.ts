@@ -3,12 +3,13 @@ import { CONFIG } from '../config';
 import type { Discount, Line, Order, PaySource, PaymentBody } from '../contract';
 import type { Core, Log } from './core';
 import { liveOrders } from './fold/fold';
-import { due, held, preRound, total } from './rules/bill';
+import { due, held, preRound, subtotal, total } from './rules/bill';
 import { checkPayment } from './rules/pay';
 import { isOpen, type Page } from './rules/status';
 import { istDate, rollover } from './rules/day';
 import { nextToken } from './rules/tokens';
 import type { UiState } from './ui';
+import { holding } from './rules/handling';
 
 /** Q-DRAFT-SYNC device label: serving name + short device id, e.g. "Ravi · 3f9a". */
 export const deviceLabel = (servingName: string, deviceId: string): string =>
@@ -17,9 +18,7 @@ export const deviceLabel = (servingName: string, deviceId: string): string =>
 function makeCtx(core: Core, log: Log) {
   const st = () => core.get();
   const toast = (text: string) => { core.set((s) => ({ ui: { ...s.ui, toast: { text, id: (s.ui.toast?.id ?? 0) + 1 } } })); };
-  const ui = (patch: Partial<UiState>) => {
-    core.set((s) => ({ ui: { ...s.ui, ...patch } }));
-  };
+  const ui = (patch: Partial<UiState>) => { core.set((s) => ({ ui: { ...s.ui, ...patch } })); };
   const current = (): Order | null => {
     const id = st().ui.orderId;
     const o = id ? st().folded.orders[id] : undefined;
@@ -50,18 +49,35 @@ function makeCtx(core: Core, log: Log) {
     return it.count - drafts;
   };
   const editable = (l: Line) => l.status === 'draft' || l.status === 'waiting';
-  return { core, log, st, toast, ui, current, currentDay, startDay, available, editable };
+  /** s127: true (with a calm toast) when another phone has the current order; nothing changes here until Take over. */
+  const locked = (): boolean => {
+    const s = st();
+    const o = current();
+    if (!o || holding(o, s.prefs.deviceId, { heard: s.heard, since: s.syncSince }, core.env.now()).kind !== 'busy') return false;
+    toast('Another phone has this order · tap Take over to change it');
+    return true;
+  };
+  return { core, log, st, toast, ui, current, currentDay, startDay, available, editable, locked };
 }
 type Ctx = ReturnType<typeof makeCtx>;
 
+/** An order nothing has been put in yet: no lines with qty, no payments, not sent. */
+const empty = (o: Order) => !o.sent && o.payments.length === 0 && o.lines.every((l) => l.qty === 0);
+/** W-22: a new IST date while yesterday's day is still open, and the question not answered today. */
+function askDay(x: Ctx): boolean {
+  const f = x.st().folded;
+  const t = x.core.env.now();
+  return rollover(f.days, f.locks, t) === 'ask' && x.st().ui.dayKept !== istDate(t);
+}
+/** Not `orders[newOrder()]`: the object would be read before newOrder() runs (stale state). */
+function ensureOrder(x: Ctx, nav: { newOrder(): string }): Order | null { const id = nav.newOrder(); return x.st().folded.orders[id] ?? null; }
+
 function navActions(x: Ctx) {
-  const { core, log, st, ui, current, currentDay, startDay } = x;
-  const ensure = (): Order | null => { const id = self.newOrder(); return st().folded.orders[id] ?? null; };
-  /** An order nothing has been put in yet: no lines with qty, no payments, not sent. */
-  const empty = (o: Order) => !o.sent && o.payments.length === 0 && o.lines.every((l) => l.qty === 0);
+  const { core, log, st, ui, current, currentDay } = x;
   const self = {
     /** + New order. W-07/W-14: an empty current draft is reused, so taps never burn tokens or strand drafts. */
     newOrder(): string {
+      if (askDay(x)) { ui({ sheet: { kind: 'newDay' } }); return ''; }
       const cur = current();
       if (cur && empty(cur) && cur.dayId === currentDay()) {
         core.set((s) => ({ ui: { ...s.ui, orderId: cur.id, counterTab: 'new', pages: { ...s.ui.pages, [cur.id]: 'menu' } } }));
@@ -77,6 +93,19 @@ function navActions(x: Ctx) {
       return orderId;
     },
     selectOrder(orderId: string) { ui({ orderId }); },
+    setPage(page: Page) {
+      const o = current() ?? ensureOrder(x, self);
+      if (!o) return;
+      core.set((s) => ({ ui: { ...s.ui, pages: { ...s.ui.pages, [o.id]: page } } }));
+    },
+  };
+  return self;
+}
+type Nav = ReturnType<typeof navActions>;
+
+function dayActions(x: Ctx) {
+  const { core, log, st, ui, current, startDay } = x;
+  const self = {
     /** W-22: what the next new order does about the day ('ask' = the Counter asks; P2 shows the question). */
     dayCheck() { const f = st().folded; return rollover(f.days, f.locks, core.env.now()); },
     /** W-22 answer "Start today": a new day, tokens from #001. */
@@ -87,28 +116,29 @@ function navActions(x: Ctx) {
       if (cur && empty(cur) && cur.dayId !== d) { log.dispatch('order.delete', { orderId: cur.id }); ui({ orderId: null }); }
       return d;
     },
-    setPage(page: Page) {
-      const o = current() ?? ensure();
-      if (!o) return;
-      core.set((s) => ({ ui: { ...s.ui, pages: { ...s.ui.pages, [o.id]: page } } }));
+    /** W-22 answer: "Start today" (tokens from #001) or "Keep yesterday's day" (not asked again today). Then carries on
+     * with what was tapped: the menu item, or a new order. */
+    answerDay(start: boolean): string {
+      if (start) self.startToday(); else ui({ dayKept: istDate(core.env.now()) });
+      const item = st().ui.pendingItem;
+      ui({ sheet: null, pendingItem: '' });
+      return item;
     },
   };
   return self;
 }
-type Nav = ReturnType<typeof navActions>;
 
 function lineActions(x: Ctx, nav: Nav) {
   const { core, log, st, toast, current, available, editable } = x;
-  // Not `orders[newOrder()]`: the object would be read before newOrder() runs (stale state).
-  const ensure = (): Order | null => { const id = nav.newOrder(); return st().folded.orders[id] ?? null; };
   const self = {
     /** Tap a menu card: +1 (F-06). */
     addItem(itemId: string) {
+      if (x.locked()) return;
       const it = st().folded.items[itemId];
       if (!it || it.removed || it.supply) return;
       if (it.soldOut || available(itemId) < 1) { toast(`${it.name} is sold out`); return; }
-      const o = current() ?? ensure();
-      if (!o) return;
+      const o = current() ?? ensureOrder(x, nav);
+      if (!o) { if (st().ui.sheet?.kind === 'newDay') x.ui({ pendingItem: itemId }); return; }
       const draft = [...o.lines].reverse().find((l) => l.itemId === itemId && l.status === 'draft');
       if (draft) { self.setQty(draft.lineId, draft.qty + 1); return; }
       if (o.lines.length >= CONFIG.limits.linesMax) { toast('This order is full; start another one'); return; }
@@ -116,12 +146,14 @@ function lineActions(x: Ctx, nav: Nav) {
     },
     /** Menu −: take one off the newest line of this item that is not being made yet. */
     removeItem(itemId: string) {
+      if (x.locked()) return;
       const o = current();
       const line = o && [...o.lines].reverse().find((l) => l.itemId === itemId && editable(l));
       if (!line) { if (o?.lines.some((l) => l.itemId === itemId)) toast('Already being made; change it from the kitchen'); return; }
       self.setQty(line.lineId, line.qty - 1);
     },
     setQty(lineId: string, qty: number) {
+      if (x.locked()) return;
       const o = current();
       const line = o?.lines.find((l) => l.lineId === lineId);
       if (!o || !line) return;
@@ -139,35 +171,41 @@ function lineActions(x: Ctx, nav: Nav) {
   return self;
 }
 
+/** W-16: never more than the bill; a free order (100 %) needs a note saying why. */
+function discountProblem(o: Order, d: Discount | null, value: number): string {
+  if (!d) return '';
+  const sub = subtotal(o);
+  const off = d.kind === 'pct' ? Math.round((sub * value) / 100) : value;
+  if (off > sub) return 'Discount is more than the bill';
+  return off > 0 && off >= sub && !d.note.trim() ? 'Add a note to make this order free' : '';
+}
+
 function billActions(x: Ctx) {
-  const { core, log, toast, current } = x;
+  const { log, toast, current } = x;
   const self = {
     setLineNote(lineId: string, note: string) {
+      if (x.locked()) return;
       const o = current();
       if (!o?.lines.some((l) => l.lineId === lineId)) return;
       log.dispatch('line.note', { orderId: o.id, lineId, note: note.trim().slice(0, CONFIG.limits.noteMaxChars) });
     },
     setOrderNote(note: string) {
+      if (x.locked()) return;
       const o = current();
       if (o) log.dispatch('order.note', { orderId: o.id, note: note.trim().slice(0, CONFIG.limits.noteMaxChars) });
     },
-    /** F-18 Refund what is owed after an edit. */
-    refund(source: PaySource): boolean {
-      const o = current();
-      if (!o) return false;
-      const owed = -due(o);
-      if (owed <= 0) return false;
-      log.dispatch('refund.add', { refundId: core.env.makeId(), orderId: o.id, amount: owed, source });
-      return true;
-    },
     setDiscount(d: Discount | null) {
+      if (x.locked()) return;
       const o = current();
       if (!o) return;
       const value = d ? Math.max(0, Math.trunc(d.kind === 'pct' ? Math.min(d.value, 100) : d.value)) : 0;
+      const problem = discountProblem(o, d, value);
+      if (problem) { toast(problem); return; }
       log.dispatch('order.discount', { orderId: o.id, kind: d?.kind ?? 'amount', value, allowedBy: d?.allowedBy ?? '', note: d?.note ?? '' });
     },
     /** Q-ROUND-1 A: set at billing, both ways, against the current total. */
     setRoundOff(amount: number) {
+      if (x.locked()) return;
       const o = current();
       if (!o) return;
       const forTotal = preRound(o);
@@ -184,12 +222,14 @@ function flowActions(x: Ctx) {
   const self = {
     /** F-12 To kitchen: sends the unpaid order. A second tap does nothing. */
     sendToKitchen(): boolean {
+      if (x.locked()) return false;
       const o = current();
       if (!o?.lines.some((l) => l.status === 'draft' && l.qty > 0)) return false;
       log.dispatch('order.send', { orderId: o.id });
       return true;
     },
     deleteOrder(): boolean {
+      if (x.locked()) return false;
       const o = current();
       if (!o) return false;
       const net = held(o);
@@ -202,6 +242,7 @@ function flowActions(x: Ctx) {
     },
     /** F-14 Confirm payment. Refused when nothing is due (double taps) or the parts do not add up. */
     pay(p: Omit<PaymentBody, 'paymentId' | 'orderId'>): string | null {
+      if (x.locked()) return 'Another phone has this order';
       const o = current();
       if (!o) return 'No order';
       const bill = due(o);
@@ -219,8 +260,17 @@ function flowActions(x: Ctx) {
 
 /** Q-CANCEL-1 A: cancel an order at any status, with an optional reason. Paid money is recorded as refund due. */
 function cancelActions(x: Ctx) {
-  const { log, st, toast, ui } = x;
+  const { core, log, st, toast, ui, current } = x;
   return {
+    /** F-18 Refund what is owed after an edit. */
+    refund(source: PaySource): boolean {
+      const o = current();
+      if (!o) return false;
+      const owed = -due(o);
+      if (owed <= 0) return false;
+      log.dispatch('refund.add', { refundId: core.env.makeId(), orderId: o.id, amount: owed, source });
+      return true;
+    },
     cancelOrder(orderId: string, reason: string): boolean {
       const o = st().folded.orders[orderId];
       if (!o || o.deleted || o.cancel) return false;
@@ -236,6 +286,6 @@ function cancelActions(x: Ctx) {
 export function counterActions(core: Core, log: Log) {
   const x = makeCtx(core, log);
   const nav = navActions(x);
-  return { ...nav, ...lineActions(x, nav), ...billActions(x), ...flowActions(x), ...cancelActions(x), totalOf: (o: Order) => total(o), available: x.available, toast: x.toast };
+  return { ...nav, ...dayActions(x), ...lineActions(x, nav), ...billActions(x), ...flowActions(x), ...cancelActions(x), totalOf: (o: Order) => total(o), available: x.available, toast: x.toast };
 }
 export type CounterActions = ReturnType<typeof counterActions>;

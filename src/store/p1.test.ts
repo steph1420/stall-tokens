@@ -74,10 +74,14 @@ describe('Counter flow rules (P1)', () => {
     expect(s().counter.dayCheck()).toBe('same');
     now = T16 + 20 * H; // 17 Nov 11:30 IST
     expect(s().counter.dayCheck()).toBe('ask');
+    // P2: + New order asks first (new-day sheet); nothing is made until it is answered.
+    expect(s().counter.newOrder()).toBe('');
+    expect(s().ui.sheet?.kind).toBe('newDay');
+    s().counter.answerDay(false); // "Keep yesterday's day": not asked again today
     const o2 = s().counter.newOrder();
-    expect(s().folded.orders[o2]?.dayId).toBe(d1); // not answered yet: keeps yesterday's day
+    expect(s().folded.orders[o2]?.dayId).toBe(d1);
     const d2 = s().counter.startToday(); // "Start today (tokens from #001)"
-    s().counter.addItem(id.tea ?? ''); // reuses the empty draft? it belongs to the old day, so a new order starts
+    s().counter.addItem(id.tea ?? '');
     const o3 = cur(s);
     expect(o3.dayId).toBe(d2);
     expect(o3.token).toBe(1);
