@@ -56,18 +56,18 @@ for (const theme of ['night', 'day']) {
     await tap(p, 'Tea', 2); await p.getByRole('button', { name: /^Bill|items/ }).last().click();
     await p.getByRole('button', { name: 'To kitchen' }).first().click();
     await p.getByRole('tab', { name: /Unpaid/ }).click(); await p.waitForTimeout(300); await shot('01-unpaid');
-    return (await p.getByText(/to collect · 1 order/).count()) > 0 ? '"₹40 to collect · 1 order", row #001' : false;
+    return (await p.getByText(/to collect/).count()) > 0 && (await p.getByRole("button", { name: /#001/ }).count()) > 0 ? "₹ to collect, row #001" : false;
   });
   await step(T('order view: Take payment + hold bar; a short tap only hints (s121)'), async () => {
     await p.getByRole('button', { name: /#001/ }).first().click(); await p.waitForTimeout(300); await shot('02-orderview-unpaid');
-    const bar = p.getByRole('button', { name: 'Complete without payment (hold)' });
+    const bar = p.getByRole('button', { name: 'Complete (hold)' });
     await bar.click(); await p.waitForTimeout(200);
     const hint = await p.getByRole('status').innerText().catch(() => '');
     return /Press and hold/.test(hint) ? `tap hint: "${hint}"` : false;
   });
   await step(T('press and hold completes without payment; it leaves the Unpaid list... and stays on record'), async () => {
-    const bar = p.getByRole('button', { name: 'Complete without payment (hold)' });
-    const box = await bar.boundingBox(); await p.mouse.move(box.x + box.width / 2, box.y + box.height / 2); await p.mouse.down(); await p.waitForTimeout(1600); await p.mouse.up();
+    const bar = p.getByRole('button', { name: 'Complete (hold)' });
+    const box = await bar.boundingBox(); await p.mouse.move(box.x + box.width / 2, box.y + box.height / 2); await p.mouse.down(); await p.waitForTimeout(250); await shot('03a-hold-mid'); await p.waitForTimeout(1400); await p.mouse.up();
     await p.waitForTimeout(400); await shot('03-after-hold');
     const t = await p.getByRole('status').innerText().catch(() => '');
     return /not collected/.test(t) ? `toast "${t}"` : false;

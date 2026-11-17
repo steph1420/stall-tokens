@@ -1,13 +1,15 @@
-// F-55 s121 / s122 order view (P2), opened from the Unpaid tab. Unpaid: Take payment, and the yellow hold bar to complete
-// without payment (Q-COMPLETE-2 A, Q-HOLD-RING A). Paid: Refund in one tap (whole, same way it was paid, Undo toast),
-// "Change lines, reason or note ›" for the Refund sheet, Reprint, and Complete.
+// F-55 s121 / s122 order view (P2), opened from the Unpaid tab. Layout from s121 (locked): "‹ Order", big token with
+// Unpaid in red, who · status · age, the lines card, and the action bar. Unpaid: Take payment + yellow Complete
+// (press and hold, Q-HOLD-RING A bar on top of the action bar). Paid: Refund in one tap (Undo toast), "Change lines,
+// reason or note ›" for the Refund sheet, Reprint, and Complete.
 import { CONFIG } from '../../../config';
 import type { Order } from '../../../contract';
-import { bill, completed, formatToken, istClock, useApp } from '../../../store';
+import { ago, bill, completed, formatToken, orderStatus, useApp } from '../../../store';
 import { HoldBar } from '../../kit/HoldBar';
 import { Icon } from '../../kit/Icon';
 import { Money } from '../../kit/Money';
 import k from '../../kit/kit.module.css';
+import { useSecond } from '../TakeOver';
 import s from './Unpaid.module.css';
 
 export function OrderView({ orderId }: { orderId: string }) {
@@ -22,30 +24,21 @@ function Lines({ o }: { o: Order }) {
   const paid = bill.held(o);
   return (
     <ul className={s.lines}>
-      {o.lines.filter((l) => l.qty > 0).map((l) => <li key={l.lineId}><span>{`${String(l.qty)}× ${l.name}`}</span><Money p={bill.lineAmount(l)} /></li>)}
+      {o.lines.filter((l) => l.qty > 0).map((l) => <li key={l.lineId}><span>{`${String(l.qty)} × ${l.name}`}</span><Money p={bill.lineAmount(l)} /></li>)}
       <li className={s.tot}><span>Total</span><Money p={bill.total(o)} /></li>
-      {paid > 0 ? <li><span>Paid</span><Money p={paid} /></li> : null}
-      {due > 0 ? <li className={s.due}><span>To collect</span><Money p={due} /></li> : null}
-      {o.complete?.unpaid ? <li className={s.note}><span>Completed without payment</span></li> : null}
+      {paid > 0 && due > 0 ? <li><span>Paid so far</span><Money p={paid} /></li> : null}
+      {o.complete?.unpaid ? <li className={s.note}><span>Completed without payment · the amount is on record</span></li> : null}
       {o.cancel ? <li className={s.note}><span>{`Cancelled${o.cancel.reason ? ` · ${o.cancel.reason}` : ''}`}</span></li> : null}
     </ul>
   );
 }
 
-function Actions({ o }: { o: Order }) {
-  const a = useApp((x) => x.open);
+/** Paid extras under the lines (s122): Refund in one tap, the Refund sheet, Reprint. */
+function Extras({ o }: { o: Order }) {
   const r = useApp((x) => x.refund);
   const sheet = useApp((x) => x.openSheet);
-  const due = bill.due(o);
-  const done = completed(o);
   return (
     <div className={s.acts}>
-      {due > 0 && !o.cancel ? <button type="button" className={k.cta} onClick={() => { a.takePayment(o.id); }}>{`Take payment · ${formatToken(o.token, CONFIG.tokens.pad)}`}</button> : null}
-      {due > 0 && o.sent && !done && !o.cancel ? (
-        <HoldBar label="Complete without payment" sub="Press and hold · the amount stays on record" onConfirm={() => { a.completeUnpaid(o.id); }}
-          onHint={() => { a.complete(o.id); }} />
-      ) : null}
-      {due <= 0 && o.sent && !done && !o.cancel ? <button type="button" className={k.cta} onClick={() => { a.complete(o.id); }}>Complete</button> : null}
       {bill.held(o) > 0 ? (
         <>
           <button type="button" className={k.danger} onClick={() => { r.quick(o.id); }}>Refund</button>
@@ -57,18 +50,43 @@ function Actions({ o }: { o: Order }) {
   );
 }
 
+function Dock({ o }: { o: Order }) {
+  const a = useApp((x) => x.open);
+  const due = bill.due(o);
+  const open = o.sent && !completed(o) && !o.cancel;
+  const pay = due > 0 && !o.cancel ? <button type="button" className={k.quiet} onClick={() => { a.takePayment(o.id); }}>Take payment</button> : null;
+  if (open && due > 0) return <HoldBar label="Complete" holdText="Marking as complete" onConfirm={() => { a.completeUnpaid(o.id); }} onHint={() => { a.complete(o.id); }}>{pay}</HoldBar>;
+  if (!pay && !open) return null;
+  return (
+    <footer className={s.dock}>
+      {pay}
+      {open ? <button type="button" className={k.cta} onClick={() => { a.complete(o.id); }}>Complete</button> : null}
+    </footer>
+  );
+}
+
 function Body({ o }: { o: Order }) {
   const back = useApp((x) => x.back);
-  const meta = [o.client, istClock(o.createdAt), o.servedBy].filter(Boolean).join(' · ');
+  const now = useSecond();
+  const due = bill.due(o);
+  const meta = [o.client, `${orderStatus(o, undefined)} · ${ago(o.createdAt, now)}`].filter(Boolean).join(' · ');
   return (
-    <main className={s.view} aria-label={`Order ${formatToken(o.token, CONFIG.tokens.pad)}`}>
-      <div className={s.vHead}>
-        <button type="button" className={s.vBack} aria-label="Back" onClick={() => { back(); }}><Icon name="chevLeft" /></button>
-        <div><b>{formatToken(o.token, CONFIG.tokens.pad)}</b><small>{meta}</small></div>
-      </div>
-      <Lines o={o} />
-      {o.note ? <p className={s.vNote}>{o.note}</p> : null}
-      <Actions o={o} />
-    </main>
+    <>
+      <main className={s.view} aria-label={`Order ${formatToken(o.token, CONFIG.tokens.pad)}`}>
+        <div className={s.vTop}>
+          <button type="button" className={s.vBack} aria-label="Back" onClick={() => { back(); }}><Icon name="chevLeft" /></button>
+          <b>Order</b>
+        </div>
+        <div className={s.vHead}>
+          <span className={s.vTok}>{formatToken(o.token, CONFIG.tokens.pad)}</span>
+          {due > 0 ? <span className={s.vDue}>Unpaid <Money p={due} /></span> : <span className={s.vPaid}>{completed(o) ? 'Complete' : 'Paid'}</span>}
+        </div>
+        <p className={s.vMeta}>{meta}</p>
+        <Lines o={o} />
+        {o.note ? <p className={s.vNote}>{o.note}</p> : null}
+        <Extras o={o} />
+      </main>
+      <Dock o={o} />
+    </>
   );
 }
