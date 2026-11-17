@@ -1,5 +1,6 @@
 // UI place for this device (ARCHITECTURE §3): screen, current order, each order's last page, open sheet.
 import type { Page } from './rules/status';
+import type { LineStatus } from '../contract';
 
 export type Screen = 'launch' | 'counter' | 'kitchen' | 'station' | StallScreen;
 /** D-NAV: the quiet Stall section (launch + Counter ⋯). */
@@ -28,8 +29,11 @@ export type Sheet =
   | { kind: 'refundSheet'; orderId: string }
   | { kind: 'slip'; orderId: string };
 /** A toast's one button (s127 "Open", s122 "Undo"). */
-export type ToastAction = { readonly label: string; readonly run: 'open'; readonly orderId: string } | { readonly label: string; readonly run: 'undoRefund'; readonly orderId: string; readonly refundId: string };
-export interface ToastState { readonly text: string; readonly id: number; readonly action?: ToastAction }
+export type ToastAction = { readonly label: string; readonly run: 'open'; readonly orderId: string } | { readonly label: string; readonly run: 'undoRefund'; readonly orderId: string; readonly refundId: string }
+  | { readonly label: string; readonly run: 'undoStep'; readonly orderId: string; readonly lineId: string; readonly status: LineStatus; readonly from: LineStatus }
+  | { readonly label: string; readonly run: 'undoPriority'; readonly orderId: string; readonly on: boolean };
+/** `ms` = how long it stays (P3 kitchen Undo: CONFIG.kitchen.undoToastMs); default by kind. */
+export interface ToastState { readonly text: string; readonly id: number; readonly action?: ToastAction; readonly ms?: number }
 
 export interface UiState {
   readonly screen: Screen;

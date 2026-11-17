@@ -150,3 +150,45 @@ export function overviewAll(orders: readonly Order[]): Overview {
   }
   return { items: [...items].map(([name, qty]) => ({ name, qty })).sort((a, b) => b.qty - a.qty || a.name.localeCompare(b.name)), split };
 }
+
+// ---- P3 Kitchen + Station (PK-2, PK-4, PK-10; W-25/26/38/42) ----
+
+/** Plain words for a line status (toasts, PK-4 Undo). */
+export const STATUS_WORD: Readonly<Record<LineStatus, string>> = {
+  draft: 'Draft', waiting: 'Waiting', preparing: 'Preparing', 'done?': 'Done?', ready: 'Ready', held: 'On hold', handed: 'Handed over', paused: 'Paused',
+};
+
+/** W-38 ticket age in whole minutes ("just in" under one minute). */
+export function ageText(createdAt: number, now: number): string {
+  const m = Math.floor(Math.max(0, now - createdAt) / 60_000);
+  return m < 1 ? 'just in' : `${String(m)} min`;
+}
+/** W-38 age tone: calm, then amber after `amber` minutes, red after `red`. */
+export function ageTone(createdAt: number, now: number, amber: number, red: number): 'calm' | 'amber' | 'red' {
+  const m = (now - createdAt) / 60_000;
+  return m >= red ? 'red' : m >= amber ? 'amber' : 'calm';
+}
+/** W-25 an order note that names an allergy or a strict diet shows as a warning (whole words, any case). */
+export function isWarningNote(note: string, words: readonly string[]): boolean {
+  const t = ` ${note.toLowerCase().replace(/[^a-z\s]/g, ' ').replace(/\s+/g, ' ')} `;
+  return words.some((w) => t.includes(` ${w.toLowerCase()} `));
+}
+/** W-42 on a station's card its own lines come first, then the other stations' lines (order kept inside each group). */
+export function ownFirst(lines: readonly Line[], station: string | null): Line[] {
+  if (station === null) return [...lines];
+  return [...lines.filter((l) => l.stationId === station), ...lines.filter((l) => l.stationId !== station)];
+}
+
+export type LeaveWhy = 'completed' | 'cancelled' | 'handed';
+/** PK-10 why an order left a list: cancelled or deleted, completed, or (on a station) handed over here while other
+ * stations still have lines ("Handed over", the quiet veil). null = it did not leave for a reason worth a veil. */
+export function leaveWhy(cur: Order | undefined, station: string | null): LeaveWhy | null {
+  if (!cur || cur.deleted || cur.cancel) return 'cancelled';
+  if (orderComplete(cur)) return 'completed';
+  if (station !== null && linesAt(cur, station).length > 0 && linesAt(cur, station).every(lineComplete)) return 'handed';
+  return null;
+}
+/** "2 left at other stations" for the Handed over veil. */
+export function leftElsewhere(o: Order, station: string): number {
+  return live(o).filter((l) => l.stationId !== station && !lineComplete(l)).length;
+}

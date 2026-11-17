@@ -161,10 +161,20 @@ async function syncRound(core: Core, l: ReturnType<typeof createLog>) {
   core.set({ sync: core.env.engine.status(), heard });
 }
 
-/** W-12: keep "which order is on screen" (and its page) in this device's prefs, so a reload reopens it. */
+/** PK-5: the screen this device is used as ('' for Launch / Counter / Stall pages). */
+function roleOf(u: CoreState['ui']): string | null {
+  if (u.screen === 'kitchen') return 'kitchen';
+  if (u.screen === 'station' && u.station) return `station:${u.station.id}`;
+  return u.screen === 'launch' || u.screen === 'counter' ? '' : null; // Stall pages keep the last place
+}
+
+/** W-12: keep "which order is on screen" (and its page) in this device's prefs, so a reload reopens it.
+ * PK-5: also the Kitchen / Station place, so a kitchen device reopens where it was. */
 function persistPlace(store: AppStore) {
   store.subscribe((s, prev) => {
     if (!s.ready) return;
+    const role = roleOf(s.ui);
+    if (role !== null && role !== s.prefs.lastRole) s.setPrefs({ lastRole: role });
     const id = s.ui.orderId ?? '';
     const page = (id && s.ui.pages[id]) || 'menu';
     if (id !== (prev.ui.orderId ?? '') || page !== ((id && prev.ui.pages[id]) || 'menu')) {

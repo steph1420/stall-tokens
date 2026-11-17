@@ -2,13 +2,13 @@
 import { describe, expect, it } from 'vitest';
 import { DEMO_MENU } from '../mock/fixtures';
 import { bill, isOpen, kitchen, liveOrders } from '.';
-import { makeTestStore } from './testkit';
+import { makeTestStore, stepClock } from './testkit';
 
 /** Test-only: fail loudly instead of a non-null assertion. */
 const must = <T,>(x: T | null | undefined): T => { if (x === null || x === undefined) throw new Error('missing'); return x; };
 
 async function ready() {
-  const t = makeTestStore();
+  const t = makeTestStore({ now: stepClock() });
   await t.store.getState().start();
   const s = () => t.store.getState();
   for (const m of DEMO_MENU) s().catalog.saveItem(null, { name: m.name, price: m.price, swatch: m.swatch, category: m.category, stationId: m.stationId, count: null });

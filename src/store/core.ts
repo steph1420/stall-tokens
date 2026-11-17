@@ -41,8 +41,11 @@ function uiForRole(role: string): CoreState['ui'] {
   return initialUi;
 }
 
+/** PK-5 A (W-44): a device last used as the Kitchen or a Station reopens there; Counter devices still see Launch. */
+const kitchenResume = (last: string): string => (last === 'kitchen' || last.startsWith('station:') ? last : '');
+
 export const initialCore = (prefs: DevicePrefs): CoreState => ({
-  ready: false, folded: emptyFolded(), prefs, ui: uiForRole(prefs.role), saveError: null, unsaved: [],
+  ready: false, folded: emptyFolded(), prefs, ui: uiForRole(prefs.role || kitchenResume(prefs.lastRole)), saveError: null, unsaved: [],
   sync: { pending: 0, lastOkAt: null, error: null, online: false }, memoryOnly: false, heard: {}, syncSince: null,
 });
 

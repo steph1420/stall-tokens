@@ -53,6 +53,10 @@ function Body({ o }: { o: Order }) {
           <button type="button" className={kit.quiet} onClick={() => { close({ kind: 'refundSheet', orderId: o.id }); }}>Change lines, reason or note ›</button>
         </div>
       ) : null}
+      {o.lines.some((l) => l.status === 'done?') ? (
+        // W-31 PK-4: the kitchen said Done? too early: send it back to Preparing.
+        <div className={s.shBtns}><button type="button" className={kit.quiet} onClick={() => { if (k.sendBack(o.id)) close(null); }}>Send back to the kitchen</button></div>
+      ) : null}
       <div className={s.shBtns}>
         <button type="button" className={kit.quiet} onClick={() => { a.editInBilling(o.id); }}>Edit in Billing</button>
         <button type="button" className={kit.quiet} onClick={() => { close({ kind: 'slip', orderId: o.id }); }}>Print token</button>
