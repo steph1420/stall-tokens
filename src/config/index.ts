@@ -2,17 +2,31 @@
 /** Build-time env (absent when vite.config.ts itself loads this file). */
 const envStr = (k: string): string => { const v = (import.meta as { env?: Record<string, unknown> }).env?.[k]; return typeof v === 'string' ? v : ''; };
 
+/** Q-CHANNEL A / Q-BETA-PATH B: Stable (root repo) or Beta (`steph1420/stall-tokens-beta`). */
+export type Channel = 'stable' | 'beta';
+export const CHANNELS = Object.freeze({
+  stable: { label: 'Stable', name: 'Stall Tokens', shortName: 'Stall', prefix: 'stall-tokens.v2' },
+  beta: { label: 'Beta', name: 'Stall Tokens Beta', shortName: 'Stall β', prefix: 'stall-tokens-beta.v2', basePath: '/stall-tokens-beta/' },
+} as const);
+/** Beta wins if either the build says so (`VITE_CHANNEL=beta`) or the page is served under the Beta path, so Beta can never open Stable's data. */
+export const detectChannel = (envChannel: string, pathname: string | undefined): Channel =>
+  envChannel === 'beta' || (pathname ?? '').startsWith(CHANNELS.beta.basePath) ? 'beta' : 'stable';
+const channel: Channel = detectChannel(envStr('VITE_CHANNEL'), typeof location === 'undefined' ? undefined : location.pathname);
+const isBeta = channel === 'beta';
+
 export const CONFIG = Object.freeze({
   app: {
     codename: 'stall-tokens',
     name: 'Stall Tokens',
-    version: envStr('VITE_APP_VERSION') || '2.0.0',
+    version: envStr('VITE_APP_VERSION') || '2.1.0',
     gitSha: envStr('VITE_GIT_SHA') || 'dev',
     buildDate: envStr('VITE_BUILD_DATE') || 'dev',
+    channel,
+    channelLabel: CHANNELS[channel].label,
   },
   ports: { dev: 5173, preview: 4173 },
-  // Shared github.io origin: every storage key and DB name starts with this prefix (ARCHITECTURE §9).
-  storage: { prefix: 'stall-tokens.v2', dbVersion: 1 },
+  // Shared github.io origin: every storage key and DB name starts with this prefix (ARCHITECTURE §9). Beta has its own (§4.7, F-49).
+  storage: { prefix: CHANNELS[channel].prefix, dbVersion: 1 },
   themes: { night: 'stall-night', day: 'stall-day' },
   // D-TOKEN: each Counter device picks one range; tokens restart per day.
   tokens: { ranges: [{ from: 1, to: 500 }, { from: 501, to: 1000 }], pad: 3 },
@@ -41,7 +55,8 @@ export const CONFIG = Object.freeze({
   // Q-SUPPLY-CONFIRM B: a pasted thing marked "Menu" lands in `newMenuCategory` at ₹0 until a price is set.
   stock: { lowAtDefault: 5, supplyCategory: 'Supplies', newMenuCategory: 'New' },
   // F-44 baked-in sync (Steve 19:33): a build can carry the bridge URL / key (VITE_SYNC_URL, VITE_SYNC_KEY); empty by default.
-  sync: { bakedUrl: envStr('VITE_SYNC_URL'), bakedKey: envStr('VITE_SYNC_KEY'), pollMinMs: 4000, pollMaxMs: 60000, backoff: 2, pushBatch: 200, timeoutMs: 15000 },
+  // F-49: Beta never carries a baked sync link or key; it only talks to a bridge typed in on that phone.
+  sync: { bakedUrl: isBeta ? '' : envStr('VITE_SYNC_URL'), bakedKey: isBeta ? '' : envStr('VITE_SYNC_KEY'), pollMinMs: 4000, pollMaxMs: 60000, backoff: 2, pushBatch: 200, timeoutMs: 15000 },
   timings: { toastMs: 2600, fakeDelayMs: 120, clockTickMs: 30000, printDelayMs: 300, remindLaterMs: 3600000 },
   // Open Orders header: dots up to this many orders, then "3 of 12" (Q-ORDERS-1).
   openDotsMax: 8,

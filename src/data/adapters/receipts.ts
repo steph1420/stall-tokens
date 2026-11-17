@@ -1,6 +1,9 @@
 // F-47 Receipt photos (Q-SETTLE-EXTRAS C): kept on this phone only, in their own IndexedDB store keyed by entry id.
 // Not synced and not in the Sheet (photos are large; the op log stays small). Losing the phone loses the photos.
-const DB = 'stall-tokens.v2.receipts';
+import { CONFIG } from '../../config';
+
+// F-49: the channel's storage prefix, so Beta's photos never mix with Stable's on the same origin.
+export const DB = `${CONFIG.storage.prefix}.receipts`;
 const STORE = 'photos';
 
 function open(): Promise<IDBDatabase> {

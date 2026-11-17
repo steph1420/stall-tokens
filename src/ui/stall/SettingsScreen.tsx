@@ -1,6 +1,7 @@
 // F-34 Settings (21-polish2/settings.html; D-ACCESS, D-THEME): Kitchen (Auto-prep, Station look), Money (Partner shares,
 // tip choices, round-off), Feel (Haptics, Appearance Night / Day), Counter (serving name, token range), Passcode,
-// Developer (passcode lock off), Q-HARM-7 footer stamp (tap opens What's New). Device prefs stay on this phone.
+// Developer (passcode lock off), About (version + channel, F-49), Q-HARM-7 footer stamp (tap opens What's New).
+// Device prefs stay on this phone.
 import { useState, type ReactNode } from 'react';
 import { appStamp, CONFIG } from '../../config';
 import { formatInr } from '../../contract';
@@ -116,6 +117,9 @@ export function SettingsScreen() {
       <Group label="Developer">
         <Opt t="Sign-in links" sub="One-tap links per person / role: sets up sync and opens their screen" value="" onClick={() => { a.openStall('developer'); a.unlock(); }} />
         <Opt t="Passcode lock" sub="Off (default) = Money, Settle up and Settings open without a code on this phone" sw={!p.passcodeOff} onClick={() => { set({ passcodeOff: !p.passcodeOff }); }} />
+      </Group>
+      <Group label="About">
+        <Opt t="Version" value={`${CONFIG.app.version} · ${CONFIG.app.channelLabel}`} />
       </Group>
       <Footer deviceId={p.deviceId} />
     </StallPage>

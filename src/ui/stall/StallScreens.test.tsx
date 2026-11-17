@@ -48,7 +48,8 @@ describe('Settings footer (F-34, Q-HARM-7)', () => {
     render(<StoreProvider store={store}><StallScreens screen="settings" /></StoreProvider>);
     const stamp = screen.getByRole('button', { name: "What's New" });
     expect(stamp.textContent).toBe(appStamp());
-    expect(stamp.textContent).toMatch(/^v2\.0\.0 · /);
+    expect(stamp.textContent).toMatch(/^v2\.1\.0 · /);
+    expect(screen.getByText('2.1.0 · Stable')).toBeTruthy(); // F-49 About shows the channel
     expect(stamp.textContent).toMatch(/IST$/);
     fireEvent.click(stamp);
     expect(screen.getByRole('dialog', { name: "What's New" })).toBeTruthy();
