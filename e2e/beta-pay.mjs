@@ -67,7 +67,7 @@ for (const theme of (process.env.THEMES ?? 'night,day').split(',')) {
     return confirm === 1 && qr === 0 && expanded === 'false' ? 'all cash, notes hidden' : false;
   });
   await step(T('pay5: UPI shows the QR with the ID and amount straight away'), async () => {
-    await p.getByRole('group', { name: 'How to pay' }).getByRole('button', { name: /^UPI ₹/ }).click(); await p.waitForTimeout(200);
+    await p.getByRole('group', { name: 'How to pay' }).getByRole('button', { name: 'UPI', exact: true }).click(); await p.waitForTimeout(200);
     const facts = await p.getByRole('group', { name: 'UPI ID and amount on this QR' }).innerText();
     const qr = await p.locator('[data-qr]').count();
     await shot('12-pay5-upi');
