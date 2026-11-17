@@ -28,7 +28,7 @@ function Row({ line, n, sel, onSel }: { line: Line; n: number; sel: boolean; onS
   const openSheet = useApp((st) => st.openSheet);
   return (
     <tr className={sel ? s.isSel : undefined}>
-      <td className={s.c}>{n}</td>
+      <td className={[s.c, s.num].join(' ')}>{n}</td>
       <td className={s.item}>
         <button type="button" className={s.itemBtn} onClick={() => { openSheet({ kind: 'lineNote', lineId: line.lineId }); }} aria-label={`${line.name}, ${line.note ? 'edit' : 'add'} note`}>
           <b>{line.name} <Icon name="note" className={line.note ? s.niconHas : s.nicon} /></b>
@@ -36,7 +36,7 @@ function Row({ line, n, sel, onSel }: { line: Line; n: number; sel: boolean; onS
           {line.note ? <em className={s.itemNote}>{line.note}</em> : null}
         </button>
       </td>
-      <td className={s.c}>
+      <td className={[s.c, s.qtyCell].join(' ')}>
         <div className={s.qty}>
           <button type="button" className={s.qb} aria-label={`One less ${line.name}`} onClick={() => { c.setQty(line.lineId, line.qty - 1); }}>−</button>
           <button type="button" className={s.qn} aria-label={`Quantity ${String(line.qty)}, change`} onClick={() => { onSel(!sel); }}>{line.qty}</button>

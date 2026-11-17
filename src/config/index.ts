@@ -60,7 +60,15 @@ export const CONFIG = Object.freeze({
   // F-44 baked-in sync (Steve 19:33): a build can carry the bridge URL / key (VITE_SYNC_URL, VITE_SYNC_KEY); empty by default.
   // F-49: Beta never carries a baked sync link or key; it only talks to a bridge typed in on that phone.
   sync: { bakedUrl: isBeta ? '' : envStr('VITE_SYNC_URL'), bakedKey: isBeta ? '' : envStr('VITE_SYNC_KEY'), pollMinMs: 4000, pollMaxMs: 60000, backoff: 2, pushBatch: 200, timeoutMs: 15000 },
-  timings: { toastMs: 2600, fakeDelayMs: 120, clockTickMs: 30000, printDelayMs: 300, remindLaterMs: 3600000 },
+  // s127 take-over (Q-TAKE-LEASE B ★ 90 s, D-TAKE-1): a claim lapses when its phone is not heard from for leaseMs; a waiting
+  // phone checks every checkMs; an app hidden for hiddenReleaseMs lets go of its order (Q-TAKE-WHEN A); leaving an order lets
+  // go after switchGraceMs, so a quick tab flip writes nothing.
+  // s122 Refund sheet reason chips (plain words; the note field takes anything else).
+  refundReasons: ['Wrong item', 'Not happy', 'Took too long', 'Ran out'],
+  // P2 menu: the search and sort row shows once the menu has more items than this (D-MENU-1).
+  menu: { searchFrom: 8 },
+  handling: { leaseMs: 90_000, checkMs: 10_000, hiddenReleaseMs: 30_000, switchGraceMs: 5_000, actionToastMs: 8_000 },
+  timings: { tapLockMs: 900, toastMs: 2600, fakeDelayMs: 120, clockTickMs: 30000, printDelayMs: 300, remindLaterMs: 3600000 },
   // Open Orders header: dots up to this many orders, then "3 of 12" (Q-ORDERS-1).
   openDotsMax: 8,
   // swipePx: horizontal travel that turns a drag on the Station page into next / previous order (Q-STN-LOOK D).

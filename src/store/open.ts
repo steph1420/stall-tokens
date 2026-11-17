@@ -8,12 +8,13 @@ import { makeCtx, type Ctx } from './kitchen';
 import { due } from './rules/bill';
 import { counterNext, openOrders } from './rules/kitchen';
 import { completed } from './rules/status';
+import { holding } from './rules/handling';
 import type { CounterTab } from './ui';
 
 function navActions(core: Core, { st, ui, order, log }: Ctx) {
   const list = () => openOrders(liveOrders(st().folded));
   return {
-    showTab(tab: CounterTab) { ui({ counterTab: tab, sheet: null }); },
+    showTab(tab: CounterTab) { ui({ counterTab: tab, sheet: null, orderView: null }); },
     showOpen(orderId: string) { ui({ openId: orderId }); },
     /** Swipe the header for the previous / next order. */
     stepOpen(dir: 1 | -1) {
@@ -93,8 +94,32 @@ function completeActions({ order, toast, log }: Ctx) {
   };
 }
 
+/** P2 Unpaid tab (s120), order view (s121/s122) and Drafts sheet (s123). */
+function viewActions(core: Core, { st, ui, order, toast, log }: Ctx) {
+  return {
+    viewOrder(orderId: string) { ui({ orderView: orderId, sheet: null }); },
+    /** s121 Take payment: the order's Payment page on New Orders. */
+    takePayment(orderId: string) {
+      if (!order(orderId)) return;
+      core.set((s) => ({ ui: { ...s.ui, counterTab: 'new', orderView: null, orderId, sheet: null, pages: { ...s.ui.pages, [orderId]: 'payment' } } }));
+    },
+    /** s123 Discard (second tap): only a draft nobody paid for or sent, and not one another phone is using. */
+    discardDraft(orderId: string): boolean {
+      const o = order(orderId);
+      if (!o || o.sent || o.payments.length > 0) return false;
+      const s = st();
+      const h = holding(o, s.prefs.deviceId, { heard: s.heard, since: s.syncSince }, core.env.now());
+      if (h.kind === 'busy') { toast(`${h.label} is using this order`); return false; }
+      log.dispatch('order.delete', { orderId });
+      if (s.ui.orderId === orderId) ui({ orderId: null });
+      toast(`Draft #${tok(o.token)} discarded`);
+      return true;
+    },
+  };
+}
+
 export function openActions(core: Core, log: Log) {
   const x = makeCtx(core, log);
-  return { ...navActions(core, x), ...lineActions(x), ...completeActions(x) };
+  return { ...navActions(core, x), ...lineActions(x), ...completeActions(x), ...viewActions(core, x) };
 }
 export type OpenActions = ReturnType<typeof openActions>;

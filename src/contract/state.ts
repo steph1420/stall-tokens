@@ -41,7 +41,11 @@ export interface Order {
   readonly complete: Completion | null;
   /** Q-DRAFT-SYNC: label of the device that made the order ('' on older ops). */
   readonly device: string;
+  /** s127 handling lease: the device that has this order open now (null = nobody). Liveness is checked against
+   * presence (store/rules/handling.ts), never against wall clocks. */
+  readonly handler: Handler | null;
 }
+export interface Handler { readonly deviceId: string; readonly label: string; readonly at: number; readonly takeover: boolean }
 export interface Payee { readonly id: string; readonly name: string; readonly upiId: string }
 export interface Day { readonly id: string; readonly label: string; readonly startedAt: number }
 /** Q-HARM-10: a true clash (neither op had seen the other). `rule` says why the winner won: the later op in causal

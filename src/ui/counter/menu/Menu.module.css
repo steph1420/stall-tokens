@@ -29,6 +29,8 @@
   grid-column: 1 / -1; grid-row: 1; position: relative; z-index: 1; pointer-events: none;
   font-size: 1.125rem; line-height: 1.375rem; font-weight: 500; letter-spacing: -0.02em; color: var(--dl-color-text);
   padding-right: 3.75rem; overflow-wrap: anywhere;
+  /* W-17: at most 2 lines with an ellipsis, so the price row always shows; Billing shows the full name. */
+  display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2; overflow: hidden;
 }
 .price {
   grid-column: 1; grid-row: 2; margin-top: 0.25rem; position: relative; z-index: 1; pointer-events: none;
@@ -79,3 +81,12 @@
 }
 .next:disabled { opacity: 0.45; box-shadow: none; }
 .nextIcon svg { width: 1rem; height: 1rem; display: block; }
+/* P2 menu search + sort (shows past CONFIG.menu.searchFrom items). */
+.tools { flex: none; display: flex; flex-wrap: wrap; gap: 0.5rem; padding: 0.5rem 1rem 0; }
+.search, .sort {
+  min-height: var(--dl-hit-min); border-radius: var(--dl-radius-md); padding: 0 0.75rem; font: inherit; font-size: 0.9375rem;
+  color: var(--dl-color-text); background: var(--dl-color-surface-solid); border: var(--dl-stall-hair) solid var(--dl-color-hairline);
+}
+.search { flex: 1 1 10rem; min-width: 0; }
+.sort { flex: 0 1 auto; }
+.none { margin: 0; padding: 0.75rem 1rem 0; color: var(--dl-color-text-muted); }

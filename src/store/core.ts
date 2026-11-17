@@ -15,6 +15,10 @@ export interface CoreState {
   readonly sync: SyncStatus;
   /** No usable IndexedDB: orders live in this tab only (calm banner). */
   readonly memoryOnly: boolean;
+  /** s127: when this phone last heard from each other device (by devKey), on this phone's clock. Not synced. */
+  readonly heard: Readonly<Record<string, number>>;
+  /** s127: when sync started this session (null = no sync set up on this phone). */
+  readonly syncSince: number | null;
 }
 
 export interface Env {
@@ -39,8 +43,18 @@ function uiForRole(role: string): CoreState['ui'] {
 
 export const initialCore = (prefs: DevicePrefs): CoreState => ({
   ready: false, folded: emptyFolded(), prefs, ui: uiForRole(prefs.role), saveError: null, unsaved: [],
-  sync: { pending: 0, lastOkAt: null, error: null, online: false }, memoryOnly: false,
+  sync: { pending: 0, lastOkAt: null, error: null, online: false }, memoryOnly: false, heard: {}, syncSince: null,
 });
+
+/** s127: note other devices' ops as "heard from now" (writer = first 8 of the device id + '.' + load id). */
+function heardFrom(core: Core, ops: readonly Op[], self: string) {
+  const mine = self.split('.')[0] ?? '';
+  const keys = [...new Set(ops.map((o) => o.writer.split('.')[0] ?? '').filter((k) => k && k !== mine && o0(k)))];
+  if (!keys.length) return;
+  const t = core.env.now();
+  core.set((s) => ({ heard: { ...s.heard, ...Object.fromEntries(keys.map((k) => [k, t])) } }));
+}
+const o0 = (k: string) => k !== 'sheet';
 
 /** Save ops; a failure keeps them in `unsaved` and shows the banner (never silent). */
 function makePersist(core: Core) {
@@ -104,6 +118,7 @@ export function createLog(core: Core, writer: string, follow: Follow | null = nu
       const inOrder = !last || fresh.every((o) => compareOps(o, last) > 0);
       core.set({ folded: inOrder ? fresh.sort(compareOps).reduce(applyOp, f) : fold(log) });
       if (save) persist(fresh);
+      heardFrom(core, fresh, writer);
     },
     retrySave() { persist(core.get().unsaved); },
     all: () => log,

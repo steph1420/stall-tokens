@@ -4,7 +4,7 @@ import { chromium } from '@playwright/test';
 import { demoOps } from './seed-plain.mjs';
 
 const out = process.argv[2] ?? '.';
-const BETA = 'https://steph1420.github.io/stall-tokens-beta/';
+const BETA = process.env.BETA_URL ?? 'https://steph1420.github.io/stall-tokens-beta/';
 const STABLE = 'https://steph1420.github.io/stall-tokens/';
 const results = [];
 const rec = (name, ok, ev = '') => { results.push({ name, ok, ev }); console.log(`${ok ? 'PASS' : 'FAIL'} | ${name} | ${ev}`); };

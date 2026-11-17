@@ -44,7 +44,7 @@ export function planRefund(o: Order, ask: RefundAsk): { amount: number; lines: R
 export function refundActions(core: Core, log: Log) {
   const st = () => core.get();
   const toast = (text: string) => { core.set((s) => ({ ui: { ...s.ui, toast: { text, id: (s.ui.toast?.id ?? 0) + 1 } } })); };
-  return {
+  const self = {
     /** Instant refund (one tap). Returns the refundId for the Undo toast. */
     refund(req: RefundRequest): RefundResult {
       const o = st().folded.orders[req.orderId];
@@ -56,6 +56,21 @@ export function refundActions(core: Core, log: Log) {
         reason: req.reason.trim().slice(0, CONFIG.limits.noteMaxChars), lines: plan.lines, restock: req.restock && plan.lines.length > 0 });
       return { ok: true, refundId, amount: plan.amount };
     },
+    /** s122 Refund in one tap: the whole order, back the way most of it was paid; the toast offers Undo. */
+    quick(orderId: string): RefundResult {
+      const o = st().folded.orders[orderId];
+      const cash = o ? o.payments.reduce((t, p) => t + p.cash, 0) : 0;
+      const upi = o ? o.payments.reduce((t, p) => t + p.upi, 0) : 0;
+      return self.offer({ orderId, ask: { kind: 'whole' }, source: upi > cash ? 'upi' : 'cash', reason: '', restock: false });
+    },
+    /** Refund, then a calm toast "Refunded ₹X · Cash" with Undo (or the reason it could not, in plain words). */
+    offer(req: RefundRequest): RefundResult {
+      const r = self.refund(req);
+      if (!r.ok) { toast(r.reason); return r; }
+      const how = req.source === 'upi' ? 'UPI' : 'Cash';
+      core.set((s) => ({ ui: { ...s.ui, toast: { text: `Refunded ${formatInr(r.amount)} · ${how}`, id: (s.ui.toast?.id ?? 0) + 1, action: { label: 'Undo', run: 'undoRefund', orderId: req.orderId, refundId: r.refundId } } } }));
+      return r;
+    },
     /** Undo (5 s toast): the refund stays on record, voided; stock it put back is taken out again. */
     undo(orderId: string, refundId: string): boolean {
       const r = st().folded.orders[orderId]?.refunds.find((x) => x.refundId === refundId);
@@ -65,5 +80,6 @@ export function refundActions(core: Core, log: Log) {
       return true;
     },
   };
+  return self;
 }
 export type RefundActions = ReturnType<typeof refundActions>;

@@ -112,3 +112,9 @@
 .printBtn { margin-top: 1rem; min-height: var(--dl-hit-min); padding: 0 1rem; border-radius: var(--dl-radius-pill); font-size: 0.9375rem; font-weight: 600; color: var(--dl-stall-info-text); background: var(--dl-color-surface); }
 .chipIcon { display: inline-flex; width: 1.25rem; height: 1.25rem; }
 .chipIcon svg { width: 100%; height: 100%; }
+
+/* P2 large text (200 %): the bar wraps and Confirm payment takes a full row, so it is always on screen. */
+@container counter (max-width: 18rem) {
+  .bar { flex-wrap: wrap; }
+  .confirm { flex: 1 1 100%; order: 3; }
+}

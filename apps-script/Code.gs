@@ -16,6 +16,7 @@
  * Protocol (POST, text/plain JSON body), mirrored by src/data/adapters/sheetTransport.ts:
  *   {action:'push', key, ops:[Op]}      -> {ok:true, stored:[opId], resend:[{writer, fromSeq}], schema_v, bridge}
  *   {action:'pull', key, cursor:'<n>'}  -> {ok:true, ops:[Op + recvAt], cursor:'<m>', schema_v, bridge}
+ *   {action:'beat', key, deviceId, label, orderId} -> {ok:true, seen:[{deviceId, label, orderId, ageMs}]}  (s127 presence, cache only)
  *   GET                                 -> {ok:true, app:'stall-tokens-bridge', protocol:2, bridge, schema_v}
  *   an op from an older contract        -> {ok:false, error:'update the app'}
  * Future safe: columns found by header name, only ever appended (ensureSchema_); _meta.schema_version records it.
@@ -626,10 +627,28 @@ function doPost(e) {
     ensureSchema_();
     if (body.action === 'push') return reply_(push_(body.ops));
     if (body.action === 'pull') return reply_(pull_(body.cursor));
+    if (body.action === 'beat') return reply_(beat_(body));
     return reply_({ ok: false, error: 'unknown action' });
   } catch (err) {
     return reply_({ ok: false, error: String(err && err.message ? err.message : err) });
   }
+}
+
+/** s127 presence (Q-TAKE-ALIVE A): "last heard from" per device, kept in the script cache, never in the Sheet or the op
+ * log. Each phone sends {deviceId, label, orderId}; the reply lists every phone heard from in the last 10 minutes with
+ * its age by the server clock (so a wrong phone clock changes nothing). */
+function beat_(b) {
+  var cache = CacheService.getScriptCache();
+  var id = String(b.deviceId || '').slice(0, 64);
+  if (!id) return { ok: false, error: 'no device' };
+  var now = Date.now();
+  cache.put('beat:' + id, JSON.stringify({ deviceId: id, label: String(b.label || '').slice(0, 60), orderId: String(b.orderId || '').slice(0, 64), at: now }), 600);
+  var index = JSON.parse(cache.get('beat:index') || '[]');
+  if (index.indexOf(id) < 0) { index.push(id); index = index.slice(-50); cache.put('beat:index', JSON.stringify(index), 21600); }
+  var got = cache.getAll(index.map(function (d) { return 'beat:' + d; }));
+  var seen = [];
+  for (var k in got) { var x = JSON.parse(got[k]); seen.push({ deviceId: x.deviceId, label: x.label, orderId: x.orderId, ageMs: Math.max(0, now - x.at) }); }
+  return { ok: true, seen: seen, bridge: CFG.VERSION };
 }
 
 function doGet() { return reply_({ ok: true, app: 'stall-tokens-bridge', protocol: 2, bridge: CFG.VERSION, schema_v: SCHEMA_VERSION }); }

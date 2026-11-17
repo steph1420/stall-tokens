@@ -66,6 +66,11 @@ export interface Bodies {
   'device.set': { deviceId: string; label: string; rangeIndex: number; role: string };
   /** Q-SYNC-ALL backup metadata: every device and the Sheet see when snapshots were made. */
   'snapshot.note': { snapshotId: string; at: number; reason: string; opCount: number; hash: string };
+  /** Q-TAKE-1a / Q-TAKE-2a (s127): this device has the order open (claim) or takes it over from another device. The
+   * lease lives while the holder is heard from (presence beats, outside the log); see store/rules/handling.ts. */
+  'order.handle': { orderId: string; deviceId: string; label: string; takeover: boolean };
+  /** s127: the holder lets go (Back, another order, Cancel, Complete, app hidden). Only the holder's own release clears it. */
+  'order.release': { orderId: string; deviceId: string; reason: string };
   'payee.set': { payeeId: string; name: string; upiId: string; removed: boolean };
   'setting.set': { key: string; value: string };
   /** F-23..F-29 Money and settlement (additive kinds; contract stays v2). */
@@ -91,7 +96,7 @@ export const OP_KINDS = [
   'item.set', 'stock.adjust', 'day.start', 'order.create', 'line.add', 'line.qty', 'line.note', 'line.status', 'line.finish',
   'order.note', 'order.discount', 'order.roundoff', 'order.send', 'order.delete', 'order.priority', 'order.cancel', 'order.client', 'payment.add', 'refund.add',
   'payee.set', 'setting.set', 'person.set', 'entry.add', 'entry.void', 'settle.pay', 'settle.clear', 'settle.undo', 'day.lock',
-  'record.set', 'refund.void', 'order.complete', 'device.set', 'snapshot.note',
+  'record.set', 'refund.void', 'order.complete', 'device.set', 'snapshot.note', 'order.handle', 'order.release',
 ] as const satisfies readonly OpKind[];
 /** True for a kind this app version knows how to fold. */
 export const isKnownKind = (kind: string): kind is OpKind => (OP_KINDS as readonly string[]).includes(kind);
@@ -169,6 +174,8 @@ const S: Record<OpKind, Record<string, FieldType>> = {
   'order.complete': { orderId: 's', unpaid: 'b', dueAt: 'n', reason: 's' },
   'device.set': { deviceId: 's', label: 's', rangeIndex: 'n', role: 's' },
   'snapshot.note': { snapshotId: 's', at: 'n', reason: 's', opCount: 'n', hash: 's' },
+  'order.handle': { orderId: 's', deviceId: 's', label: 's', takeover: 'b' },
+  'order.release': { orderId: 's', deviceId: 's', reason: 's' },
 };
 /** Optional fields (additive, 2.1.0): absent is fine; present must have the right type. */
 const OPTIONAL: Partial<Record<OpKind, Record<string, FieldType>>> = {

@@ -9,6 +9,9 @@ import { conflictActions } from './conflicts';
 import { createLog, initialCore, type Core, type CoreState } from './core';
 import { counterActions, deviceLabel } from './counter';
 import { refundActions } from './refund';
+import { focusOf, handlingActions, watchHandling } from './handling';
+import { backStep } from './nav';
+import { devKey, phoneLabel } from './rules/handling';
 import { completed } from './rules/status';
 import { kitchenActions } from './kitchen';
 import { openActions } from './open';
@@ -20,7 +23,7 @@ import { liveOrders as live } from './fold/fold';
 import { pauseMoves } from './rules/kitchen';
 import type { Screen, Sheet, StallScreen } from './ui';
 
-export type { CounterTab, Screen, Sheet, StallScreen, StationPlace } from './ui';
+export type { CounterTab, Screen, Sheet, StallScreen, StationPlace, ToastAction } from './ui';
 export type { EntryDraft } from './money';
 export * as money from './rules/money';
 export * as settle from './rules/settle';
@@ -38,7 +41,9 @@ export * as cats from './rules/catalog';
 export * as day from './rules/day';
 export { planRefund, type RefundAsk, type RefundRequest, type RefundResult } from './refund';
 export * as pay from './rules/pay';
-export { orderStatus, isOpen, completed, writtenOff, unpaid, unpaidOrders, allHanded } from './rules/status';
+export { orderStatus, isOpen, completed, writtenOff, unpaid, unpaidOrders, allHanded, draftOrders } from './rules/status';
+export { devKey, holding, phoneLabel, type Holding } from './rules/handling';
+export { focusOf } from './handling';
 export { formatToken } from './rules/tokens';
 export { ago, istClock, istDay } from './rules/time';
 export { upiLink } from './rules/upi';
@@ -51,6 +56,9 @@ export interface AppState extends CoreState {
   readonly kitchen: ReturnType<typeof kitchenActions>;
   readonly open: ReturnType<typeof openActions>;
   readonly refund: ReturnType<typeof refundActions>;
+  readonly handling: ReturnType<typeof handlingActions>;
+  /** W-13: one Back press; false when nothing is left to close (launch). */
+  readonly back: () => boolean;
   readonly money: ReturnType<typeof moneyActions>;
   readonly settle: ReturnType<typeof settleActions>;
   readonly stock: ReturnType<typeof stockActions>;
@@ -94,30 +102,63 @@ export function createAppStore(ds: DataSource, opts: StoreOptions = {}): AppStor
     const l = log;
     return {
       ...initialCore(prefs),
-      counter: counterActions(core, l),
-      catalog: catalogActions(core, l),
-      conflicts: conflictActions(l),
-      kitchen: kitchenActions(core, l),
-      open: openActions(core, l),
-      refund: refundActions(core, l),
-      money: moneyActions(core, l),
-      settle: settleActions(core, l),
-      stock: stockActions(core, l, (amount, label, note, parts) => get().money.addEntry({ dir: 'spent', amount, label, kind: 'normal', parts, note, personId: null })),
-      ...navActions(core),
+      ...actionsOf(core, l, get),
       setPrefs(patch) { const next = { ...get().prefs, ...patch }; ds.device.write(next); set({ prefs: next }); },
       retrySave() { l.retrySave(); },
-      async start() {
-        l.load(await ds.ops.load()); resume21(core); migrate21(core, l); // W-12 resume, Q-SYNC-ALL first start
-        ds.channel.subscribe((ops) => { l.intake(ops, false); });
-        if (ds.transports.length === 0) return;
-        const tick = () => { void get().syncNow().finally(() => { setTimeout(tick, engine.nextDelayMs()); }); };
-        tick();
-      },
-      async syncNow() { l.intake(await engine.round(), true); set({ sync: engine.status() }); },
+      start: () => startApp(core, l, get),
+      syncNow: () => syncRound(core, l),
     };
   });
   persistPlace(store);
+  watchHandling({ getState: () => store.getState(), subscribe: (f) => store.subscribe(f), setUi: (patch) => { store.setState((s) => ({ ui: { ...s.ui, ...patch } })); } });
   return store;
+}
+
+type L = ReturnType<typeof createLog>;
+function actionsOf(core: Core, l: L, get: () => AppState) {
+  return {
+    counter: counterActions(core, l),
+    catalog: catalogActions(core, l),
+    conflicts: conflictActions(l),
+    kitchen: kitchenActions(core, l),
+    open: openActions(core, l),
+    refund: refundActions(core, l),
+    handling: handlingActions(core, l, () => get().syncNow()),
+    back: () => backOnce(core),
+    money: moneyActions(core, l),
+    settle: settleActions(core, l),
+    stock: stockActions(core, l, (amount, label, note, parts) => get().money.addEntry({ dir: 'spent', amount, label, kind: 'normal', parts, note, personId: null })),
+    ...navActions(core),
+  };
+}
+
+async function startApp(core: Core, l: L, get: () => AppState) {
+  const { ds, engine, now } = core.env;
+  l.load(await ds.ops.load()); resume21(core); migrate21(core, l); // W-12 resume, Q-SYNC-ALL first start
+  ds.channel.subscribe((ops) => { l.intake(ops, false); });
+  if (ds.transports.length === 0) return;
+  core.set({ syncSince: now() });
+  const tick = () => { void get().syncNow().finally(() => { setTimeout(tick, engine.nextDelayMs()); }); };
+  tick();
+}
+
+/** W-13: one Back press (store/nav.ts backStep); false when nothing is left to close. */
+function backOnce(core: Core): boolean {
+  const step = backStep(core.get());
+  if (!step) return false;
+  core.set((s) => ({ ui: { ...s.ui, ...step } }));
+  return true;
+}
+
+/** One sync round with this phone's presence beat (s127); other phones heard from are noted on this phone's clock. */
+async function syncRound(core: Core, l: ReturnType<typeof createLog>) {
+  const s0 = core.get();
+  const mine = devKey(s0.prefs.deviceId);
+  const beat = { deviceId: s0.prefs.deviceId, label: phoneLabel(s0.prefs.rangeIndex, s0.prefs.servingName), orderId: focusOf(s0) ?? '' };
+  l.intake(await core.env.engine.round(beat), true);
+  const heard = { ...core.get().heard };
+  for (const p of core.env.engine.presence()) if (devKey(p.deviceId) !== mine) heard[devKey(p.deviceId)] = Math.max(heard[devKey(p.deviceId)] ?? 0, p.heardAt);
+  core.set({ sync: core.env.engine.status(), heard });
 }
 
 /** W-12: keep "which order is on screen" (and its page) in this device's prefs, so a reload reopens it. */

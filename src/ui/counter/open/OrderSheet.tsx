@@ -28,6 +28,7 @@ function Body({ o }: { o: Order }) {
   const close = useApp((x) => x.openSheet);
   const a = useApp((x) => x.open);
   const k = useApp((x) => x.kitchen);
+  const r = useApp((x) => x.refund);
   const [name, setName] = useState(o.client);
   const tok = `#${String(o.token).padStart(CONFIG.tokens.pad, '0')}`;
   const meta = [o.client, istClock(o.createdAt), o.servedBy].filter(Boolean).join(' · ');
@@ -45,8 +46,16 @@ function Body({ o }: { o: Order }) {
         <li className={s.shTot}><span>{`Total · ${paidText(o)}`}</span><Money p={due > 0 ? due : bill.total(o)} /></li>
       </ul>
       <div className={s.shRow}><span>Note</span><span className={s.shFaint}>{o.note || '—'}</span></div>
+      {bill.held(o) > 0 ? (
+        // s122: Refund in one tap (whole, the way it was paid; Undo in the toast) or the full Refund sheet.
+        <div className={s.shBtns}>
+          <button type="button" className={kit.danger} onClick={() => { if (r.quick(o.id).ok) close(null); }}>Refund</button>
+          <button type="button" className={kit.quiet} onClick={() => { close({ kind: 'refundSheet', orderId: o.id }); }}>Change lines, reason or note ›</button>
+        </div>
+      ) : null}
       <div className={s.shBtns}>
         <button type="button" className={kit.quiet} onClick={() => { a.editInBilling(o.id); }}>Edit in Billing</button>
+        <button type="button" className={kit.quiet} onClick={() => { close({ kind: 'slip', orderId: o.id }); }}>Print token</button>
         <button type="button" className={s.shCancel} onClick={() => { close({ kind: 'cancel', orderId: o.id }); }}>Cancel order</button>
       </div>
     </Sheet>

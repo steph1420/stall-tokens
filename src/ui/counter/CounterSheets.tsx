@@ -8,6 +8,7 @@ import { Money } from '../kit/Money';
 import { Sheet } from '../kit/Sheet';
 import k from '../kit/kit.module.css';
 import { StallNav } from '../stall/StallNav';
+import { DraftsSheet, NewDaySheet, RefundLinesSheet, SlipSheet } from './P2Sheets';
 
 const R = CONFIG.money.paisePerRupee;
 
@@ -30,11 +31,38 @@ function Swatches({ value, onPick }: { value: number; onPick: (i: number) => voi
   );
 }
 
+/** W-03: a new item takes the station most items of its category use (not always the first station). */
+function useStationFor() {
+  const items = useApp((st) => st.folded.items);
+  return (category: string): string | undefined => {
+    const n = new Map<string, number>();
+    for (const i of Object.values(items)) if (!i.removed && i.category === category && i.stationId) n.set(i.stationId, (n.get(i.stationId) ?? 0) + 1);
+    return [...n].sort((a, b) => b[1] - a[1])[0]?.[0];
+  };
+}
+
+/** W-03: Category is a list (no typo splits); "+ Add category…" at the end opens a box for a new one. */
+function CategoryPick({ value, cats, onPick }: { value: string; cats: readonly string[]; onPick: (c: string) => void }) {
+  const [adding, setAdding] = useState(cats.length === 0);
+  if (adding) {
+    return (
+      <Field id="icat" label="New category"><input id="icat" className={k.input} value={value} maxLength={CONFIG.limits.nameMaxChars} autoComplete="off"
+        onChange={(e) => { onPick(e.target.value); }} /></Field>
+    );
+  }
+  return (
+    <Field id="icat" label="Category"><select id="icat" className={k.input} value={value} onChange={(e) => { if (e.target.value === '+') { setAdding(true); onPick(''); } else onPick(e.target.value); }}>
+      {cats.map((c) => <option key={c} value={c}>{c}</option>)}
+      <option value="+">+ Add category…</option></select></Field>
+  );
+}
+
 function ItemSheet({ itemId }: { itemId: string | null }) {
   const close = useClose();
   const it = useApp((st) => (itemId ? st.folded.items[itemId] : undefined));
   const cats = useApp((st) => [...new Set(Object.values(st.folded.items).filter((i) => !i.removed && !i.supply).map((i) => i.category).filter(Boolean))]);
   const cat = useApp((st) => st.catalog);
+  const stationFor = useStationFor();
   const [name, setName] = useState(it?.name ?? '');
   const [price, setPrice] = useState(it ? String(it.price / R) : '');
   const [swatch, setSwatch] = useState(it?.swatch ?? 0);
@@ -55,8 +83,7 @@ function ItemSheet({ itemId }: { itemId: string | null }) {
       <Field id="iname" label="Name"><input id="iname" className={k.input} value={name} maxLength={CONFIG.limits.nameMaxChars} onChange={(e) => { setName(e.target.value); }} autoComplete="off" /></Field>
       <Field id="iprice" label="Price (₹)"><input id="iprice" className={k.input} value={price} inputMode="decimal" onChange={(e) => { setPrice(e.target.value); }} /></Field>
       <Swatches value={swatch} onPick={setSwatch} />
-      <Field id="icat" label="Category"><input id="icat" className={k.input} value={category} list="icats" maxLength={CONFIG.limits.nameMaxChars} onChange={(e) => { setCategory(e.target.value); }} />
-        <datalist id="icats">{cats.map((c) => <option key={c} value={c} />)}</datalist></Field>
+      <CategoryPick value={category} cats={cats} onPick={(c) => { setCategory(c); if (!it) setStation(stationFor(c) ?? station); }} />
       <Field id="istation" label="Station"><select id="istation" className={k.input} value={station} onChange={(e) => { setStation(e.target.value); }}>
         {CONFIG.stations.map((x) => <option key={x} value={x}>{x}</option>)}</select></Field>
       <Field id="icount" label="Stock (leave empty for no count)"><input id="icount" className={k.input} value={count} inputMode="numeric" onChange={(e) => { setCount(e.target.value.replace(/[^\d]/g, '')); }} /></Field>
@@ -282,5 +309,9 @@ export function CounterSheets() {
     case 'serving': return <ServingSheet />;
     case 'more': return <MoreSheet />;
     case 'waived': return null; // owned by PaymentScreen (draft-local)
+    case 'drafts': return <DraftsSheet />;
+    case 'newDay': return <NewDaySheet />;
+    case 'refundSheet': return <RefundLinesSheet key={sheet.orderId} orderId={sheet.orderId} />;
+    case 'slip': return <SlipSheet orderId={sheet.orderId} />;
   }
 }

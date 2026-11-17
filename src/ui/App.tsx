@@ -5,6 +5,7 @@ import { useApp } from '../store';
 import { CounterShell } from './counter/CounterShell';
 import { MemoryBanner, SaveBanner, Toast } from './kit/Toast';
 import { UpdateBanner } from './kit/Update';
+import { useBackTrap } from './kit/useBackTrap';
 import { KitchenScreen } from './kitchen/KitchenScreen';
 import { LaunchScreen } from './launch/LaunchScreen';
 import { StationScreen } from './station/StationScreen';
@@ -16,6 +17,7 @@ export function App() {
   const screen = useApp((s) => s.ui.screen);
   const ready = useApp((s) => s.ready);
   const start = useApp((s) => s.start);
+  useBackTrap(); // W-13: the phone's Back steps back inside the app
   useEffect(() => { document.documentElement.dataset.theme = CONFIG.themes[theme]; }, [theme]);
   const [failed, setFailed] = useState(false);
   useEffect(() => { start().catch((e: unknown) => { console.error('could not open the op log', e); setFailed(true); }); }, [start]);
