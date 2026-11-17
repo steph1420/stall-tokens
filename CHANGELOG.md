@@ -3,6 +3,11 @@ All notable changes to Stall Tokens. SemVer. Times IST.
 
 ## [Unreleased]
 
+### pay3 payment (F-63), 17 Nov 2026 — Steve: lock, calculator, no "Cash given"
+- **Removed** the "Cash given" ₹100 / ₹200 / ₹500 row and the "Give back" box. Cash or UPI typed above the amount is clamped to it. Old records with a cash-given amount still read fine.
+- **Padlock on Cash and UPI.** A locked side never changes by itself; the other is always the rest, so Cash + UPI = amount due. Locking one unlocks the other. + Tip / − Waive move the unlocked side; if the locked side is now above the amount it is lowered to fit, with a calm toast. While locked the slider rests (dimmed), and the "rest" box says so when tapped.
+- **Calculator** button by "To collect": a big-key calculator sheet (0–9, ., +, −, ×, ÷, =, C, delete). Standalone; "Use as Cash" / "Use as UPI" put the result in and lock that side. Dividing by 0 shows "Can't divide by 0".
+
 ### pay2 payment (F-62), 17 Nov 2026 — Steve's locked rule
 - Cash + UPI always equal the amount due; whichever box is typed or slid, the other is the rest. A shortfall can't happen.
 - The amount due changes only with **+ Tip** and **− Waive** (₹10, ₹20, Other; Undo toast). Waive can't go above the bill. These replace the Tip row and "Round off / waive".

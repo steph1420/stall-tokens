@@ -1,4 +1,4 @@
-// F-14..F-17, F-62 Payment (20-polish/payment.html p1; pay2 locked 17 Nov: + Tip / − Waive, cash given). Manual UPI confirm (Q-UPI-1 A).
+// F-14..F-17, F-62, F-63 Payment (20-polish/payment.html p1; pay2: + Tip / − Waive; pay3: split lock + calculator). Manual UPI confirm (Q-UPI-1 A).
 import { useEffect, useRef, useState } from 'react';
 import { CONFIG } from '../../../config';
 import type { Order, Paise } from '../../../contract';
@@ -10,13 +10,14 @@ import { Qr } from '../../kit/Qr';
 import { Sheet } from '../../kit/Sheet';
 import k from '../../kit/kit.module.css';
 import { Numpad } from './Numpad';
-import { AdjustRow, CountNotes, GivenRow } from './parts';
+import { CalcSheet } from './CalcSheet';
+import { AdjustRow, CountNotes } from './parts';
 import s from './Payment.module.css';
 
 type Box = 'cash' | 'upi' | 'tip' | 'waive';
 const R = CONFIG.money.paisePerRupee;
 
-function Slider({ split, covered, onSlide }: { split: pay.Split; covered: Paise; onSlide: (f: number) => void }) {
+function Slider({ split, covered, onSlide, locked }: { split: pay.Split; covered: Paise; onSlide: (f: number) => void; locked: boolean }) {
   const ref = useRef<HTMLDivElement>(null);
   const f = covered > 0 ? split.cash / covered : 0;
   const upiF = covered > 0 ? split.upi / covered : 0;
@@ -24,10 +25,12 @@ function Slider({ split, covered, onSlide }: { split: pay.Split; covered: Paise;
   const step = CONFIG.money.sliderSnapPaise / Math.max(covered, 1);
   return (
     <>
-      <div className={s.track} ref={ref} role="slider" tabIndex={0} aria-label="Cash and UPI split" aria-valuemin={0} aria-valuemax={covered / R} aria-valuenow={split.cash / R}
-        onPointerDown={(e) => { e.currentTarget.setPointerCapture(e.pointerId); move(e.clientX); }}
-        onPointerMove={(e) => { if (e.currentTarget.hasPointerCapture(e.pointerId)) move(e.clientX); }}
-        onKeyDown={(e) => { if (e.key === 'ArrowLeft') onSlide(f - step); if (e.key === 'ArrowRight') onSlide(f + step); }}>
+      {/* D-PAY3-2: while a side is locked the slider rests (dimmed, not draggable); the lock says why. */}
+      <div className={locked ? s.trackLocked : s.track} ref={ref} role="slider" tabIndex={locked ? -1 : 0} aria-label="Cash and UPI split" aria-disabled={locked || undefined}
+        aria-valuemin={0} aria-valuemax={covered / R} aria-valuenow={split.cash / R}
+        onPointerDown={(e) => { if (locked) return; e.currentTarget.setPointerCapture(e.pointerId); move(e.clientX); }}
+        onPointerMove={(e) => { if (!locked && e.currentTarget.hasPointerCapture(e.pointerId)) move(e.clientX); }}
+        onKeyDown={(e) => { if (locked) return; if (e.key === 'ArrowLeft') onSlide(f - step); if (e.key === 'ArrowRight') onSlide(f + step); }}>
         <div className={s.trackIn}>
           <div className={s.fillCash} style={{ width: `${String(f * 100)}%` }} />
           <div className={s.fillUpi} style={{ left: `${String(f * 100)}%`, width: `${String(upiF * 100)}%` }} />
@@ -94,7 +97,7 @@ function useDraft(o: Order | undefined) {
   const servingName = useApp((st) => st.prefs.servingName);
   const due0 = o ? bill.due(o) : 0;
   const [tip, setTip] = useState<Paise>(0);
-  const [split, setSplit] = useState<pay.Split>({ cash: Math.max(0, due0), upi: 0, pinned: null, waived: 0, tendered: 0 });
+  const [split, setSplit] = useState<pay.Split>({ cash: Math.max(0, due0), upi: 0, pinned: null, waived: 0, locked: null });
   const [notes, setNotes] = useState<Record<string, number>>({});
   const [waiver, setWaiver] = useState({ by: servingName, note: '' });
   const [payeeId, setPayeeId] = useState<string | null>(null);
@@ -108,35 +111,54 @@ function useDraft(o: Order | undefined) {
     else setSplit(pay.setBox(cur, box, rupees * R, toCollect));
   };
   const waived = cur.waived ?? 0;
-  const setBoth = (t: Paise, w: Paise) => { setTip(t); setSplit(pay.setWaived(pay.addTip(cur, t - tip, Math.max(0, owed) + t), w, Math.max(0, owed) + t, t)); };
-  const [quick, setQuick] = useState<Paise>(0); // pay2: one-tap cash given (₹100 / ₹200 / ₹500)
-  const given = quick || pay.notesTotal(notes) || (cur.tendered ?? 0);
+  /** + Tip / − Waive: the unlocked side absorbs the change; returns true when the locked side had to come down. */
+  const setBoth = (t: Paise, w: Paise): boolean => {
+    const next = pay.setWaived(pay.addTip(cur, t - tip, Math.max(0, owed) + t), w, Math.max(0, owed) + t, t);
+    setTip(t); setSplit(next);
+    return pay.lockClamped(cur, next);
+  };
   useUndo(o?.id, setBoth);
-  return { tip, setTipTo, setBoth, cur, setSplit, notes, setNotes: (n: Record<string, number>) => { setQuick(0); setNotes(n); }, waiver, setWaiver, payeeId, setPayeeId,
-    owed, toCollect, typed, waived, given, setQuick, check: pay.checkPayment(cur.cash, cur.upi, toCollect, tip, waived) };
+  return { tip, setTipTo, setBoth, cur, setSplit, notes, setNotes, waiver, setWaiver, payeeId, setPayeeId,
+    owed, toCollect, typed, waived, check: pay.checkPayment(cur.cash, cur.upi, toCollect, tip, waived) };
 }
 
 /** pay2: the toast's Undo (+ Tip / − Waive) puts the old amounts back. */
-function useUndo(orderId: string | undefined, setBoth: (t: Paise, w: Paise) => void) {
+function useUndo(orderId: string | undefined, setBoth: (t: Paise, w: Paise) => boolean) {
   const u = useApp((st) => st.ui.payUndo);
   const seen = useRef(u?.seq ?? 0);
   useEffect(() => {
     if (!u || u.seq === seen.current) return;
     seen.current = u.seq;
-    if (u.orderId === orderId) setBoth(u.tip, u.waived);
+    if (u.orderId === orderId) setBoth(u.tip, u.waived); // the old amounts come back; a lock stays as it is
   }, [u, orderId, setBoth]);
 }
 type Draft = ReturnType<typeof useDraft>;
 
+/** pay3: each side has a padlock. A locked side never changes by itself; the other is always the difference. */
+function SideBox({ d, side, on, onPad }: { d: Draft; side: pay.Side; on: boolean; onPad: () => void }) {
+  const c = useApp((st) => st.counter);
+  const lk = d.cur.locked ?? null;
+  const label = side === 'cash' ? 'Cash' : 'UPI';
+  const follows = lk !== null && lk !== side;
+  const tap = () => { if (follows) c.toast(`${label} is the rest while ${lk === 'cash' ? 'Cash' : 'UPI'} is locked`); else onPad(); };
+  const cls = side === 'cash' ? (on ? s.boxCashOn : s.boxCash) : (on ? s.boxUpiOn : s.boxUpi);
+  return (
+    <div className={lk === side ? [cls, s.boxLocked].join(' ') : cls}>
+      <button type="button" className={s.boxTap} aria-label={`${label} ₹${String(d.cur[side] / R)}${follows ? ', the rest' : ''}`} onClick={tap}>
+        <span className={side === 'cash' ? s.labCash : s.labUpi}>{label}{follows ? <em className={s.rest}> · the rest</em> : null}</span>
+        <Money p={d.cur[side]} className={on ? s.valOn : s.val} />
+      </button>
+      <button type="button" className={lk === side ? s.lockOn : s.lock} aria-pressed={lk === side} aria-label={lk === side ? `Unlock ${label}` : `Lock ${label}`}
+        onClick={() => { d.setSplit(pay.toggleLock(d.cur, side)); }}><Icon name={lk === side ? 'lock' : 'unlock'} /></button>
+    </div>
+  );
+}
+
 function SplitBoxes({ d, pad, setPad }: { d: Draft; pad: Box | null; setPad: (b: Box) => void }) {
   return (
     <div className={s.split}>
-      <button type="button" className={pad === 'cash' ? s.boxCashOn : s.boxCash} onClick={() => { setPad('cash'); }}>
-        <span className={s.labCash}>Cash</span><Money p={d.cur.cash} className={pad === 'cash' ? s.valOn : s.val} />
-      </button>
-      <button type="button" className={pad === 'upi' ? s.boxUpiOn : s.boxUpi} onClick={() => { setPad('upi'); }}>
-        <span className={s.labUpi}>UPI</span><Money p={d.cur.upi} className={pad === 'upi' ? s.valOn : s.val} />
-      </button>
+      <SideBox d={d} side="cash" on={pad === 'cash'} onPad={() => { setPad('cash'); }} />
+      <SideBox d={d} side="upi" on={pad === 'upi'} onPad={() => { setPad('upi'); }} />
     </div>
   );
 }
@@ -172,7 +194,7 @@ function useConfirm(d: Draft) {
     const payee = payees.find((p) => p.id === d.payeeId) ?? payees[0];
     const g = d.waived; // only the explicit − Waive amount, never a leftover gap
     const err = c.pay({ cash: d.cur.cash, upi: d.cur.upi, upiPayeeId: d.cur.upi > 0 ? payee?.id ?? null : null, tip: d.tip, waived: g,
-      waivedBy: g > 0 ? d.waiver.by : '', waivedNote: g > 0 ? d.waiver.note : '', cashGiven: Math.max(d.given, d.cur.cash > 0 ? d.cur.tendered ?? 0 : 0), notes: d.notes });
+      waivedBy: g > 0 ? d.waiver.by : '', waivedNote: g > 0 ? d.waiver.note : '', cashGiven: pay.notesTotal(d.notes), notes: d.notes });
     busy.current = false;
     if (err) { c.toast(err); buzz(haptics, 'error'); return; }
     buzz(haptics, 'confirm');
@@ -182,7 +204,7 @@ function useConfirm(d: Draft) {
 function padRupees(pad: Box, d: Draft): number {
   if (pad === 'tip') return d.tip / R;
   if (pad === 'waive') return d.waived / R;
-  return (pad === 'cash' && (d.cur.tendered ?? 0) > 0 ? d.cur.tendered ?? 0 : d.cur[pad]) / R;
+  return d.cur[pad] / R;
 }
 
 /** pay2: + Tip / − Waive change the amount due (with an Undo toast); any problem shows under them. */
@@ -191,9 +213,11 @@ function Adjust({ d, onOther }: { d: Draft; onOther: (k: 'tip' | 'waive') => voi
   const c = useApp((st) => st.counter);
   const pick = (k: 'tip' | 'waive', p: Paise) => {
     const prev = { tip: d.tip, waived: d.waived };
-    if (k === 'tip') d.setBoth(p, d.waived); else d.setBoth(d.tip, Math.min(p, Math.max(0, d.owed)));
+    const clamped = k === 'tip' ? d.setBoth(p, d.waived) : d.setBoth(d.tip, Math.min(p, Math.max(0, d.owed)));
     const r = (x: Paise) => `₹${String(x / R)}`;
-    c.adjustToast(k === 'tip' ? (p > 0 ? `Tip ${r(p)} added` : 'Tip removed') : (p > 0 ? `Waived ${r(Math.min(p, Math.max(0, d.owed)))}` : 'Waive removed'), prev);
+    const said = k === 'tip' ? (p > 0 ? `Tip ${r(p)} added` : 'Tip removed') : (p > 0 ? `Waived ${r(Math.min(p, Math.max(0, d.owed)))}` : 'Waive removed');
+    // pay3: a locked side above the new amount comes down to it; say so calmly in the same toast.
+    c.adjustToast(clamped ? `${said} · ${d.cur.locked === 'upi' ? 'UPI' : 'Cash'} lowered to fit` : said, prev);
   };
   return (
     <>
@@ -209,6 +233,7 @@ export function PaymentScreen() {
   const d = useDraft(o);
   const confirm = useConfirm(d);
   const [pad, setPad] = useState<Box | null>(null);
+  const [calc, setCalc] = useState(false);
   if (!o) return null;
   if (d.owed <= 0 && (bill.paid(o) !== 0 || bill.waived(o) > 0)) return <Settled o={o} />;
   if (d.owed === 0 && o.lines.some((l) => l.qty > 0)) return <NothingDue o={o} />;
@@ -218,14 +243,14 @@ export function PaymentScreen() {
       <main className={s.stage}>
         <div className={s.body}>
           <div className={s.due}>
+            <button type="button" className={s.calcBtn} aria-label="Calculator" onClick={() => { setCalc(true); }}><Icon name="calc" /></button>
             <div className={s.dueLab}>To collect</div>
             <Money p={d.toCollect - d.waived} className={s.dueAmt} />
             {tip > 0 || d.waived > 0 ? <div className={s.tipNote}>bill <Money p={Math.max(0, d.owed)} />{tip > 0 ? <> · tip +<Money p={tip} /></> : null}{d.waived > 0 ? <> · waived −<Money p={d.waived} /></> : null}</div> : null}
           </div>
           <Adjust d={d} onOther={(k2) => { setPad(k2); }} />
           <SplitBoxes d={d} pad={pad} setPad={setPad} />
-          <Slider split={cur} covered={cur.cash + cur.upi} onSlide={(f) => { d.setSplit(pay.slide(f, cur.cash + cur.upi, CONFIG.money.sliderSnapPaise, d.waived)); }} />
-          <GivenRow given={d.given} cash={cur.cash} onGiven={d.setQuick} />
+          <Slider split={cur} covered={cur.cash + cur.upi} locked={!!cur.locked} onSlide={(f) => { d.setSplit(pay.slide(f, cur.cash + cur.upi, CONFIG.money.sliderSnapPaise, d.waived)); }} />
           <QrBlock d={d} o={o} />
           {cur.cash > 0 ? <CountNotes notes={d.notes} onNotes={d.setNotes} /> : null}
         </div>
@@ -236,6 +261,7 @@ export function PaymentScreen() {
         <button type="button" className={s.confirm} disabled={!check.ok} onClick={confirm}>Confirm payment</button>
       </footer>
       {pad ? <Numpad key={pad} rupees={padRupees(pad, d)} onChange={(r) => { d.typed(pad, r); }} onDone={() => { setPad(null); }} /> : null}
+      {calc ? <CalcSheet due={d.toCollect - d.waived} onClose={() => { setCalc(false); }} onUse={(side, p) => { d.setSplit(pay.putInto(cur, side, p, d.toCollect)); setCalc(false); }} /> : null}
       <WaivedSheetHost by={d.waiver.by} note={d.waiver.note} onSave={(by, note) => { d.setWaiver({ by, note }); }} />
     </>
   );

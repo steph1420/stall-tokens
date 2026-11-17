@@ -1,5 +1,5 @@
 // pay2 (locked 17 Nov): Cash + UPI always equal the amount due; + Tip / − Waive are the only way to change it (Undo toast);
-// one-tap cash given with "Give back"; tip and waive reach the payment record, the slip and the day summary.
+// (pay3 removed the one-tap cash given row); tip and waive reach the payment record, the slip and the day summary.
 import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import { afterEach, describe, expect, it } from 'vitest';
 import { DEMO_MENU } from '../../../mock/fixtures';
@@ -58,11 +58,5 @@ describe('pay2', () => {
     tap('Done');
     expect(due().replace(/\D/g, '')).toBe('0');
     expect(screen.getByRole('button', { name: /^− Waive/ }).textContent.replace(/\D/g, '')).toBe(String(bill0 / 100));
-  });
-  it('₹100 cash given shows a big Give back', async () => {
-    await payScreen();
-    tap('₹100 given');
-    const d = Number(due().replace(/\D/g, ''));
-    expect(screen.getByText(/Give back/).textContent.replace(/\D/g, '')).toBe(String(100 - d));
   });
 });

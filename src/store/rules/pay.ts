@@ -1,54 +1,72 @@
 // F-14 F-16 F-17 Payment split, waived gap, change and validation. Pure; paise.
 import type { Paise } from '../../contract';
 
-/** pinned = the box last typed (or the slider = cash); waived only from the explicit Round off / waive control;
- * tendered = cash typed above the amount (change due). Cash + UPI + waived always equals the amount to collect. */
-export interface Split { cash: Paise; upi: Paise; pinned: 'cash' | 'upi' | null; waived?: Paise; tendered?: Paise }
+/** pinned = the box last typed or slid (it keeps its value); locked = the side the person locked (pay3: never changes by
+ * itself; only one side at a time); waived only from the explicit − Waive control. Cash + UPI + waived = the amount to collect. */
+export type Side = 'cash' | 'upi';
+export interface Split { cash: Paise; upi: Paise; pinned: Side | null; waived?: Paise; locked?: Side | null }
 
 const whole = (v: Paise): Paise => Math.max(0, Math.trunc(Number.isFinite(v) ? v : 0));
 const avail = (split: Split, toCollect: Paise): Paise => Math.max(0, toCollect - whole(split.waived ?? 0));
+const other = (s: Side): Side => (s === 'cash' ? 'upi' : 'cash');
 
-/** Typing one box makes the other take the balance (UPI = total − cash, cash = total − UPI), every time.
- * Cash above the amount becomes change due; UPI above it is clamped. A gap is never left (no implicit waive). */
-export function setBox(split: Split, box: 'cash' | 'upi', value: Paise, toCollect: Paise): Split {
-  const v = whole(value);
+/** Typing one box makes the other the difference (UPI = due − cash, cash = due − UPI), clamped to 0..due. While one side is
+ * locked the other is not typed (the screen refuses it); typing the locked side keeps it locked. */
+export function setBox(split: Split, box: Side, value: Paise, toCollect: Paise): Split {
   const a = avail(split, toCollect);
-  const waived = whole(split.waived ?? 0);
-  if (box === 'cash') return { cash: Math.min(v, a), upi: Math.max(0, a - v), pinned: 'cash', waived, tendered: v > a ? v : 0 };
-  const upi = Math.min(v, a);
-  return { cash: a - upi, upi, pinned: 'upi', waived, tendered: 0 };
+  const v = Math.min(whole(value), a);
+  const base = { pinned: box, waived: whole(split.waived ?? 0), locked: split.locked ?? null };
+  return box === 'cash' ? { ...base, cash: v, upi: a - v } : { ...base, cash: a - v, upi: v };
 }
 
-/** The amount changed (tip, bill on another phone): the typed box keeps its value (clamped), the other takes the balance. */
+/** The amount changed (+ Tip, − Waive, the bill on another phone): the locked side (else the last typed one) keeps its value,
+ * clamped to the new amount; the other side takes the difference. */
 export function refit(split: Split, toCollect: Paise): Split {
   const waived = Math.min(whole(split.waived ?? 0), Math.max(0, toCollect));
   const s0 = { ...split, waived };
-  if (split.pinned === null) return { cash: avail(s0, toCollect), upi: 0, pinned: null, waived, tendered: 0 };
-  const kept = split.pinned === 'cash' && (split.tendered ?? 0) > 0 ? whole(split.tendered ?? 0) : split[split.pinned];
-  return setBox(s0, split.pinned, kept, toCollect);
+  const keep = split.locked ?? split.pinned;
+  if (keep === null) return { cash: avail(s0, toCollect), upi: 0, pinned: null, waived, locked: null };
+  return { ...setBox(s0, keep, split[keep], toCollect), pinned: split.pinned };
 }
 
-/** A tip change goes to cash, or to UPI when the payment is all UPI. */
+/** True when the locked side had to come down to fit a smaller amount (the screen shows a calm toast). */
+export const lockClamped = (before: Split, after: Split): boolean => !!before.locked && after[before.locked] < before[before.locked];
+
+/** pay3 lock: only one side; locking one unlocks the other; tapping the locked one unlocks it. */
+export function toggleLock(split: Split, side: Side): Split {
+  return { ...split, locked: split.locked === side ? null : side, pinned: split.locked === side ? split.pinned : side };
+}
+
+/** A tip change: with a lock, the unlocked side absorbs it; otherwise it goes to cash, or to UPI when the payment is all UPI. */
 export function addTip(split: Split, _delta: Paise, toCollect: Paise): Split {
+  if (split.locked) return refit(split, toCollect);
   if (split.pinned === null) return refit(split, toCollect);
   const allUpi = split.cash === 0 && split.upi > 0;
-  return refit({ ...split, pinned: allUpi ? 'cash' : 'upi' }, toCollect);
+  return { ...refit({ ...split, pinned: allUpi ? 'cash' : 'upi' }, toCollect), pinned: split.pinned };
 }
 
-/** Slider: cash share of what is being collected, snapped (₹10), clamped to [0, covered]. UPI takes the rest. */
+/** Slider: cash share of what is being collected, snapped (₹10), clamped to [0, covered]. UPI takes the rest.
+ * D-PAY3-2: the screen disables the slider while a side is locked. */
 export function slide(fraction: number, covered: Paise, snap: Paise, waived: Paise = 0): Split {
   const f = Math.min(1, Math.max(0, Number.isFinite(fraction) ? fraction : 0));
   let cash = Math.round((covered * f) / snap) * snap;
   if (covered - cash <= snap / 2 || f >= 1) cash = covered; // a last odd ₹5 snaps to the end
   cash = Math.min(covered, Math.max(0, cash));
-  return { cash, upi: covered - cash, pinned: 'cash', waived: whole(waived), tendered: 0 };
+  return { cash, upi: covered - cash, pinned: 'cash', waived: whole(waived), locked: null };
 }
 
-/** The explicit Round off / waive control: never more than the bill (the tip can't be waived); the boxes rebalance. */
+/** The explicit − Waive control: never more than the bill (the tip can't be waived); the boxes rebalance. */
 export function setWaived(split: Split, value: Paise, toCollect: Paise, tip: Paise): Split {
   const waived = Math.min(whole(value), Math.max(0, toCollect - tip));
   return refit({ ...split, waived }, toCollect);
 }
+
+/** Calculator "Use as Cash / UPI": put the amount into that side and lock it. */
+export function putInto(split: Split, side: Side, value: Paise, toCollect: Paise): Split {
+  return setBox({ ...split, locked: side }, side, value, toCollect);
+}
+
+export const otherSide = other;
 
 export interface PayCheck { ok: boolean; gap: Paise; over: Paise; reason: string }
 

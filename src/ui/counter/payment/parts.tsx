@@ -39,22 +39,6 @@ export function AdjustRow({ tip, waived, onPick, onOther, onWho }: { tip: Paise;
   );
 }
 
-/** pay2: one-tap "cash given" (₹100 / ₹200 / ₹500) and a big "Give back ₹X". */
-export function GivenRow({ given, cash, onGiven }: { given: Paise; cash: Paise; onGiven: (p: Paise) => void }) {
-  return (
-    <section className={s.given} aria-label="Cash given">
-      {cash > 0 ? (
-        <div className={s.givenBtns}>
-          <span className={s.givenLab}>Cash given</span>
-          {CONFIG.payment.givenNotes.map((p) => <button type="button" key={p} aria-label={`₹${String(p / 100)} given`} aria-pressed={given === p} className={given === p ? s.noteOn : s.note} onClick={() => { onGiven(given === p ? 0 : p); }}><Money p={p} /></button>)}
-        </div>
-      ) : null}
-      {cash > 0 && given > cash ? <div className={s.giveBack} role="status"><span>{`Cash given ₹${String(given / 100)} for ₹${String(cash / 100)}`}</span><b>Give back <Money p={given - cash} /></b></div> : null}
-      {cash > 0 && given > 0 && given < cash ? <div className={s.giveShort} role="status">Take <Money p={cash - given} /> more</div> : null}
-    </section>
-  );
-}
-
 const SWATCH_OF: Readonly<Record<number, number>> = { 5: 7, 10: 1, 20: 5, 50: 3, 100: 0, 200: 2, 500: 4, 1000: 6, 2000: 1 };
 
 export function CountNotes({ notes, onNotes }: { notes: Record<string, number>; onNotes: (n: Record<string, number>) => void }) {
