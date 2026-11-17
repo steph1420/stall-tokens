@@ -10,10 +10,10 @@ import { Qr } from '../../kit/Qr';
 import { Sheet } from '../../kit/Sheet';
 import k from '../../kit/kit.module.css';
 import { Numpad } from './Numpad';
-import { CountNotes, TipRow, Waived } from './parts';
+import { ChangeDue, CountNotes, RoundOff, TipRow, Waived } from './parts';
 import s from './Payment.module.css';
 
-type Box = 'cash' | 'upi' | 'tip';
+type Box = 'cash' | 'upi' | 'tip' | 'waive';
 const R = CONFIG.money.paisePerRupee;
 
 function Slider({ split, covered, onSlide }: { split: pay.Split; covered: Paise; onSlide: (f: number) => void }) {
@@ -94,7 +94,7 @@ function useDraft(o: Order | undefined) {
   const servingName = useApp((st) => st.prefs.servingName);
   const due0 = o ? bill.due(o) : 0;
   const [tip, setTip] = useState<Paise>(0);
-  const [split, setSplit] = useState<pay.Split>({ cash: Math.max(0, due0), upi: 0, pinned: null });
+  const [split, setSplit] = useState<pay.Split>({ cash: Math.max(0, due0), upi: 0, pinned: null, waived: 0, tendered: 0 });
   const [notes, setNotes] = useState<Record<string, number>>({});
   const [waiver, setWaiver] = useState({ by: servingName, note: '' });
   const [payeeId, setPayeeId] = useState<string | null>(null);
@@ -102,9 +102,14 @@ function useDraft(o: Order | undefined) {
   const toCollect = Math.max(0, owed) + tip;
   const cur = pay.refit(split, toCollect);
   const setTipTo = (t: Paise) => { setTip(t); setSplit(pay.addTip(cur, t - tip, Math.max(0, owed) + t)); };
-  const typed = (box: Box, rupees: number) => { if (box === 'tip') setTipTo(rupees * R); else setSplit(pay.setBox(cur, box, rupees * R, toCollect)); };
-  return { tip, setTipTo, cur, setSplit, notes, setNotes, waiver, setWaiver, payeeId, setPayeeId, owed, toCollect, typed,
-    check: pay.checkPayment(cur.cash, cur.upi, toCollect, tip) };
+  const typed = (box: Box, rupees: number) => {
+    if (box === 'tip') setTipTo(rupees * R);
+    else if (box === 'waive') setSplit(pay.setWaived(cur, rupees * R, toCollect, tip));
+    else setSplit(pay.setBox(cur, box, rupees * R, toCollect));
+  };
+  const waived = cur.waived ?? 0;
+  return { tip, setTipTo, cur, setSplit, notes, setNotes, waiver, setWaiver, payeeId, setPayeeId, owed, toCollect, typed, waived,
+    check: pay.checkPayment(cur.cash, cur.upi, toCollect, tip, waived) };
 }
 type Draft = ReturnType<typeof useDraft>;
 
@@ -150,19 +155,38 @@ function useConfirm(d: Draft) {
     if (busy.current) return; // double tap guard; the store also refuses a second payment
     busy.current = true;
     const payee = payees.find((p) => p.id === d.payeeId) ?? payees[0];
-    const g = d.check.gap;
+    const g = d.waived; // only the explicit Round off / waive amount, never a leftover gap
     const err = c.pay({ cash: d.cur.cash, upi: d.cur.upi, upiPayeeId: d.cur.upi > 0 ? payee?.id ?? null : null, tip: d.tip, waived: g,
-      waivedBy: g > 0 ? d.waiver.by : '', waivedNote: g > 0 ? d.waiver.note : '', cashGiven: pay.notesTotal(d.notes), notes: d.notes });
+      waivedBy: g > 0 ? d.waiver.by : '', waivedNote: g > 0 ? d.waiver.note : '', cashGiven: Math.max(pay.notesTotal(d.notes), d.cur.tendered ?? 0), notes: d.notes });
     busy.current = false;
     if (err) { c.toast(err); buzz(haptics, 'error'); return; }
     buzz(haptics, 'confirm');
   };
 }
 
+function padRupees(pad: Box, d: Draft): number {
+  if (pad === 'tip') return d.tip / R;
+  if (pad === 'waive') return d.waived / R;
+  return (pad === 'cash' && (d.cur.tendered ?? 0) > 0 ? d.cur.tendered ?? 0 : d.cur[pad]) / R;
+}
+
+/** Change due, any problem, the explicit waive / round-off. */
+function Adjust({ d, onRoundOff }: { d: Draft; onRoundOff: () => void }) {
+  const openSheet = useApp((st) => st.openSheet);
+  return (
+    <>
+      <ChangeDue tendered={d.cur.tendered ?? 0} cash={d.cur.cash} />
+      {d.check.over > 0 ? <div className={s.over} role="alert">More than the bill by <Money p={d.check.over} /></div> : null}
+      {!d.check.ok && d.check.over === 0 && d.toCollect > 0 ? <div className={s.over} role="alert">{d.check.reason}</div> : null}
+      {d.waived > 0 ? <Waived amount={d.waived} who={d.waiver.by} onEdit={() => { openSheet({ kind: 'waived' }); }} /> : null}
+      <RoundOff on={d.waived > 0} onOpen={() => { onRoundOff(); }} />
+    </>
+  );
+}
+
 export function PaymentScreen() {
   const o = useApp((st) => (st.ui.orderId ? st.folded.orders[st.ui.orderId] : undefined));
   const c = useApp((st) => st.counter);
-  const openSheet = useApp((st) => st.openSheet);
   const d = useDraft(o);
   const confirm = useConfirm(d);
   const [pad, setPad] = useState<Box | null>(null);
@@ -180,10 +204,8 @@ export function PaymentScreen() {
             {tip > 0 ? <div className={s.tipNote}>incl. <Money p={tip} /> tip</div> : null}
           </div>
           <SplitBoxes d={d} pad={pad} setPad={setPad} />
-          <Slider split={cur} covered={cur.cash + cur.upi} onSlide={(f) => { d.setSplit(pay.slide(f, Math.min(d.toCollect, cur.cash + cur.upi) || d.toCollect, CONFIG.money.sliderSnapPaise)); }} />
-          {check.over > 0 ? <div className={s.over} role="alert">More than the bill by <Money p={check.over} /></div> : null}
-          {!check.ok && check.over === 0 && d.toCollect > 0 ? <div className={s.over} role="alert">{check.reason}</div> : null}
-          {check.gap > 0 && check.ok ? <Waived amount={check.gap} who={d.waiver.by} onEdit={() => { openSheet({ kind: 'waived' }); }} /> : null}
+          <Slider split={cur} covered={cur.cash + cur.upi} onSlide={(f) => { d.setSplit(pay.slide(f, cur.cash + cur.upi, CONFIG.money.sliderSnapPaise, d.waived)); }} />
+          <Adjust d={d} onRoundOff={() => { setPad('waive'); }} />
           <TipRow tip={tip} onTip={d.setTipTo} onOther={() => { setPad('tip'); }} />
           <QrBlock d={d} o={o} />
           <CountNotes notes={d.notes} onNotes={d.setNotes} cash={cur.cash} />
@@ -194,7 +216,7 @@ export function PaymentScreen() {
         <span className={s.paid}>{check.ok && check.gap === 0 ? 'Adds up ✓' : ''}</span>
         <button type="button" className={s.confirm} disabled={!check.ok} onClick={confirm}>Confirm payment</button>
       </footer>
-      {pad ? <Numpad key={pad} rupees={pad === 'tip' ? tip / R : cur[pad] / R} onChange={(r) => { d.typed(pad, r); }} onDone={() => { setPad(null); }} /> : null}
+      {pad ? <Numpad key={pad} rupees={padRupees(pad, d)} onChange={(r) => { d.typed(pad, r); }} onDone={() => { setPad(null); }} /> : null}
       <WaivedSheetHost by={d.waiver.by} note={d.waiver.note} onSave={(by, note) => { d.setWaiver({ by, note }); }} />
     </>
   );

@@ -38,6 +38,21 @@ export function Waived({ amount, who, onEdit }: { amount: Paise; who: string; on
   );
 }
 
+/** The only way to waive or round off part of the bill (explicit; typing Cash or UPI never leaves a gap). */
+export function RoundOff({ on, onOpen }: { on: boolean; onOpen: () => void }) {
+  return <button type="button" className={s.roundOff} onClick={onOpen}>{on ? 'Change round-off' : 'Round off / waive'}</button>;
+}
+
+/** Cash typed above the amount: shown as change due, not as an error. */
+export function ChangeDue({ tendered, cash }: { tendered: Paise; cash: Paise }) {
+  if (tendered <= cash) return null;
+  return (
+    <div className={s.changeDue} role="status">
+      <span>Cash given <Money p={tendered} /></span><span className={s.tChgLab}>Change</span><Money p={pay.change(tendered, cash)} className={s.tChg} />
+    </div>
+  );
+}
+
 const SWATCH_OF: Readonly<Record<number, number>> = { 5: 7, 10: 1, 20: 5, 50: 3, 100: 0, 200: 2, 500: 4, 1000: 6, 2000: 1 };
 
 export function CountNotes({ notes, onNotes, cash }: { notes: Record<string, number>; onNotes: (n: Record<string, number>) => void; cash: Paise }) {

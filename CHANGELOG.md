@@ -3,6 +3,12 @@ All notable changes to Stall Tokens. SemVer. Times IST.
 
 ## [Unreleased]
 
+### Hotfix 17 Nov 2026 — payment split always balances (Steve, live Beta #001)
+- Typing Cash or UPI always moves the other box to the balance (UPI = total − cash, cash = total − UPI); the slider follows. Before, after the slider (or typing both boxes) the old value stayed and a "Waived" row appeared on its own.
+- A waive / round-off is only made through the explicit "Round off / waive" control (then the pencil edits who / note). Payment checks refuse any gap that isn't that explicit amount (UI and store).
+- Cash typed above the total is change due ("Cash given ₹X · Change ₹Y"), recorded as cash given; UPI above the total is clamped to it. Clearing a box gives the whole amount to the other.
+- Supersedes the locked v5 behaviour "₹100 + ₹70 of ₹180 → Waived ₹10" (D-HF-PAY).
+
 ### 2.1.0 P3 — Kitchen + Station (17 Nov 2026, Beta only; F-58..F-60)
 - **Ticket header (PK-2, s124).** Every ticket shows its age ("4 min", amber after 8, red after 15), the client, **Unpaid**, and the **order note** on all looks; allergy and diet words (nut, gluten, Jain, no onion…) show in the warning tone with ⚠. Line notes get a pencil and normal text; the station name is a small chip on All only. One colour dot per line. "Kitchen · 3" and "Momos · 12" counts. Bigger kitchen text.
 - **Safe taps (PK-4).** A double or triple tap moves a line one step only; every step and every Priority change says what happened with **Undo** (5 s). Hold a Done? line to take it back to Preparing; the Counter's order sheet has **Send back to the kitchen**. An Undo never pulls back a line that has moved on since.
