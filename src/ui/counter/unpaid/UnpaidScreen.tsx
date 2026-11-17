@@ -1,4 +1,5 @@
-// F-55 s120 Unpaid tab (P2): every order with money still to collect, oldest first. Tap a row for the order view (s121).
+// F-55 s120 Unpaid tab (P2, Q-UNPAID-ROW B, locked): "₹X to collect", then one card of rows: token, who · items,
+// status · age, the amount in red, a chevron. No buttons on the row; tap it for the order view (s121).
 import { CONFIG } from '../../../config';
 import type { Order } from '../../../contract';
 import { ago, bill, formatToken, liveOrders, orderStatus, unpaidOrders, useApp } from '../../../store';
@@ -7,8 +8,8 @@ import { Money } from '../../kit/Money';
 import { useSecond } from '../TakeOver';
 import s from './Unpaid.module.css';
 
-const items = (o: Order) => o.lines.filter((l) => l.qty > 0).map((l) => `${String(l.qty)}× ${l.name}`).join(', ');
-
+const count = (o: Order) => { const n = o.lines.reduce((t, l) => t + l.qty, 0); return `${String(n)} ${n === 1 ? 'item' : 'items'}`; };
+const since = (ms: number, now: number) => ago(ms, now).replace(/ ago$/, '');
 
 export function UnpaidScreen() {
   const folded = useApp((x) => x.folded);
@@ -19,15 +20,15 @@ export function UnpaidScreen() {
   if (list.length === 0) return <main className={s.empty}><p><b>Nothing to collect</b></p><p>Every order is paid.</p></main>;
   return (
     <main className={s.page} aria-label="Unpaid orders">
-      <div className={s.sum}><Money p={owed} className={s.sumAmt} /><span>{` to collect · ${String(list.length)} ${list.length === 1 ? 'order' : 'orders'}`}</span></div>
+      <div className={s.sum}><Money p={owed} className={s.sumAmt} /><span>to collect</span></div>
       <ul className={s.list}>
         {list.map((o) => (
           <li key={o.id}>
             <button type="button" className={s.row} onClick={() => { open.viewOrder(o.id); }}>
-              <b className={s.tok}>{formatToken(o.token, CONFIG.tokens.pad)}</b>
-              <span className={s.mid}><span className={s.who}>{o.client || items(o)}</span><small>{`${orderStatus(o, undefined)} · ${ago(o.createdAt, now)}`}</small></span>
+              <span className={s.tok}>{formatToken(o.token, CONFIG.tokens.pad)}</span>
+              <span className={s.mid}><b className={s.who}>{[o.client, count(o)].filter(Boolean).join(' · ')}</b><small>{`${orderStatus(o, undefined)} · ${since(o.createdAt, now)}`}</small></span>
               <Money p={bill.due(o)} className={s.amt} />
-              <Icon name="next" />
+              <span className={s.chev}><Icon name="chevLeft" /></span>
             </button>
           </li>
         ))}

@@ -34,10 +34,10 @@ describe('P2 Counter', () => {
     const oid = s().ui.orderId ?? '';
     render(<StoreProvider store={store}><CounterShell /></StoreProvider>);
     fireEvent.click(screen.getByRole('tab', { name: /Unpaid/ }));
-    expect(screen.getByText(/to collect · 1 order/)).toBeTruthy();
+    expect(screen.getByText(/to collect/)).toBeTruthy();
     fireEvent.click(screen.getByRole('button', { name: /#001/ }));
     expect(s().ui.orderView).toBe(oid);
-    expect(screen.getByRole('button', { name: 'Complete without payment (hold)' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Complete (hold)' })).toBeTruthy();
     fireEvent.click(screen.getByRole('button', { name: /Take payment/ }));
     expect(s().ui.orderView).toBeNull();
     expect(s().ui.pages[oid]).toBe('payment');
