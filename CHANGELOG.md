@@ -3,6 +3,14 @@ All notable changes to Stall Tokens. SemVer. Times IST.
 
 ## [Unreleased]
 
+### 2.1.0 P4 — History, Money, Close the day, Day notes, Stock (17 Nov 2026, Beta only; F-64..F-68)
+- **History** has Orders · Money. Every order that went to the kitchen is listed (unpaid ones too), with its #004 token and one plain tag: Paid cash / UPI, Unpaid ₹25, Written off, Refund due, Refunded ₹15 cash, Cancelled · Refund due ₹20. Tap a row: Take payment, Edit, Refund (whenever money is held), Print token, Hold to cancel. Each day has **Notes ›**.
+- **Money** shows what came in, a separate **Refunds** tile, **Unpaid ₹X · n** (opens the Unpaid tab) and **Written off**.
+- **Close the day** (switch on in Settings › Extras): Unpaid, Refunds due, Cash in the box (count notes; "₹20 short"), Day notes, Lock the day, then a **Day summary** with top sellers and Hold to share.
+- **History search** (switch on in Settings › Extras): token, name or item.
+- **Stock:** All at the top of the rail; Low and Sold out are chips. Pasting "Tea 20pcs" with no price just adds 20 to Tea (no Spent).
+- **Fixed:** a refunded order showed up again as Unpaid (and in the Unpaid count) because the refund made the bill look owed. Only the part of a refund that gives back an overpayment counts against the bill now (D-P4-REFUND-DUE).
+
 ### pay4 tip like waive (F-62), 17 Nov 2026 — Steve
 - **+ Tip is now a twin of − Waive:** same pill side by side, same chips (₹10, ₹20, Other), same Undo toast. The "No tip" chip and the pencil on the Payment screen are gone; tap a lit chip to take the tip off. An Other amount shows as its own lit chip. Tip choices stay in Settings (₹10, ₹20 by default).
 

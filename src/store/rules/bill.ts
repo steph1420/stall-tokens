@@ -38,8 +38,16 @@ export const held = (o: Pick<Order, 'payments' | 'refunds'>): Paise =>
 export const waived = (o: Pick<Order, 'payments'>): Paise => o.payments.reduce((t, p) => t + p.waived, 0);
 export const tips = (o: Pick<Order, 'payments'>): Paise => o.payments.reduce((t, p) => t + p.tip, 0);
 
-/** Positive = still to collect; negative = refund owed (F-18). */
-export const due = (o: Order): Paise => total(o) - paid(o) - waived(o);
+/**
+ * Positive = still to collect; negative = refund owed (F-18).
+ * P4 fix (D-P4-REFUND-DUE): only the part of a refund that gave back an overpayment counts here (`settled`, set by the fold).
+ * Money given back for goods (Q-REFUND-1 A) never makes the customer owe the bill again (it used to put a refunded order on Unpaid).
+ */
+export function due(o: Order): Paise {
+  const got = o.payments.reduce((x, p) => x + p.cash + p.upi - p.tip, 0);
+  const settled = o.refunds.reduce((x, r) => x + (r.voided ? 0 : r.settled), 0);
+  return total(o) - waived(o) - got + settled;
+}
 
 /** Round-off choices for a total: nearest ₹5 / ₹10 down and up, never the same as the total. */
 export function roundOffChoices(t: Paise, steps: readonly number[]): Paise[] {

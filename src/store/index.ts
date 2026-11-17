@@ -5,6 +5,7 @@ import { createStore as createZustand, useStore, type StoreApi } from 'zustand';
 import { useShallow } from 'zustand/react/shallow';
 import { createBrowserDataSource, createSyncEngine, type DataSource, type DevicePrefs } from '../data';
 import { catalogActions } from './catalog';
+import { closeActions } from './close';
 import { conflictActions } from './conflicts';
 import { createLog, initialCore, type Core, type CoreState } from './core';
 import { counterActions, deviceLabel } from './counter';
@@ -29,6 +30,9 @@ export * as money from './rules/money';
 export * as settle from './rules/settle';
 export * as stock from './rules/stock';
 export * as amounts from './rules/amounts';
+export * as history from './rules/history';
+export * as closing from './rules/close';
+export type { Extra } from './close';
 export type { Split } from './rules/settle';
 export * as kitchen from './rules/kitchen';
 export type { Folded } from './fold/state';
@@ -63,6 +67,8 @@ export interface AppState extends CoreState {
   readonly money: ReturnType<typeof moneyActions>;
   readonly settle: ReturnType<typeof settleActions>;
   readonly stock: ReturnType<typeof stockActions>;
+  /** F-66 / F-67 Close the day, day notes, the Extras switches. */
+  readonly close: ReturnType<typeof closeActions>;
   /** D-NAV: open a Stall screen; Back returns to the launch screen or the Counter. */
   readonly openStall: (screen: StallScreen) => void;
   readonly closeStall: () => void;
@@ -78,11 +84,15 @@ export type AppStore = StoreApi<AppState>;
 
 export interface StoreOptions { makeId?: () => string; now?: () => number; loadId?: string }
 
+const NOT_STALL: readonly Screen[] = ['launch', 'counter', 'kitchen', 'station'];
+const isStallScreen = (x: Screen): x is StallScreen => !NOT_STALL.includes(x);
+
 function navActions(core: Core) {
   const up = (f: (u: CoreState['ui']) => Partial<CoreState['ui']>) => { core.set((s) => ({ ui: { ...s.ui, ...f(s.ui) } })); };
   return {
     go(screen: Screen) { up(() => ({ screen, sheet: null })); },
-    openStall(screen: StallScreen) { up((u) => ({ screen, sheet: null, stallFrom: u.screen === 'counter' ? 'counter' : 'launch' })); },
+    // P4: a Stall screen opened from another (Close the day › Settle up) keeps where Back finally returns to.
+    openStall(screen: StallScreen) { up((u) => ({ screen, sheet: null, stallFrom: u.screen === 'counter' ? 'counter' : u.screen === 'launch' ? 'launch' : isStallScreen(u.screen) ? u.stallFrom : 'launch' })); },
     closeStall() { up((u) => ({ screen: u.stallFrom, sheet: null, unlocked: false })); },
     unlock() { up(() => ({ unlocked: true })); },
     openSheet(sheet: Sheet | null) { up(() => ({ sheet })); },
@@ -129,6 +139,7 @@ function actionsOf(core: Core, l: L, get: () => AppState) {
     money: moneyActions(core, l),
     settle: settleActions(core, l),
     stock: stockActions(core, l, (amount, label, note, parts) => get().money.addEntry({ dir: 'spent', amount, label, kind: 'normal', parts, note, personId: null })),
+    close: closeActions(core, l, () => get().settle.lockDay()),
     ...navActions(core),
   };
 }

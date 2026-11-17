@@ -45,9 +45,20 @@ describe('bill (F-10 F-11 F-18)', () => {
     expect(due(o)).toBe(0);
     const edited = order({ lines: [line(3000, 2)], payments: [payment(10000, 0)] });
     expect(due(edited)).toBe(-4000);
-    expect(due({ ...edited, refunds: [{ refundId: 'r', amount: 4000, source: 'cash', at: 0, reason: '', lines: [], restocked: [], voided: null }] })).toBe(0);
+    expect(due({ ...edited, refunds: [{ refundId: 'r', amount: 4000, source: 'cash', at: 0, reason: '', lines: [], restocked: [], voided: null, settled: 4000 }] })).toBe(0);
     // Q-REFUND-INSTANT: a voided (Undo) refund gives nothing back.
-    expect(due({ ...edited, refunds: [{ refundId: 'r', amount: 4000, source: 'cash', at: 0, reason: '', lines: [], restocked: [], voided: 'Undo' }] })).toBe(-4000);
+    expect(due({ ...edited, refunds: [{ refundId: 'r', amount: 4000, source: 'cash', at: 0, reason: '', lines: [], restocked: [], voided: 'Undo', settled: 4000 }] })).toBe(-4000);
     expect(due(order({ payments: [payment(8000, 0, 0, 2000)] }))).toBe(0);
+  });
+  // D-P4-REFUND-DUE: a refund of goods (settled 0) never makes a paid order owed again; only the overpayment part counts.
+  it('a refund of a paid bill leaves nothing to collect', () => {
+    const r = (amount: number, settled: number) => ({ refundId: `r${String(amount)}`, amount, source: 'cash' as const, at: 0, reason: '', lines: [], restocked: [], voided: null, settled });
+    const paidOrder = order({ payments: [payment(10000, 0, 0, 0)] });
+    expect(due({ ...paidOrder, refunds: [r(10000, 0)] })).toBe(0);
+    expect(due({ ...paidOrder, refunds: [r(3000, 0)] })).toBe(0);
+    const edited = { ...paidOrder, lines: paidOrder.lines.map((l) => ({ ...l, qty: 1 })) };
+    expect(due(edited)).toBe(-3000);
+    expect(due({ ...edited, refunds: [r(5000, 3000)] })).toBe(0);
+    expect(due({ ...edited, refunds: [r(2000, 2000)] })).toBe(-1000);
   });
 });

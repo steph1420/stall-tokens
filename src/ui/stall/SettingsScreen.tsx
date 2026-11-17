@@ -5,7 +5,7 @@
 import { useState, type ReactNode } from 'react';
 import { appStamp, CONFIG } from '../../config';
 import { formatInr } from '../../contract';
-import type { DevicePrefs } from '../../store';
+import type { DevicePrefs, Extra } from '../../store';
 import { amounts, istClock, isSheetUrl, useApp } from '../../store';
 import { AmountsEdit } from '../kit/AmountsEdit';
 import { Sheet } from '../kit/Sheet';
@@ -111,6 +111,7 @@ export function SettingsScreen() {
         <Opt t="Serving name" value={p.servingName || 'Not set'} />
       </Group>
       <Group label="Sync"><SyncRow /></Group>
+      <Extras />
       <Group label="Passcode">
         <Opt t="Change passcode" sub="Asks for a new 4-digit code next time" value="" onClick={() => { set({ passcode: '' }); a.money.toast('Passcode cleared · set a new one next time'); }} />
       </Group>
@@ -123,6 +124,19 @@ export function SettingsScreen() {
       </Group>
       <Footer deviceId={p.deviceId} />
     </StallPage>
+  );
+}
+
+/** FEATURES §0.2 top-4 gaps (F-64 search, F-66 Close the day): shared switches, off until Steve turns them on. */
+function Extras() {
+  const set = useApp((x) => x.folded.settings);
+  const c = useApp((x) => x.close);
+  const on = (k: Extra) => set[CONFIG.extras[k]] === '1';
+  return (
+    <Group label="Extras · every phone">
+      <Opt t="Close the day" sub="A checklist and summary at the end of the day, in the Stall list" sw={on('closeDay')} onClick={() => { c.setExtra('closeDay', !on('closeDay')); }} />
+      <Opt t="History search" sub="Find an order by token, name or item" sw={on('historySearch')} onClick={() => { c.setExtra('historySearch', !on('historySearch')); }} />
+    </Group>
   );
 }
 

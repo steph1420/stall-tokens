@@ -1,7 +1,8 @@
 // F-23..F-25 Money rules (pure). Q-MIXED-1: parts must cover the amount exactly; only person parts touch balances.
 // D-MONEY: tips are their own pot; donations and round-off count in profit. Refunds due come from cancelled orders (Q-CANCEL-1 A).
 import type { Entry, MoneyPart, Order, Paise } from '../../contract';
-import { paid, tips, waived } from './bill';
+import { due, paid, tips, waived } from './bill';
+import { unpaid, writtenOff } from './status';
 
 export const partsSum = (parts: readonly MoneyPart[]): Paise => parts.reduce((t, p) => t + p.amount, 0);
 /** Bar state on the Mixed sheet: "₹X of ₹total", green when covered. */
@@ -27,7 +28,10 @@ export interface DayMoney {
   readonly spent: Paise; readonly received: Paise; readonly donations: Paise;
   /** Register money by the book (opening float added by the caller). */
   readonly registerFlow: Paise; readonly upiFlow: Paise;
+  /** F-65 (W-08): money still to collect on every day's unpaid orders (the Unpaid tab), and this day's write-offs (Q-WRITEOFF-SPLIT A). */
+  readonly unpaid: { amount: Paise; n: number }; readonly writtenOff: { amount: Paise; n: number };
 }
+const owedOf = (os: readonly Order[]) => ({ amount: os.reduce((t, o) => t + due(o), 0), n: os.length });
 const sumBy = (es: readonly Entry[], src: MoneyPart['source']) => es.reduce((t, e) => t + e.parts.filter((p) => p.source === src).reduce((u, p) => u + p.amount, 0), 0);
 
 export function dayMoney(orders: readonly Order[], entries: readonly Entry[], dayId: string): DayMoney {
@@ -46,5 +50,6 @@ export function dayMoney(orders: readonly Order[], entries: readonly Entry[], da
     donations: rc.filter((e) => e.kind === 'donation').reduce((t, e) => t + e.amount, 0),
     registerFlow: cashSales - refunds.cash + sumBy(rc, 'register') - sumBy(sp, 'register'),
     upiFlow: upiSales - refunds.upi + sumBy(rc, 'upi') - sumBy(sp, 'upi'),
+    unpaid: owedOf(orders.filter(unpaid)), writtenOff: owedOf(os.filter(writtenOff)),
   };
 }
