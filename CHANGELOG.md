@@ -3,6 +3,11 @@ All notable changes to Stall Tokens. SemVer. Times IST.
 
 ## [Unreleased]
 
+### P3b tablet layout (F-61), 17 Nov 2026
+- **Two panes on a tablet** (48 rem wide and 30 rem tall, so 820×1180, 1180×820, 1024×768, 768×1024): Menu beside the bill or payment; Open Orders list beside the order card; Unpaid list beside the order. The number pad stays in its pane.
+- **Kitchen:** tickets in columns (3 across at 1180, 2 at 820).
+- **Unchanged:** phones, a phone on its side (927×421) and 200 % text keep one column; at 200 % on a tablet the station pills wrap.
+
 ### Hotfix 17 Nov 2026 — payment split always balances (Steve, live Beta #001)
 - Typing Cash or UPI always moves the other box to the balance (UPI = total − cash, cash = total − UPI); the slider follows. Before, after the slider (or typing both boxes) the old value stayed and a "Waived" row appeared on its own.
 - A waive / round-off is only made through the explicit "Round off / waive" control (then the pencil edits who / note). Payment checks refuse any gap that isn't that explicit amount (UI and store).

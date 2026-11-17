@@ -35,6 +35,13 @@
 .drafts b { font-variant-numeric: tabular-nums; color: var(--dl-color-accent); }
 .body { flex: 1; min-height: 0; display: flex; flex-direction: column; position: relative; }
 .locked { flex: 1; min-height: 0; display: flex; flex-direction: column; opacity: 0.55; filter: saturate(0.6); }
+/* P3b tablet (D-P3B-1): wider shell and two panes; each pane is a `counter` container so phone rules apply inside it.
+ * `contain: layout` keeps a pane's fixed parts (number pad) inside that pane. */
+.wide { composes: phone; max-width: 90rem; }
+.panes { flex: 1; min-height: 0; display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr); }
+.pane { min-width: 0; min-height: 0; display: flex; flex-direction: column; position: relative; container: counter / inline-size; contain: layout; }
+.paneR { composes: pane; border-left: var(--dl-stall-hair) solid var(--dl-color-hairline); }
+.paneHint { margin: auto; padding: 2rem 1.5rem; text-align: center; font-size: 1.0625rem; color: var(--dl-color-text-faint); }
 /* P2 large text (200 %): the header wraps instead of pushing buttons off screen. */
 @container counter (max-width: 18rem) {
   .hdr, .pages, .hdrTop { flex-wrap: wrap; }

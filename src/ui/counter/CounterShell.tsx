@@ -3,6 +3,7 @@
 import { CONFIG } from '../../config';
 import { bill, draftOrders, formatToken, kitchen, liveOrders, orderStatus, unpaidOrders, useApp, type Page } from '../../store';
 import { Icon } from '../kit/Icon';
+import { useWide } from '../kit/useWide';
 import { BillingScreen } from './billing/BillingScreen';
 import { CounterSheets } from './CounterSheets';
 import { CancelSheet } from './CancelSheet';
@@ -60,13 +61,16 @@ function HeaderEnd({ settled }: { settled: boolean }) {
 
 function PageTabs({ page }: { page: Page }) {
   const c = useApp((st) => st.counter);
+  const wide = useWide(); // P3b: the menu is always beside the bill, so only Billing / Payment are tabs
+  const tabs = wide ? PAGES.filter((p) => p.id !== 'menu') : PAGES;
+  const on = wide && page === 'menu' ? 'billing' : page;
   const settled = useApp((st) => { const o = st.ui.orderId ? st.folded.orders[st.ui.orderId] : undefined; return !!o && page === 'payment' && bill.due(o) <= 0 && bill.paid(o) + bill.waived(o) > 0; });
   return (
     <>
       <div className={s.hdr}>
         <nav className={s.pages} aria-label="Pages">
-          {PAGES.map((p) => (
-            <button type="button" key={p.id} className={p.id === page ? s.ptabOn : s.ptab} aria-current={p.id === page ? 'page' : undefined}
+          {tabs.map((p) => (
+            <button type="button" key={p.id} className={p.id === on ? s.ptabOn : s.ptab} aria-current={p.id === on ? 'page' : undefined}
               onClick={() => { c.setPage(p.id); }}>{p.label}</button>
           ))}
         </nav>
@@ -77,11 +81,35 @@ function PageTabs({ page }: { page: Page }) {
   );
 }
 
+/** P3b: two panes side by side (tablet). Each pane is its own `counter` container, so the phone rules apply inside it. */
+function Panes({ left, right, label }: { left: React.ReactNode; right: React.ReactNode; label: string }) {
+  return (
+    <div className={s.panes} aria-label={label}>
+      <section className={s.pane}>{left}</section>
+      <section className={s.paneR}>{right}</section>
+    </div>
+  );
+}
+
+function WideBody() {
+  const orderId = useApp((st) => st.ui.orderId);
+  const orderView = useApp((st) => st.ui.orderView);
+  const tab = useApp((st) => st.ui.counterTab);
+  const page = useApp((st) => (st.ui.orderId ? st.ui.pages[st.ui.orderId] : undefined) ?? 'menu');
+  if (orderView) return tab === 'unpaid' ? <Panes label="Unpaid" left={<UnpaidScreen />} right={<OrderView orderId={orderView} />} /> : <OrderView orderId={orderView} />;
+  if (tab === 'open') return <OpenOrdersScreen wide />;
+  if (tab === 'unpaid') return <Panes label="Unpaid" left={<UnpaidScreen />} right={<p className={s.paneHint}>Tap an order to see it here</p>} />;
+  const right = !orderId ? <p className={s.paneHint}>The bill shows here. Tap an item on the left to start.</p> : page === 'payment' ? <PaymentScreen key={orderId} /> : <BillingScreen />;
+  return <Panes label="Order" left={<MenuScreen />} right={right} />;
+}
+
 function Body() {
   const orderId = useApp((st) => st.ui.orderId);
   const orderView = useApp((st) => st.ui.orderView);
   const tab = useApp((st) => st.ui.counterTab);
   const page = useApp((st) => (st.ui.orderId ? st.ui.pages[st.ui.orderId] : undefined) ?? 'menu');
+  const wide = useWide();
+  if (wide) return <WideBody />;
   if (orderView) return <OrderView orderId={orderView} />;
   if (tab === 'open') return <OpenOrdersScreen />;
   if (tab === 'unpaid') return <UnpaidScreen />;
@@ -95,8 +123,9 @@ export function CounterShell() {
   const stallName = useApp((st) => st.folded.settings.stallName ?? 'Fair stall');
   const openSheet = useApp((st) => st.openSheet);
   const take = useTakeOver();
+  const wide = useWide();
   return (
-    <div className={s.phone}>
+    <div className={wide ? s.wide : s.phone}>
       <header className={s.chrome}>
         <div className={s.hdrTop}>
           <div className={s.kicker}>{stallName}</div>

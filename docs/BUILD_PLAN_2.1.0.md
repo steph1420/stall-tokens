@@ -207,7 +207,7 @@ The full design is in `docs/SYNC_SERVER.md`: `server/` in Go with JSON endpoints
 - [x] P1 data + rules + unit tests — 17 Nov 2026 (F-50..F-53; Steve's go 06:53 IST). 136 tests on both channels.
 - [x] P2 Counter (Unpaid tab = Q-UNPAID-ROW B, s120) — 17 Nov 2026 (F-54..F-57): take-over lease s127, Unpaid tab + order view + hold bar, refund one tap + sheet, Drafts, new-day question, Back nav, menu search/sort, W-01/02/03/04/09/13/15/16/17/18/19/21/24, 200 % text reflow, 44 px targets. Code.gs `beat` (presence) is written but goes live only when Steve pastes the P6 Code.gs; until then phones fall back to ops.
 - [x] P3 Kitchen + Station — 17 Nov 2026 (F-58..F-60): ticket header + note strip, safe taps + Undo, pinned station order, Handed-over veil, kitchen resume, wake lock, silent new-ticket glow, 200 % wrap, 44 px Priority. Tablet grid stays in P3b.
-- [ ] P3b Tablet layout (landscape: Kitchen + Open Orders side by side, Menu + Billing side by side)
+- [x] P3b Tablet layout — 17 Nov 2026 (F-61): two panes from 48 rem (portrait iPad too, D-P3B-1), Kitchen ticket columns.
 - [ ] P4 History / Money / Close day / Day notes / Stock
 - [ ] P5 Settings + Data (backup, snapshots, reset)
 - [ ] P6 Code.gs 2.1.0 (compaction dry-run first, TEST copy; digest freshness check on the bridge)
