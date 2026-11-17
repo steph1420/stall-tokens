@@ -3,7 +3,7 @@
 import { kitchen, liveOrders, useApp } from '../../store';
 import { useFreshIds, useReorderGuard } from '../kit/alerts';
 import { Icon } from '../kit/Icon';
-import { useWide } from '../kit/useWide';
+import { useBigText, useWide } from '../kit/useWide';
 import { useWakeLock } from '../kit/wakeLock';
 import { KitchenCard } from './KitchenCard';
 import { LeavingCard, useLeaving, withGone, type Why } from './Leaving';
@@ -36,6 +36,7 @@ export function KitchenScreen() {
   const guard = useReorderGuard(list.map((o) => o.id), filter ?? ''); // W-41: taps rest a moment after a Priority order jumps in
   useWakeLock(true);
   const wide = useWide(); // P3b: tickets in a grid on a tablet (D-P3B-3)
+  const big = useBigText(); // 200 % text on a tablet: the pills wrap like on a phone
   return (
     <div className={wide ? s.wide : s.phone}>
       <div className={s.kscroll}>
@@ -46,7 +47,7 @@ export function KitchenScreen() {
             <h1 className={s.title}>{`Kitchen · ${String(list.length)}`}</h1>
             {filter ? <button type="button" className={s.open} onClick={() => { k.openStation(filter, 'kitchen'); }}>Open {filter}<Icon name="open" className={s.openIc} /></button> : null}
           </div>
-          <div className={s.pills} role="group" aria-label="Station filter">
+          <div className={big ? s.pillsWrap : s.pills} role="group" aria-label="Station filter">
             <Pill name={null} count={kitchen.toMake(all, null)} on={filter === null} onPick={() => { k.filterKitchen(null); }} />
             {STATIONS.map((n) => <Pill key={n} name={n} count={kitchen.toMake(all, n)} on={filter === n} onPick={() => { k.filterKitchen(n); }} />)}
           </div>

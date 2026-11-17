@@ -45,7 +45,7 @@ export const CONFIG = Object.freeze({
     payeesMax: 8,
   },
   /** P3b tablet layout (D-P3B-1): two panes from 48 rem wide and 30 rem tall, measured in the root rem so 200 % text stays one column. */
-  layout: { twoPaneMinRem: 48, twoPaneMinHeightRem: 30 },
+  layout: { twoPaneMinRem: 48, twoPaneMinHeightRem: 30, baseFontPx: 16, bigTextScale: 1.5 },
   money: { paisePerRupee: 100, sliderSnapPaise: 1000, roundOffSteps: [500, 1000] as const },
   payment: {
     denominations: [5, 10, 20, 50, 100, 200, 500] as const,
