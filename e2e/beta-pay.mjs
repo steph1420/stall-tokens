@@ -60,8 +60,8 @@ for (const theme of (process.env.THEMES ?? 'night,day').split(',')) {
     await tipP.click(); await waiveP.click(); await p.waitForTimeout(150);
     const wChips = (await p.getByRole('group', { name: 'Waive' }).getByRole('button').allInnerTexts()).map((x) => x.replace(/\s+/g, ''));
     await waiveP.click();
-    const same = Math.abs(a.height - w.height) < 1 && Math.abs(a.y - w.y) < 1;
-    return same && extra === 0 && tipChips.join() === '₹10,₹20,Other' && wChips.slice(0, 3).join() === tipChips.join() ? `side by side, ${String(Math.round(a.height))}px; Tip: ${tipChips.join(' ')}; Waive: ${wChips.join(' ')}` : false;
+    const same = Math.abs(a.height - w.height) < 1 && Math.abs(a.width - w.width) < 1 && Math.abs(a.y - w.y) < 1;
+    return same && extra === 0 && tipChips.join() === '₹10,₹20,Other' && wChips.slice(0, 3).join() === tipChips.join() ? `side by side, both ${String(Math.round(a.width))}×${String(Math.round(a.height))}px; Tip: ${tipChips.join(' ')}; Waive: ${wChips.join(' ')}` : false;
   });
 
   await step(T('type Cash: UPI becomes the balance'), async () => { await type('Cash', '50'); const x = await state(); return x.ok && x.c === 50 && x.u === t0 - 50 ? ev(x) : false; });

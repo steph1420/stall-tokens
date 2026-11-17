@@ -107,7 +107,7 @@
 /* pay2 (locked 17 Nov): + Tip / − Waive pills with quick chips. */
 .adjBlock { margin: 0.25rem 0 0.75rem; display: flex; flex-direction: column; align-items: center; gap: 0.5rem; }
 .adjPills { display: flex; flex-wrap: wrap; justify-content: center; gap: 0.5rem; }
-.pillTip { min-height: var(--dl-hit-min); padding: 0 1rem; border-radius: var(--dl-radius-pill); font-size: 0.9375rem; font-weight: 650; color: var(--dl-color-accent); background: var(--dl-color-track); }
+.pillTip { min-height: var(--dl-hit-min); min-width: 7.5rem; padding: 0 1rem; border-radius: var(--dl-radius-pill); font-size: 0.9375rem; font-weight: 650; color: var(--dl-color-accent); background: var(--dl-color-track); }
 .pillTipOn { composes: pillTip; background: color-mix(in srgb, var(--dl-color-accent) 16%, transparent); }
 .pillWaive { composes: pillTip; color: var(--dl-stall-danger-text); }
 .pillWaiveOn { composes: pillWaive; background: color-mix(in srgb, var(--dl-color-danger) 14%, transparent); }
