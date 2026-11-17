@@ -25,10 +25,9 @@ describe('payment split (F-14 F-16 F-17)', () => {
     const c = slide(0.5, b.cash + b.upi, 1000);
     expect(at(c)).toEqual({ cash: 12000, upi: 12000, waived: 0 });
   });
-  it('over the total: cash becomes change due, UPI is clamped', () => {
+  it('over the total: both sides are clamped to the amount (pay3: no change-due box)', () => {
     const cash = setBox({ cash: 24000, upi: 0, pinned: null }, 'cash', 30000, 24000);
-    expect(cash).toMatchObject({ cash: 24000, upi: 0, tendered: 30000 });
-    expect(change(cash.tendered ?? 0, cash.cash)).toBe(6000);
+    expect(at(cash)).toEqual({ cash: 24000, upi: 0, waived: 0 });
     expect(at(setBox(cash, 'upi', 99900, 24000))).toEqual({ cash: 0, upi: 24000, waived: 0 });
   });
   it('clearing a field gives the whole amount to the other side', () => {
@@ -39,7 +38,7 @@ describe('payment split (F-14 F-16 F-17)', () => {
     const w = pay.setWaived(setBox({ cash: 24000, upi: 0, pinned: null }, 'upi', 4000, 24000), 1000, 24000, 0);
     expect(at(w)).toEqual({ cash: 19000, upi: 4000, waived: 1000 });
     expect(checkPayment(w.cash, w.upi, 24000, 0, w.waived)).toMatchObject({ ok: true, gap: 1000 });
-    expect(at(setBox(w, 'cash', 30000, 24000))).toMatchObject({ cash: 23000, upi: 0, waived: 1000 });
+    expect(at(setBox(w, 'cash', 30000, 24000))).toEqual({ cash: 23000, upi: 0, waived: 1000 });
     expect(pay.setWaived(w, 99900, 26000, 2000).waived).toBe(24000);
   });
   it('a leftover gap without an explicit waive is refused', () => {
@@ -87,5 +86,38 @@ describe('refit and tip (break-it: numpad typed UPI left cash unchanged)', () =>
     expect(at(pay.addTip({ cash: 9000, upi: 5000, pinned: 'cash' }, 1000, 15000))).toEqual({ cash: 10000, upi: 5000, waived: 0 });
     expect(at(pay.addTip({ cash: 0, upi: 14000, pinned: 'upi' }, 2000, 16000))).toEqual({ cash: 0, upi: 16000, waived: 0 });
     expect(at(pay.addTip({ cash: 500, upi: 5000, pinned: 'cash' }, -1000, 4500))).toEqual({ cash: 0, upi: 4500, waived: 0 });
+  });
+});
+
+describe('pay3 split lock', () => {
+  const base = (): pay.Split => setBox({ cash: 24000, upi: 0, pinned: null }, 'cash', 15000, 24000); // ₹150 + ₹90
+  it('only one side locks; locking one unlocks the other; tapping again unlocks', () => {
+    const a = pay.toggleLock(base(), 'cash');
+    expect(a.locked).toBe('cash');
+    expect(pay.toggleLock(a, 'upi').locked).toBe('upi');
+    expect(pay.toggleLock(a, 'cash').locked).toBeNull();
+  });
+  it('+ Tip and − Waive: the unlocked side absorbs the change, the locked side stays', () => {
+    const cashLocked = pay.toggleLock(base(), 'cash');
+    expect(at(pay.addTip(cashLocked, 2000, 26000))).toEqual({ cash: 15000, upi: 11000, waived: 0 });
+    expect(at(pay.setWaived(cashLocked, 3000, 24000, 0))).toEqual({ cash: 15000, upi: 6000, waived: 3000 });
+    const upiLocked = pay.toggleLock(base(), 'upi');
+    expect(at(pay.addTip(upiLocked, 2000, 26000))).toEqual({ cash: 17000, upi: 9000, waived: 0 });
+  });
+  it('a locked value above the new amount is clamped (and reported for the toast)', () => {
+    const locked = pay.toggleLock(base(), 'cash');
+    const after = pay.setWaived(locked, 12000, 24000, 0); // due ₹120 < locked ₹150
+    expect(at(after)).toEqual({ cash: 12000, upi: 0, waived: 12000 });
+    expect(after.locked).toBe('cash');
+    expect(pay.lockClamped(locked, after)).toBe(true);
+    expect(pay.lockClamped(locked, pay.addTip(locked, 1000, 25000))).toBe(false);
+  });
+  it('with nothing locked, the last typed side wins as before', () => {
+    const b = setBox(base(), 'upi', 4000, 24000);
+    expect(at(pay.refit(b, 26000))).toEqual({ cash: 22000, upi: 4000, waived: 0 });
+  });
+  it('Use as Cash puts the amount in and locks it', () => {
+    const u = pay.putInto(base(), 'upi', 10000, 24000);
+    expect(u).toMatchObject({ upi: 10000, cash: 14000, locked: 'upi' });
   });
 });

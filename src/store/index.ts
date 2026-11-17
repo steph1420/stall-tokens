@@ -41,6 +41,7 @@ export * as cats from './rules/catalog';
 export * as day from './rules/day';
 export { planRefund, type RefundAsk, type RefundRequest, type RefundResult } from './refund';
 export * as pay from './rules/pay';
+export * as calc from './rules/calc';
 export { orderStatus, isOpen, completed, writtenOff, unpaid, unpaidOrders, allHanded, draftOrders } from './rules/status';
 export { devKey, holding, phoneLabel, type Holding } from './rules/handling';
 export { focusOf } from './handling';

@@ -104,7 +104,7 @@
   .confirm { flex: 1 1 100%; order: 3; }
 }
 
-/* pay2 (locked 17 Nov): + Tip / − Waive pills with quick chips; one-tap cash given; big Give back. */
+/* pay2 (locked 17 Nov): + Tip / − Waive pills with quick chips. */
 .adjBlock { margin: 0.25rem 0 0.75rem; display: flex; flex-direction: column; align-items: center; gap: 0.5rem; }
 .adjPills { display: flex; flex-wrap: wrap; justify-content: center; gap: 0.5rem; }
 .pillTip { min-height: var(--dl-hit-min); padding: 0 1rem; border-radius: var(--dl-radius-pill); font-size: 0.9375rem; font-weight: 650; color: var(--dl-color-accent); background: var(--dl-color-track); }
@@ -113,12 +113,17 @@
 .pillWaiveOn { composes: pillWaive; background: color-mix(in srgb, var(--dl-color-danger) 14%, transparent); }
 .adjChips { display: flex; flex-wrap: wrap; justify-content: center; gap: 0.5rem; }
 .adjChips .chip, .adjChips .chipOn { padding: 0 1rem; min-width: var(--dl-hit-min); }
-.given { margin-top: 0.75rem; display: flex; flex-direction: column; gap: 0.625rem; }
-.givenBtns { display: grid; grid-template-columns: auto repeat(3, 1fr); align-items: center; gap: 0.5rem; }
-.givenLab { font-size: 0.8125rem; color: var(--dl-color-text-muted); padding-right: 0.25rem; }
-.note { min-height: var(--dl-hit-comfortable); border-radius: var(--dl-radius-md); font-size: 1.25rem; font-weight: 650; color: var(--dl-color-text); background: var(--dl-color-surface); box-shadow: inset 0 0 0 var(--dl-stall-hair) var(--dl-color-hairline); }
-.noteOn { composes: note; background: var(--dl-chip-positive-bg); box-shadow: inset 0 0 0 var(--dl-stall-hair-2) var(--dl-chip-positive-border); }
-.giveBack { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 0.25rem 0.75rem; padding: 0.75rem 1rem; border-radius: var(--dl-radius-lg); background: var(--dl-chip-positive-bg); font-size: 0.9375rem; color: var(--dl-color-text-muted); }
-.giveBack b { font-size: 1.75rem; font-weight: 700; color: var(--dl-stall-pos-text); }
-.giveShort { padding: 0.5rem 0.25rem; font-size: 0.9375rem; color: var(--dl-stall-warn-text); }
-@container counter (max-width: 24rem) { .givenBtns { grid-template-columns: repeat(3, 1fr); } .givenLab { grid-column: 1 / -1; } }
+/* pay3 (F-63): padlock per side; the calculator button. */
+.box { position: relative; }
+.boxTap { width: 100%; flex: 1; display: flex; flex-direction: column; align-items: inherit; text-align: inherit; min-height: var(--dl-hit-min); }
+.boxLocked { background: color-mix(in srgb, var(--dl-color-accent) 10%, transparent); }
+.rest { font-style: normal; color: var(--dl-color-text-faint); }
+.lock { position: absolute; top: 0.25rem; width: var(--dl-hit-min); height: var(--dl-hit-min); display: grid; place-items: center; color: var(--dl-color-text-faint); }
+.boxCash .lock, .boxCashOn .lock { right: 0.25rem; }
+.boxUpi .lock, .boxUpiOn .lock { left: 0.25rem; }
+.lock svg { width: 1.125rem; height: 1.125rem; display: block; }
+.lockOn { composes: lock; color: var(--dl-color-accent); }
+.trackLocked { composes: track; opacity: 0.4; cursor: default; }
+.due { position: relative; }
+.calcBtn { position: absolute; top: 0; right: 0; width: var(--dl-hit-min); height: var(--dl-hit-min); display: grid; place-items: center; border-radius: var(--dl-radius-md); color: var(--dl-color-text-muted); background: var(--dl-color-track); }
+.calcBtn svg { width: 1.375rem; height: 1.375rem; display: block; }
