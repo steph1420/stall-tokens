@@ -1,5 +1,6 @@
 /* Kitchen (21-polish2/kitchen.html + polish2.css v4 pills). Sizes from the mockup in rem (16 px = 1 rem). */
 .phone { composes: phone from "../counter/Counter.module.css"; }
+.wide { composes: wide from "../counter/Counter.module.css"; }
 .chrome { composes: chrome from "../counter/Counter.module.css"; }
 .hdr { display: grid; grid-template-columns: auto 1fr auto; grid-template-rows: 1rem 2.25rem; column-gap: 0.5rem; row-gap: 0.25rem; align-items: center; padding: 0.25rem 1rem 0 0.75rem; }
 .kicker { grid-column: 1 / span 3; grid-row: 1; padding-left: 0.5rem; font-size: 0.6875rem; line-height: 1rem; letter-spacing: 0.16em; text-transform: uppercase; color: var(--dl-color-text-faint); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -140,6 +141,8 @@
 @keyframes newGlow { from { box-shadow: inset 0 0 0 0.125rem color-mix(in srgb, var(--dl-color-accent) 30%, transparent); } }
 /* 200 % text: header, pills and tickets scroll together, so the tickets are never squeezed out (see the container query). */
 .kscroll { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+/* P3b (D-P3B-3): tickets in columns on a tablet; each column keeps the phone ticket width. */
+.kgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 21rem), 1fr)); align-items: start; align-content: start; gap: 0.75rem; }
 /* W-41 / W-28: taps rest for a moment after the list reorders under the finger. */
 .guard { pointer-events: none; }
 /* 200 % text and narrow phones: the pill row wraps instead of running off-screen (rem-based, so large text triggers it). */

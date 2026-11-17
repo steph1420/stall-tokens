@@ -4,11 +4,12 @@
 import { useEffect, useRef, useState } from 'react';
 import { CONFIG } from '../../../config';
 import type { Line, Order } from '../../../contract';
-import { ago, istClock, kitchen, liveOrders, useApp } from '../../../store';
+import { ago, formatToken, istClock, kitchen, liveOrders, useApp } from '../../../store';
 import { Icon } from '../../kit/Icon';
 import { LeavingCard, useLeaving } from '../../kitchen/Leaving';
 import { StatusMark, type Mark } from '../../kitchen/StatusMark';
 import k from '../../kitchen/Kitchen.module.css';
+import cs from '../Counter.module.css';
 import { OpenOverview, OrderSheet } from './OrderSheet';
 import s from './Open.module.css';
 
@@ -132,7 +133,29 @@ function BigCard({ o, index, count }: { o: Order; index: number; count: number }
   );
 }
 
-export function OpenOrdersScreen() {
+/** P3b (D-P3B-2): on a tablet, every open order in a list beside the order card; tap a row to show it. */
+function OpenList({ list, currentId }: { list: readonly Order[]; currentId: string | undefined }) {
+  const a = useApp((st) => st.open);
+  const now = useNow();
+  if (list.length === 0) return <p className={s.empty}>No open orders.</p>;
+  return (
+    <ul className={s.olist} aria-label="Open orders">
+      {list.map((o) => {
+        const n = o.lines.reduce((t, l) => t + l.qty, 0);
+        return (
+          <li key={o.id}>
+            <button type="button" className={o.id === currentId ? s.orowOn : s.orow} aria-current={o.id === currentId ? 'true' : undefined} onClick={() => { a.showOpen(o.id); }}>
+              <span className={s.otok}>{formatToken(o.token, CONFIG.tokens.pad)}</span>
+              <span className={s.omid}><b>{[o.client, `${String(n)} ${n === 1 ? 'item' : 'items'}`].filter(Boolean).join(' · ')}</b><small>{`${o.priority ? 'Priority · ' : ''}${ago(o.createdAt, now)}`}</small></span>
+            </button>
+          </li>
+        );
+      })}
+    </ul>
+  );
+}
+
+export function OpenOrdersScreen({ wide = false }: { wide?: boolean }) {
   const folded = useApp((st) => st.folded);
   const openId = useApp((st) => st.ui.openId);
   const sheet = useApp((st) => st.ui.sheet);
@@ -147,7 +170,7 @@ export function OpenOrdersScreen() {
   // W-09: a second tap inside the leaving-veil time is ignored, so a double tap never hands over the next order too.
   const lock = useRef(0);
   const handover = (id: string) => { const t = Date.now(); if (t < lock.current) return; lock.current = t + CONFIG.timings.tapLockMs; a.handOverAll(id); };
-  return (
+  const card = (
     <>
       <main className={s.body}>
         {o ? <div className={s.leaveR}><LeavingCard key={o.id} why={left?.why}><BigCard o={o} index={i} count={Math.max(list.length, 1)} /></LeavingCard></div>
@@ -159,6 +182,11 @@ export function OpenOrdersScreen() {
           <button type="button" className={s.handover} onClick={() => { handover(live.id); }}>Handover</button>
         </div>
       ) : null}
+    </>
+  );
+  return (
+    <>
+      {wide ? <div className={cs.panes}><section className={cs.pane}><OpenList list={list} currentId={live?.id} /></section><section className={cs.paneR}>{card}</section></div> : card}
       {sheet?.kind === 'orderSheet' ? <OrderSheet orderId={sheet.orderId} /> : null}
       {sheet?.kind === 'openOverview' ? <OpenOverview /> : null}
     </>

@@ -3,6 +3,7 @@
 import { kitchen, liveOrders, useApp } from '../../store';
 import { useFreshIds, useReorderGuard } from '../kit/alerts';
 import { Icon } from '../kit/Icon';
+import { useWide } from '../kit/useWide';
 import { useWakeLock } from '../kit/wakeLock';
 import { KitchenCard } from './KitchenCard';
 import { LeavingCard, useLeaving, withGone, type Why } from './Leaving';
@@ -34,8 +35,9 @@ export function KitchenScreen() {
   const fresh = useFreshIds(kitchen.kitchenOrders(all).map((o) => o.id));
   const guard = useReorderGuard(list.map((o) => o.id), filter ?? ''); // W-41: taps rest a moment after a Priority order jumps in
   useWakeLock(true);
+  const wide = useWide(); // P3b: tickets in a grid on a tablet (D-P3B-3)
   return (
-    <div className={s.phone}>
+    <div className={wide ? s.wide : s.phone}>
       <div className={s.kscroll}>
         <header className={s.chrome}>
           <div className={s.hdr}>
@@ -49,7 +51,7 @@ export function KitchenScreen() {
             {STATIONS.map((n) => <Pill key={n} name={n} count={kitchen.toMake(all, n)} on={filter === n} onPick={() => { k.filterKitchen(n); }} />)}
           </div>
         </header>
-        <main className={guard ? [s.klist, s.guard].join(' ') : s.klist} aria-busy={guard || undefined}>
+        <main className={[s.klist, wide ? s.kgrid : '', guard ? s.guard : ''].filter(Boolean).join(' ')} aria-busy={guard || undefined}>
           {shown.length === 0 ? <p className={s.empty}>Nothing to make right now</p> : null}
           {shown.map(({ o, gone }, i) => <LeavingCard key={o.id} why={gone} o={o} station={filter}><KitchenCard o={o} station={filter} only={filter !== null} fresh={fresh.has(o.id)} hint={i === 0 && !gone && !list.some((x) => x.priority)} /></LeavingCard>)}
         </main>

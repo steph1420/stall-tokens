@@ -76,3 +76,12 @@
 .shTot { font-weight: 700; padding-top: 0.625rem; }
 .shBtns { display: grid; grid-template-columns: 1fr 1fr; gap: 0.625rem; margin-top: 1rem; }
 .shCancel { min-height: var(--dl-hit-comfortable); border-radius: var(--dl-radius-md); font-size: 0.9375rem; font-weight: 600; color: var(--dl-stall-danger-text); background: color-mix(in srgb, var(--dl-color-danger) 12%, transparent); }
+
+/* P3b (D-P3B-2): tablet list of open orders beside the order card. */
+.olist { flex: 1; min-height: 0; overflow-y: auto; margin: 0; padding: 0.75rem 0.75rem 1rem 1rem; list-style: none; display: flex; flex-direction: column; gap: 0.5rem; }
+.orow { width: 100%; min-height: 4rem; padding: 0.5rem 0.875rem; display: flex; align-items: center; gap: 0.875rem; text-align: left; border-radius: var(--dl-radius-lg); background: var(--dl-color-surface); box-shadow: inset 0 0 0 var(--dl-stall-hair) var(--dl-color-hairline); }
+.orowOn { composes: orow; background: color-mix(in srgb, var(--dl-color-accent) 12%, var(--dl-color-surface-solid)); box-shadow: inset 0 0 0 var(--dl-stall-hair-2) var(--dl-color-accent); }
+.otok { flex: none; font-size: 1.5rem; font-weight: var(--dl-stall-num-weight); letter-spacing: -0.03em; font-variant-numeric: tabular-nums; color: var(--dl-color-text-display); }
+.omid { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 0.125rem; }
+.omid b { font-size: 1rem; font-weight: 600; color: var(--dl-color-text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.omid small { font-size: 0.8125rem; color: var(--dl-color-text-muted); }
