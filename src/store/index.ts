@@ -32,7 +32,7 @@ export * as stock from './rules/stock';
 export * as amounts from './rules/amounts';
 export * as history from './rules/history';
 export * as closing from './rules/close';
-export type { Extra } from './close';
+export { extraOn, type Extra } from './close';
 export type { Split } from './rules/settle';
 export * as kitchen from './rules/kitchen';
 export type { Folded } from './fold/state';

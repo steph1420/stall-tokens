@@ -3,6 +3,9 @@ All notable changes to Stall Tokens. SemVer. Times IST.
 
 ## [Unreleased]
 
+### Extras on by default (Q-P4-EXTRAS-ON A), 17 Nov 2026
+- Close the day and History search are on for every phone, including ones with saved settings that never touched the toggle. A phone that explicitly turned one off stays off. The switches stay in Settings › Extras.
+
 ### P4 follow-up — Stock at large text, 17 Nov 2026
 - On a phone at 200 % text, Stock names and "Not counted" no longer run off the row. Categories become a wrapping chip row, and the count sits under the name when the line is tight. The size e2e now fails (instead of a false pass) if anything is off-screen.
 

@@ -1,11 +1,11 @@
 // F-64 History (Q-HISTORY-1 A, FEATURES §17; 21-polish2/history.html look): one screen, Orders · Money. Per day, newest first.
 // Orders lists every sent order (W-08) with its padded token (W-18) and one plain tag (Unpaid / Paid / Refunded / Refund due /
 // Cancelled / Written off; W-21), plus "Edited". Search by token, name or item when the shared History search switch is on
-// (FEATURES §0.2, default off). Each day header has Notes › (F-67). Money keeps the entries list (Spent / Received, Hold to void).
+// (FEATURES §0.2, on by default; Q-P4-EXTRAS-ON A). Each day header has Notes › (F-67). Money keeps the entries list (Spent / Received, Hold to void).
 import { useState } from 'react';
 import { CONFIG } from '../../config';
 import { formatInr, type Entry, type Order } from '../../contract';
-import { bill, closing, formatToken, history, istClock, useApp } from '../../store';
+import { bill, closing, extraOn, formatToken, history, istClock, useApp } from '../../store';
 import { Money } from '../kit/Money';
 import { DayNotesSheet } from './DayNotesSheet';
 import { EntrySheet, OrderHistorySheet } from './HistorySheets';
@@ -51,7 +51,7 @@ function DayHead({ dayId, title, onNotes }: { dayId: string; title: string; onNo
 
 export function HistoryScreen() {
   const f = useApp((x) => x.folded);
-  const searchOn = f.settings[CONFIG.extras.historySearch] === '1';
+  const searchOn = extraOn(f.settings, 'historySearch');
   const [seg, setSeg] = useState<Seg>('orders');
   const [q, setQ] = useState('');
   const [pickO, setPickO] = useState<string | null>(null);

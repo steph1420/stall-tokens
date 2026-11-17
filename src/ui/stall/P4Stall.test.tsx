@@ -37,18 +37,19 @@ async function setup(screenId: StallScreen) {
 }
 
 describe('History (F-64, F-67)', () => {
-  it('shows every sent order with its tag; search appears only when switched on', async () => {
+  it('shows every sent order with its tag; search is on by default and hides when switched off', async () => {
     const { s, again } = await setup('history');
     expect(screen.getByText('#001')).toBeTruthy();
     expect(screen.getByText('Paid cash')).toBeTruthy();
     expect(screen.getByText('Unpaid ₹25')).toBeTruthy();
-    expect(screen.queryByRole('searchbox')).toBeNull();
-    act(() => { s().close.setExtra('historySearch', true); }); again();
     fireEvent.change(screen.getByRole('searchbox', { name: 'Search orders' }), { target: { value: 'vada' } });
     expect(screen.queryByText('#001')).toBeNull();
     expect(screen.getByText('#002')).toBeTruthy();
     fireEvent.change(screen.getByRole('searchbox', { name: 'Search orders' }), { target: { value: '#9' } });
     expect(screen.getByText('No order matches that.')).toBeTruthy();
+    act(() => { s().close.setExtra('historySearch', false); }); again();
+    expect(screen.queryByRole('searchbox')).toBeNull();
+    expect(screen.getByText('#001')).toBeTruthy();
   });
   it('the unpaid row offers Take payment; Money tab lists entries; Notes › saves a day note', async () => {
     const { s } = await setup('history');
@@ -94,10 +95,14 @@ describe('Close the day (F-66)', () => {
 });
 
 describe('Settings Extras, Money tile, Stock rail (F-65, F-68)', () => {
-  it('Extras switches flip the shared settings', async () => {
+  it('Extras switches start on and write an explicit off', async () => {
     const { s } = await setup('settings');
-    fireEvent.click(screen.getByRole('switch', { name: /Close the day/ }));
-    expect(s().folded.settings[CONFIG.extras.closeDay]).toBe('1');
+    const sw = screen.getByRole('switch', { name: /Close the day/ });
+    expect(sw.getAttribute('aria-checked')).toBe('true');
+    expect(s().folded.settings[CONFIG.extras.closeDay]).toBeUndefined();
+    fireEvent.click(sw);
+    expect(s().folded.settings[CONFIG.extras.closeDay]).toBe('0');
+    expect(screen.getByRole('switch', { name: /Close the day/ }).getAttribute('aria-checked')).toBe('false');
   });
   it('Money Unpaid tile opens the Unpaid tab', async () => {
     const { s } = await setup('money');

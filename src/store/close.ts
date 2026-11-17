@@ -6,6 +6,8 @@ import type { Core, Log } from './core';
 import type { Skippable } from './rules/close';
 
 export type Extra = keyof typeof CONFIG.extras;
+/** Q-P4-EXTRAS-ON A: on unless this phone has explicitly stored '0'. A missing key (never touched) is on. */
+export const extraOn = (settings: Readonly<Record<string, string>>, extra: Extra): boolean => settings[CONFIG.extras[extra]] !== '0';
 
 export function closeActions(core: Core, log: Log, lockWithSplit: () => boolean) {
   const st = () => core.get();
@@ -29,7 +31,7 @@ export function closeActions(core: Core, log: Log, lockWithSplit: () => boolean)
       log.dispatch('day.lock', { dayId, locked: true, split: {} });
       return true;
     },
-    /** FEATURES §0.2: the top-4 gaps are shared switches, off until Steve turns them on. */
+    /** FEATURES §0.2 / Q-P4-EXTRAS-ON A: shared switches; writing sets an explicit on or off. */
     setExtra(extra: Extra, on: boolean) { log.dispatch('setting.set', { key: CONFIG.extras[extra], value: on ? '1' : '0' }); },
   };
 }

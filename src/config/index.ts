@@ -72,7 +72,7 @@ export const CONFIG = Object.freeze({
   // P2 menu: the search and sort row shows once the menu has more items than this (D-MENU-1).
   menu: { searchFrom: 8 },
   // F-66 / F-67 P4 Close the day and Day notes (FEATURES §21-22): top sellers listed in the summary; quick note chips.
-  // Q-SPLIT top-4 gaps ship behind shared switches that are off until Steve turns them on (FEATURES §0.2).
+  // Q-P4-EXTRAS-ON A: Close the day and History search are shared switches, on by default (FEATURES §0.2).
   close: { topItems: 5, noteTags: ['Weather', 'Crowd', 'Sold out early', 'Issue', 'Idea'] },
   extras: { closeDay: 'extra:closeDay', historySearch: 'extra:historySearch' },
   handling: { leaseMs: 90_000, checkMs: 10_000, hiddenReleaseMs: 30_000, switchGraceMs: 5_000, actionToastMs: 8_000 },
