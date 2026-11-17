@@ -162,7 +162,9 @@ for (const [label, w, h, theme, mode] of SIZES.filter((v) => !process.env.ONLY |
       if (mode === 'text200') { await p.addStyleTag({ content: 'html{font-size:200% !important}' }); await p.waitForTimeout(250); }
       const m = await measure(p);
       await p.screenshot({ path: `${out}/p4-size-${label}-${theme}-${n}.png` });
-      return !m.hscroll && m.off.length === 0 && m.small.length === 0 ? 'ok' : `hscroll ${String(m.hscroll)} off [${m.off.join(', ')}] small [${m.small.join(', ')}]`;
+      const detail = `hscroll ${String(m.hscroll)} off [${m.off.join(', ')}] small [${m.small.join(', ')}]`;
+      if (m.hscroll || m.off.length || m.small.length) throw new Error(detail);
+      return 'ok';
     });
   }
   await ctx.close();
