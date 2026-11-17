@@ -71,7 +71,7 @@ describe('counter flow (F-06..F-18)', () => {
     const id = seedMenu(s);
     for (let i = 0; i < 6; i++) s().counter.addItem(id.coffee ?? ''); // ₹180
     const base = { upiPayeeId: null, waivedBy: 'S', waivedNote: '', cashGiven: 0, notes: {} };
-    expect(s().counter.pay({ ...base, cash: 10000, upi: 7000, tip: 0, waived: 0 })).toBe('Waived amount does not match');
+    expect(s().counter.pay({ ...base, cash: 10000, upi: 7000, tip: 0, waived: 0 })).toBe('Cash and UPI must add up to the amount');
     expect(s().counter.pay({ ...base, cash: 10000, upi: 9000, tip: 0, waived: 0 })).toBe('More than the amount to collect');
     expect(s().counter.pay({ ...base, cash: 10000, upi: 10000, tip: 2000, waived: 0 })).toBeNull();
     expect(bill.tips(cur(s))).toBe(2000);

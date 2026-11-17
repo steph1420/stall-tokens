@@ -247,7 +247,7 @@ function flowActions(x: Ctx) {
       if (!o) return 'No order';
       const bill = due(o);
       const tip = Math.max(0, Math.trunc(p.tip));
-      const check = checkPayment(p.cash, p.upi, bill + tip, tip);
+      const check = checkPayment(p.cash, p.upi, bill + tip, tip, p.waived);
       if (!check.ok) return check.reason;
       if (Math.abs(check.gap - p.waived) > 0) return 'Waived amount does not match';
       if (o.lines.every((l) => l.qty === 0)) return 'No items';
