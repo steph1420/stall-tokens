@@ -77,7 +77,7 @@ function navActions(x: Ctx) {
   const self = {
     /** + New order. W-07/W-14: an empty current draft is reused, so taps never burn tokens or strand drafts. */
     newOrder(): string {
-      if (askDay(x)) { ui({ sheet: { kind: 'newDay' } }); return ''; }
+      if (askDay(x)) { ui({ sheet: { kind: 'newDay' }, pendingItem: '' }); return ''; }
       const cur = current();
       if (cur && empty(cur) && cur.dayId === currentDay()) {
         core.set((s) => ({ ui: { ...s.ui, orderId: cur.id, counterTab: 'new', pages: { ...s.ui.pages, [cur.id]: 'menu' } } }));

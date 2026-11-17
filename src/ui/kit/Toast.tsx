@@ -4,17 +4,31 @@ import { CONFIG } from '../../config';
 import { useApp } from '../../store';
 import s from './kit.module.css';
 
+/** A toast with a button (s127 "Open", s122 "Undo") stays longer (CONFIG.handling.actionToastMs). */
 export function Toast() {
   const toast = useApp((st) => st.ui.toast);
+  const handling = useApp((st) => st.handling);
+  const refund = useApp((st) => st.refund);
   const [shown, setShown] = useState<number | null>(null);
   useEffect(() => {
     if (!toast) return undefined;
     setShown(toast.id);
-    const t = setTimeout(() => { setShown(null); }, CONFIG.timings.toastMs);
+    const t = setTimeout(() => { setShown(null); }, toast.action ? CONFIG.handling.actionToastMs : CONFIG.timings.toastMs);
     return () => { clearTimeout(t); };
   }, [toast]);
   if (!toast || shown !== toast.id) return null;
-  return <div className={s.toast} role="status">{toast.text}</div>;
+  const a = toast.action;
+  const run = () => {
+    setShown(null);
+    if (a?.run === 'open') handling.open(a.orderId);
+    else if (a?.run === 'undoRefund') refund.undo(a.orderId, a.refundId);
+  };
+  return (
+    <div className={a ? s.toastAct : s.toast} role="status">
+      <span>{toast.text}</span>
+      {a ? <button type="button" className={s.toastBtn} onClick={run}>{a.label}</button> : null}
+    </div>
+  );
 }
 
 export function SaveBanner() {

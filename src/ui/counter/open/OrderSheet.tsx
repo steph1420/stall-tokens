@@ -47,6 +47,7 @@ function Body({ o }: { o: Order }) {
       <div className={s.shRow}><span>Note</span><span className={s.shFaint}>{o.note || '—'}</span></div>
       <div className={s.shBtns}>
         <button type="button" className={kit.quiet} onClick={() => { a.editInBilling(o.id); }}>Edit in Billing</button>
+        <button type="button" className={kit.quiet} onClick={() => { close({ kind: 'slip', orderId: o.id }); }}>Print token</button>
         <button type="button" className={s.shCancel} onClick={() => { close({ kind: 'cancel', orderId: o.id }); }}>Cancel order</button>
       </div>
     </Sheet>

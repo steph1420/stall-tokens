@@ -18,7 +18,7 @@ export function StallNav({ className, onGo }: { className?: string | undefined; 
     <ul className={className ?? kit.list} aria-label="Stall">
       {STALL_SCREENS.map((x) => (
         <li key={x.id}><button type="button" className={kit.listRow} onClick={() => { onGo?.(); open(x.id); }}>
-          <span className={kit.grow}>{x.label}</span><small>{x.hint}</small></button></li>
+          <span className={kit.navLab}>{x.label}</span><small className={kit.navHint}>{x.hint}</small></button></li>
       ))}
     </ul>
   );

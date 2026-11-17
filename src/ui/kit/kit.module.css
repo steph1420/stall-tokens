@@ -27,6 +27,19 @@
   box-shadow: var(--dl-stall-pop), inset 0 0 0 var(--dl-stall-hair) var(--dl-color-hairline);
   font-size: 0.875rem; text-align: center;
 }
+.toastAct { composes: toast; display: flex; align-items: center; gap: 0.75rem; padding: 0.25rem 0.25rem 0.25rem 1rem; text-align: left; width: max-content; }
+.toastBtn {
+  flex: none; min-height: var(--dl-hit-min); min-width: var(--dl-hit-min); padding: 0 1rem; border-radius: var(--dl-radius-pill);
+  font-weight: 700; color: var(--dl-stall-on-cta); background: var(--dl-stall-cta);
+}
+/* P2 HoldBar (s121): a full-width press-and-hold bar that fills left to right; a short tap only hints. */
+.holdBar {
+  position: relative; overflow: hidden; width: 100%; min-height: var(--dl-hit-stage); padding: 0.5rem 1rem; border-radius: var(--dl-radius-md);
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0.125rem; text-align: center;
+  font-weight: 700; color: var(--dl-stall-warn-text); background: var(--dl-chip-warning-bg); box-shadow: inset 0 0 0 var(--dl-stall-hair) var(--dl-chip-warning-border);
+}
+.holdBar small { font-weight: 500; font-size: 0.8125rem; opacity: 0.85; }
+.holdBar > span:not(.holdFill), .holdBar > small { position: relative; }
 .banner {
   position: fixed; left: 0.75rem; right: 0.75rem; top: calc(0.5rem + env(safe-area-inset-top)); z-index: var(--dl-z-toast);
   display: flex; align-items: center; gap: 0.75rem; padding: 0.625rem 0.875rem; border-radius: var(--dl-radius-md);
@@ -70,20 +83,23 @@
   color: var(--dl-color-text); background: var(--dl-color-surface); box-shadow: inset 0 0 0 var(--dl-stall-hair) var(--dl-color-hairline);
 }
 .choiceOn { composes: choice; color: var(--dl-color-text-display); background: color-mix(in srgb, var(--dl-color-accent) 16%, var(--dl-color-surface)); box-shadow: inset 0 0 0 var(--dl-stall-hair) color-mix(in srgb, var(--dl-color-accent) 50%, transparent); }
-.list { display: flex; flex-direction: column; margin-bottom: 0.75rem; }
+.list { display: flex; flex-direction: column; margin: 0 0 0.75rem; padding: 0; list-style: none; }
 .listRow {
   display: flex; align-items: center; gap: 0.75rem; min-height: 3.25rem; padding: 0 0.25rem; text-align: left; width: 100%;
   border-bottom: var(--dl-stall-hair) solid color-mix(in srgb, var(--dl-color-hairline) 70%, transparent); font-size: 1rem;
 }
-.listRow:last-child { border-bottom: 0; }
+li:last-child > .listRow, .listRow:last-child { border-bottom: 0; }
 .listRow small { color: var(--dl-color-text-faint); font-size: 0.8125rem; }
 .listVal { margin-left: auto; color: var(--dl-color-text-muted); font-size: 0.9375rem; }
 
 .swatches { display: flex; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 0.875rem; }
-.swatch { width: var(--dl-hit-min); height: var(--dl-hit-min); border-radius: 50%; background: var(--c); box-shadow: inset 0 0 0 var(--dl-stall-hair) var(--dl-color-hairline); }
-.swatchOn { composes: swatch; box-shadow: 0 0 0 var(--dl-stall-hair-2) var(--dl-color-bg), 0 0 0 calc(var(--dl-stall-hair-2) * 2) var(--c); }
+.swatch { width: var(--dl-hit-min); height: var(--dl-hit-min); border-radius: 50%; background: var(--item-accent); box-shadow: inset 0 0 0 var(--dl-stall-hair) var(--dl-color-hairline); }
+.swatchOn { composes: swatch; box-shadow: 0 0 0 var(--dl-stall-hair-2) var(--dl-color-bg), 0 0 0 calc(var(--dl-stall-hair-2) * 2) var(--item-accent); }
 .stockRow { display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; margin: 0.75rem 0 1rem; }
 .stepBig { width: 4rem; height: 4rem; border-radius: var(--dl-radius-md); font-size: 2rem; font-weight: 300; color: var(--dl-color-text); background: var(--dl-color-surface); box-shadow: inset 0 0 0 var(--dl-stall-hair) var(--dl-color-hairline); }
 .stepBig:disabled { opacity: 0.4; }
 .stockNum { flex: 1; text-align: center; font-size: 1.75rem; font-weight: var(--dl-stall-num-weight); color: var(--dl-color-text-display); font-variant-numeric: tabular-nums; }
 .amountsEdit { display: flex; flex-direction: column; gap: 0.5rem; padding: 0.625rem 0; }
+/* W-04: Stall list labels stay on one line; the hint gives way (ellipsis). */
+.navLab { flex: none; white-space: nowrap; }
+.navHint { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--dl-color-text-muted); }

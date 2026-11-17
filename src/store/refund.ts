@@ -61,10 +61,14 @@ export function refundActions(core: Core, log: Log) {
       const o = st().folded.orders[orderId];
       const cash = o ? o.payments.reduce((t, p) => t + p.cash, 0) : 0;
       const upi = o ? o.payments.reduce((t, p) => t + p.upi, 0) : 0;
-      const source: PaySource = upi > cash ? 'upi' : 'cash';
-      const r = self.refund({ orderId, ask: { kind: 'whole' }, source, reason: '', restock: false });
+      return self.offer({ orderId, ask: { kind: 'whole' }, source: upi > cash ? 'upi' : 'cash', reason: '', restock: false });
+    },
+    /** Refund, then a calm toast "Refunded ₹X · Cash" with Undo (or the reason it could not, in plain words). */
+    offer(req: RefundRequest): RefundResult {
+      const r = self.refund(req);
       if (!r.ok) { toast(r.reason); return r; }
-      core.set((s) => ({ ui: { ...s.ui, toast: { text: `Refunded ${formatInr(r.amount)} · ${source === 'upi' ? 'UPI' : 'Cash'}`, id: (s.ui.toast?.id ?? 0) + 1, action: { label: 'Undo', run: 'undoRefund', orderId, refundId: r.refundId } } } }));
+      const how = req.source === 'upi' ? 'UPI' : 'Cash';
+      core.set((s) => ({ ui: { ...s.ui, toast: { text: `Refunded ${formatInr(r.amount)} · ${how}`, id: (s.ui.toast?.id ?? 0) + 1, action: { label: 'Undo', run: 'undoRefund', orderId: req.orderId, refundId: r.refundId } } } }));
       return r;
     },
     /** Undo (5 s toast): the refund stays on record, voided; stock it put back is taken out again. */

@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { CONFIG } from '../../config';
 import type { Order } from '../../contract';
 import { bill, formatToken, useApp } from '../../store';
+import { HoldButton } from '../kit/HoldButton';
 import { Money } from '../kit/Money';
 import { Sheet } from '../kit/Sheet';
 import kit from '../kit/kit.module.css';
@@ -30,7 +31,11 @@ function CancelBody({ o }: { o: Order }) {
       </label>
       <div className={kit.row}>
         <button type="button" className={[kit.quiet, kit.grow].join(' ')} onClick={() => { close(null); }}>Keep order</button>
-        <button type="button" className={[kit.danger, kit.grow].join(' ')} onClick={() => { c.cancelOrder(o.id, reason); close(null); }}>Cancel order</button>
+        {paid > 0 ? (
+          // W-21: cancelling a paid order is press-and-hold (money is involved); unpaid stays one tap.
+          <HoldButton className={[kit.danger, kit.grow].join(' ')} label="Cancel order" onConfirm={() => { c.cancelOrder(o.id, reason); close(null); }}
+            onHint={() => { c.toast('Press and hold to cancel a paid order'); }}>Hold to cancel</HoldButton>
+        ) : <button type="button" className={[kit.danger, kit.grow].join(' ')} onClick={() => { c.cancelOrder(o.id, reason); close(null); }}>Cancel order</button>}
       </div>
     </Sheet>
   );

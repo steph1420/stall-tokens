@@ -46,3 +46,7 @@ export function openOrders(orders: readonly Order[]): Order[] {
 }
 /** The Unpaid tab (s120, Q-UNPAID-ROW B): open orders with money still to collect, oldest first. */
 export const unpaidOrders = (orders: readonly Order[]): Order[] => orders.filter(unpaid);
+
+/** s123 Drafts: unsent, unpaid orders with items, from every Counter (Q-DRAFT-SYNC). */
+export const draftOrders = (orders: readonly Order[]): Order[] =>
+  orders.filter((o) => !o.deleted && !o.cancel && !o.sent && o.payments.length === 0 && o.lines.some((l) => l.qty > 0));

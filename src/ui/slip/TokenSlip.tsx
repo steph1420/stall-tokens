@@ -56,7 +56,7 @@ export function TokenSlipPrint({ o, onDone }: { o: Order; onDone: () => void }) 
   useAutoPrint(paper, onDone);
   const viaBt = () => {
     setMsg('Sending to the printer…');
-    bluetoothPrint(escposSlip(t)).then(() => { onDone(); }, (e: unknown) => { setMsg(`${e instanceof Error ? e.message : 'Printer did not answer'} · use Print (58 mm)`); });
+    bluetoothPrint(escposSlip(t)).then(() => { onDone(); }, (e: unknown) => { console.warn('bluetooth print failed', e); setMsg('The printer did not answer. Check it is on and near, or use Print (58 mm).'); });
   };
   return (
     <div className={s.preview} role="dialog" aria-label="Print token">

@@ -1,7 +1,9 @@
 // F-06 Menu (20-polish/menu.html p2): price fixed under the name, stepper zone at the bottom, equal heights.
 // Tap = +1, press-and-hold = stock panel (F-08), pencil = item note. Stock badge from Q-STOCK-SET.
+import { useState } from 'react';
+import { CONFIG } from '../../../config';
 import type { Item } from '../../../contract';
-import { bill, useApp } from '../../../store';
+import { bill, useApp, type Folded } from '../../../store';
 import { Icon } from '../../kit/Icon';
 import { usePress } from '../../kit/hold';
 import { Money } from '../../kit/Money';
@@ -49,15 +51,40 @@ function Card({ it }: { it: Item }) {
   );
 }
 
+type Sort = 'menu' | 'az' | 'sold';
+const matches = (i: Item, q: string) => { const t = q.trim().toLowerCase(); return !t || i.name.toLowerCase().includes(t) || i.category.toLowerCase().includes(t); };
+/** P2 menu sort: the stall's own order, A to Z, or most sold on the current day (the count is kept per item id). */
+function sortItems(items: Item[], sort: Sort, f: Folded): Item[] {
+  const byMenu = (a: Item, b: Item) => a.order - b.order || a.name.localeCompare(b.name);
+  if (sort === 'az') return [...items].sort((a, b) => a.name.localeCompare(b.name));
+  if (sort === 'menu') return [...items].sort(byMenu);
+  const day = f.days[f.days.length - 1]?.id;
+  const sold = new Map<string, number>();
+  for (const o of Object.values(f.orders)) if (o.dayId === day && !o.deleted && !o.cancel) for (const l of o.lines) sold.set(l.itemId, (sold.get(l.itemId) ?? 0) + l.qty);
+  return [...items].sort((a, b) => (sold.get(b.id) ?? 0) - (sold.get(a.id) ?? 0) || byMenu(a, b));
+}
+
 export function MenuScreen() {
   const folded = useApp((st) => st.folded);
   const order = useApp((st) => (st.ui.orderId ? st.folded.orders[st.ui.orderId] : undefined));
   const c = useApp((st) => st.counter);
   const openSheet = useApp((st) => st.openSheet);
-  const items = Object.values(folded.items).filter((i) => !i.removed && !i.supply).sort((a, b) => a.order - b.order || a.name.localeCompare(b.name));
+  const [q, setQ] = useState('');
+  const [sort, setSort] = useState<Sort>('menu');
+  const all = Object.values(folded.items).filter((i) => !i.removed && !i.supply);
+  const items = sortItems(all.filter((i) => matches(i, q)), sort, folded);
   const count = order?.lines.reduce((n, l) => n + l.qty, 0) ?? 0;
   return (
     <>
+      {all.length > CONFIG.menu.searchFrom ? (
+        <div className={s.tools}>
+          <input className={s.search} type="search" value={q} placeholder="Find an item" aria-label="Find an item" onChange={(e) => { setQ(e.target.value); }} />
+          <select className={s.sort} value={sort} aria-label="Sort the menu" onChange={(e) => { setSort(e.target.value as Sort); }}>
+            <option value="menu">Menu order</option><option value="az">A to Z</option><option value="sold">Most sold today</option>
+          </select>
+        </div>
+      ) : null}
+      {items.length === 0 ? <p className={s.none}>{`Nothing called “${q.trim()}”.`}</p> : null}
       <main className={s.grid}>
         {items.map((it) => <Card key={it.id} it={it} />)}
         <button type="button" className={s.add} onClick={() => { openSheet({ kind: 'item', itemId: null }); }}>

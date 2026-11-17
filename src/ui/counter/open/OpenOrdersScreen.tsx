@@ -114,12 +114,13 @@ function Cards({ o }: { o: Order }) {
 function BigCard({ o, index, count }: { o: Order; index: number; count: number }) {
   const look = useApp((st) => st.prefs.openLook);
   const setPrefs = useApp((st) => st.setPrefs);
+  const openSheet = useApp((st) => st.openSheet);
   return (
     <article className={s.big} aria-label={`Order ${String(o.token)}`}>
       <Head o={o} index={index} count={count} />
       <div className={s.div} />
       <div className={s.lookRow}>
-        <span className={s.lk}>Items</span>
+        <button type="button" className={s.ov} onClick={() => { openSheet({ kind: 'openOverview' }); }}>Overview</button>
         <div className={s.looks} role="radiogroup" aria-label="Look">
           {(['lines', 'cards'] as const).map((x) => (
             <button type="button" role="radio" key={x} aria-checked={look === x} className={look === x ? s.lookOn : s.look} onClick={() => { setPrefs({ openLook: x }); }}>{x === 'lines' ? 'Lines' : 'Cards'}</button>
@@ -143,18 +144,19 @@ export function OpenOrdersScreen() {
   const gone = useLeaving(live ? [live] : [], folded.orders);
   const left = gone.find((g) => !live || g.o.id !== live.id);
   const o = left?.o ?? live;
+  // W-09: a second tap inside the leaving-veil time is ignored, so a double tap never hands over the next order too.
+  const lock = useRef(0);
+  const handover = (id: string) => { const t = Date.now(); if (t < lock.current) return; lock.current = t + CONFIG.timings.tapLockMs; a.handOverAll(id); };
   return (
     <>
       <main className={s.body}>
-        <div className={s.band}><span className={s.bandT}>Counter · All open orders</span>
-          <button type="button" className={s.ov} onClick={() => { openSheet({ kind: 'openOverview' }); }}>Overview</button></div>
         {o ? <div className={s.leaveR}><LeavingCard key={o.id} why={left?.why}><BigCard o={o} index={i} count={Math.max(list.length, 1)} /></LeavingCard></div>
           : <p className={s.empty}>No open orders. Orders sent to the kitchen show here.</p>}
       </main>
       {live && !left ? (
         <div className={s.bar}>
           <button type="button" className={s.cancel} onClick={() => { openSheet({ kind: 'cancel', orderId: live.id }); }}>Cancel order</button>
-          <button type="button" className={s.handover} onClick={() => { a.handOverAll(live.id); }}>Handover</button>
+          <button type="button" className={s.handover} onClick={() => { handover(live.id); }}>Handover</button>
         </div>
       ) : null}
       {sheet?.kind === 'orderSheet' ? <OrderSheet orderId={sheet.orderId} /> : null}

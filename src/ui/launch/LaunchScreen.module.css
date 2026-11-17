@@ -25,4 +25,4 @@
 }
 .icon { width: 1.75rem; height: 1.75rem; color: var(--c); display: block; }
 .icon svg { width: 100%; height: 100%; display: block; }
-.stall { display: flex; flex-direction: column; border-radius: var(--dl-radius-lg); padding: 0 0.75rem; background: color-mix(in srgb, var(--dl-color-surface) 70%, transparent); }
+.stall { display: flex; flex-direction: column; list-style: none; margin: 0; border-radius: var(--dl-radius-lg); padding: 0 0.75rem; background: color-mix(in srgb, var(--dl-color-surface) 70%, transparent); }

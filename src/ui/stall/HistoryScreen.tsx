@@ -3,7 +3,8 @@
 // Entry rows show "Paid by …" and −amount for Spent; their sheet has Hold to void.
 import { useState } from 'react';
 import { formatInr, type Entry, type Order } from '../../contract';
-import { bill, istClock, useApp } from '../../store';
+import { CONFIG } from '../../config';
+import { bill, formatToken, istClock, useApp } from '../../store';
 import { HoldButton } from '../kit/HoldButton';
 import { Money } from '../kit/Money';
 import { Sheet } from '../kit/Sheet';
@@ -20,8 +21,8 @@ function OrderSheet({ o, onClose }: { o: Order; onClose: () => void }) {
   const a = useApp((x) => x);
   const refund = () => { a.go('counter'); a.open.editInBilling(o.id); a.openSheet({ kind: 'refund' }); };
   return (
-    <Sheet label={`Order ${String(o.token)}`} onClose={onClose}>
-      <p className={s.hsT}>{`Order #${String(o.token)} · ${formatInr(bill.total(o))}`}</p>
+    <Sheet label={`Order ${formatToken(o.token, CONFIG.tokens.pad)}`} onClose={onClose}>
+      <p className={s.hsT}>{`Order ${formatToken(o.token, CONFIG.tokens.pad)} · ${formatInr(bill.total(o))}`}</p>
       <p className={s.hsS}>{o.lines.map((l) => (l.qty > 1 ? `${l.name} ×${String(l.qty)}` : l.name)).join(', ')}</p>
       {o.cancel ? <p className={s.hsS}>{`Cancelled${o.cancel.reason ? ` · ${o.cancel.reason}` : ''}`}</p> : (
         <>
@@ -64,7 +65,7 @@ export function HistoryScreen() {
           <h2 className={s.hdayH}>{d.id === today ? 'Today' : d.label}</h2>
           {rows.map((r) => (r.kind === 'order' ? (
             <button type="button" key={r.o.id} className={[s.hrow, r.o.cancel ? s.hdim : ''].join(' ')} onClick={() => { setPick(r); }}>
-              <span className={s.rowMain}><span className={s.hT}>{`Order #${String(r.o.token)}`}{r.o.cancel ? <em className={s.tagR}>Cancelled</em> : r.o.refunds.length ? <em className={s.tagW}>Refunded</em> : r.o.revision > 0 ? <em className={s.tagI}>Edited</em> : null}</span>
+              <span className={s.rowMain}><span className={s.hT}>{`Order ${formatToken(r.o.token, CONFIG.tokens.pad)}`}{r.o.cancel ? <em className={s.tagR}>Cancelled</em> : r.o.refunds.length ? <em className={s.tagW}>Refunded</em> : r.o.revision > 0 ? <em className={s.tagI}>Edited</em> : null}</span>
                 <span className={s.rowS}>{`${istClock(r.at)} · ${r.o.revision > 0 ? 'edited' : howPaid(r.o)}`}</span></span>
               <Money p={bill.paid(r.o)} className={r.o.refunds.length ? s.hAmtQ : s.hAmt} />
             </button>

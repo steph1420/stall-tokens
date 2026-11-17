@@ -28,7 +28,8 @@ async function setup() {
 describe('Open Orders', () => {
   it('marks a line ready, confirms a station Ready, and the header opens the order sheet', async () => {
     const { s, oid } = await setup();
-    expect(screen.getByText('Counter · All open orders')).toBeTruthy();
+    expect(screen.queryByText('Counter · All open orders')).toBeNull(); // W-01: band removed
+    expect(screen.getByRole('button', { name: 'Overview' })).toBeTruthy();
     expect(screen.getAllByRole('button', { name: /^Mark ready/ })).toHaveLength(2);
     fireEvent.click(screen.getByRole('button', { name: 'Mark ready: Tea' }));
     expect(screen.getByText('Marked by counter')).toBeTruthy();

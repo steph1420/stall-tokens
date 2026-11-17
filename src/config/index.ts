@@ -63,8 +63,12 @@ export const CONFIG = Object.freeze({
   // s127 take-over (Q-TAKE-LEASE B ★ 90 s, D-TAKE-1): a claim lapses when its phone is not heard from for leaseMs; a waiting
   // phone checks every checkMs; an app hidden for hiddenReleaseMs lets go of its order (Q-TAKE-WHEN A); leaving an order lets
   // go after switchGraceMs, so a quick tab flip writes nothing.
+  // s122 Refund sheet reason chips (plain words; the note field takes anything else).
+  refundReasons: ['Wrong item', 'Not happy', 'Took too long', 'Ran out'],
+  // P2 menu: the search and sort row shows once the menu has more items than this (D-MENU-1).
+  menu: { searchFrom: 8 },
   handling: { leaseMs: 90_000, checkMs: 10_000, hiddenReleaseMs: 30_000, switchGraceMs: 5_000, actionToastMs: 8_000 },
-  timings: { toastMs: 2600, fakeDelayMs: 120, clockTickMs: 30000, printDelayMs: 300, remindLaterMs: 3600000 },
+  timings: { tapLockMs: 900, toastMs: 2600, fakeDelayMs: 120, clockTickMs: 30000, printDelayMs: 300, remindLaterMs: 3600000 },
   // Open Orders header: dots up to this many orders, then "3 of 12" (Q-ORDERS-1).
   openDotsMax: 8,
   // swipePx: horizontal travel that turns a drag on the Station page into next / previous order (Q-STN-LOOK D).
