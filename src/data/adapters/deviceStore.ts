@@ -3,6 +3,16 @@ import { CONFIG } from '../../config';
 import type { DevicePrefs, DeviceStore } from '../types';
 
 export const PREFS_KEY = `${CONFIG.storage.prefix}.device`;
+/** This tab's own place (sessionStorage): a reload keeps the tab where it was, even when another tab on the same device is the Kitchen. */
+export const TAB_ROLE_KEY = `${CONFIG.storage.prefix}.tabRole`;
+const ROLE_RE = /^(counter|kitchen|station:\S{1,40})$/;
+
+function readTabRole(tab: Storage | null): string | null {
+  try {
+    const v = tab?.getItem(TAB_ROLE_KEY) ?? null;
+    return v !== null && (v === '' || ROLE_RE.test(v)) ? v : null;
+  } catch { return null; } // Blocked sessionStorage: fall back to the device's last place.
+}
 
 export const defaultPrefs = (makeId: () => string): DevicePrefs => ({
   deviceId: makeId(), theme: 'night', servingName: '', rangeIndex: 0, haptics: 'normal', autoPrep: true, stationLook: 'full', openLook: 'lines', passcode: '', passcodeOff: true, syncUrl: CONFIG.sync.bakedUrl, syncKey: CONFIG.sync.bakedKey, role: '',
@@ -29,14 +39,20 @@ function merge(base: DevicePrefs, raw: unknown): DevicePrefs {
     role: pick('role', (v) => typeof v === 'string' && (v === '' || /^(counter|kitchen|launch|station:\S{1,40})$/.test(v))),
     orderId: pick('orderId', (v) => typeof v === 'string' && v.length <= 80),
     page: pick('page', (v) => v === 'menu' || v === 'billing' || v === 'payment'),
-    lastRole: pick('lastRole', (v) => typeof v === 'string' && (v === '' || /^(counter|kitchen|station:\S{1,40})$/.test(v))),
+    lastRole: pick('lastRole', (v) => typeof v === 'string' && (v === '' || ROLE_RE.test(v))),
     kitchenText: pick('kitchenText', (v) => v === 'normal' || v === 'large' || v === 'xl'),
     quiet: pick('quiet', (v) => typeof v === 'boolean'),
   };
 }
 
-export function createDeviceStore(storage: Storage | null, makeId: () => string): DeviceStore {
+export function createDeviceStore(storage: Storage | null, makeId: () => string, tab: Storage | null = null): DeviceStore {
   let memory: DevicePrefs | null = null;
+  const saveDevice = (prefs: DevicePrefs) => {
+    try { storage?.setItem(PREFS_KEY, JSON.stringify(prefs)); } catch (e) {
+      // Private mode or full storage: prefs live in memory for this session; the op log is unaffected.
+      console.warn('device prefs not saved', e);
+    }
+  };
   return {
     read() {
       if (memory) return memory;
@@ -47,14 +63,19 @@ export function createDeviceStore(storage: Storage | null, makeId: () => string)
         raw = null;
       }
       memory = merge(defaultPrefs(makeId), raw);
-      this.write(memory);
+      const own = readTabRole(tab);
+      if (own === null) this.write(memory);
+      else {
+        saveDevice(memory); // the device's place stays as read; this tab keeps its own
+        memory = { ...memory, lastRole: own };
+      }
       return memory;
     },
     write(prefs) {
       memory = prefs;
-      try { storage?.setItem(PREFS_KEY, JSON.stringify(prefs)); } catch (e) {
-        // Private mode or full storage: prefs live in memory for this session; the op log is unaffected.
-        console.warn('device prefs not saved', e);
+      saveDevice(prefs);
+      try { tab?.setItem(TAB_ROLE_KEY, prefs.lastRole); } catch (e) {
+        console.warn('tab place not saved; the device place still works', e);
       }
     },
   };
