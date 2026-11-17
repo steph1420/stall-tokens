@@ -1,84 +1,90 @@
-// F-33 History (21-polish2/history.html): per day, newest first, paid orders and money entries. Order rows show IST time ·
-// how it was paid, Refunded / Edited / Cancelled tags; tap for a sheet with Edit (opens Billing), Refund and Hold to cancel order.
-// Entry rows show "Paid by …" and −amount for Spent; their sheet has Hold to void.
+// F-64 History (Q-HISTORY-1 A, FEATURES §17; 21-polish2/history.html look): one screen, Orders · Money. Per day, newest first.
+// Orders lists every sent order (W-08) with its padded token (W-18) and one plain tag (Unpaid / Paid / Refunded / Refund due /
+// Cancelled / Written off; W-21), plus "Edited". Search by token, name or item when the shared History search switch is on
+// (FEATURES §0.2, default off). Each day header has Notes › (F-67). Money keeps the entries list (Spent / Received, Hold to void).
 import { useState } from 'react';
-import { formatInr, type Entry, type Order } from '../../contract';
 import { CONFIG } from '../../config';
-import { bill, formatToken, istClock, useApp } from '../../store';
-import { HoldButton } from '../kit/HoldButton';
+import { formatInr, type Entry, type Order } from '../../contract';
+import { bill, closing, formatToken, history, istClock, useApp } from '../../store';
 import { Money } from '../kit/Money';
-import { Sheet } from '../kit/Sheet';
+import { DayNotesSheet } from './DayNotesSheet';
+import { EntrySheet, OrderHistorySheet } from './HistorySheets';
 import { StallPage } from './StallPage';
 import s from './Stall.module.css';
 
-type Row = { kind: 'order'; at: number; o: Order } | { kind: 'entry'; at: number; e: Entry };
-const howPaid = (o: Order) => {
-  const cash = o.payments.reduce((t, p) => t + p.cash, 0); const upi = o.payments.reduce((t, p) => t + p.upi, 0);
-  return cash && upi ? 'Mixed' : upi ? 'UPI' : cash ? 'Register' : 'Not paid';
-};
+type Seg = 'orders' | 'money';
+const TONE = { ok: s.tagOk, warn: s.tagW, danger: s.tagR, info: s.tagI } as const;
+const items = (o: Order) => o.lines.filter((l) => l.qty > 0).map((l) => (l.qty > 1 ? `${l.name} ×${String(l.qty)}` : l.name)).join(', ');
 
-function OrderSheet({ o, onClose }: { o: Order; onClose: () => void }) {
-  const a = useApp((x) => x);
-  const refund = () => { a.go('counter'); a.open.editInBilling(o.id); a.openSheet({ kind: 'refund' }); };
+function OrderRow({ o, onPick }: { o: Order; onPick: () => void }) {
+  const tag = history.historyTag(o);
   return (
-    <Sheet label={`Order ${formatToken(o.token, CONFIG.tokens.pad)}`} onClose={onClose}>
-      <p className={s.hsT}>{`Order ${formatToken(o.token, CONFIG.tokens.pad)} · ${formatInr(bill.total(o))}`}</p>
-      <p className={s.hsS}>{o.lines.map((l) => (l.qty > 1 ? `${l.name} ×${String(l.qty)}` : l.name)).join(', ')}</p>
-      {o.cancel ? <p className={s.hsS}>{`Cancelled${o.cancel.reason ? ` · ${o.cancel.reason}` : ''}`}</p> : (
-        <>
-          <div className={s.hsRow}>
-            <button type="button" className={s.hsBtn} onClick={() => { a.go('counter'); a.open.editInBilling(o.id); }}>Edit</button>
-            <button type="button" className={s.hsBtn} disabled={bill.due(o) >= 0} onClick={refund}>Refund</button>
-          </div>
-          <HoldButton label="Hold to cancel order" className={s.hsDanger} onConfirm={() => { a.counter.cancelOrder(o.id, 'From History'); onClose(); }}>Hold to cancel order</HoldButton>
-        </>
-      )}
-    </Sheet>
+    <button type="button" className={[s.hrow, o.cancel ? s.hdim : ''].join(' ')} onClick={onPick}>
+      <span className={s.rowMain}>
+        <span className={s.hT}><span>{formatToken(o.token, CONFIG.tokens.pad)}</span><em className={TONE[tag.tone]}>{tag.text}</em>{o.revision > 0 ? <em className={s.tagI}>Edited</em> : null}</span>
+        <span className={s.rowS}>{`${istClock(history.rowAt(o))} · ${items(o) || 'No items'}`}</span>
+      </span>
+      <Money p={bill.total(o)} className={o.cancel ? s.hAmtQ : s.hAmt} />
+    </button>
   );
 }
 
-function EntrySheet({ e, onClose }: { e: Entry; onClose: () => void }) {
-  const m = useApp((x) => x.money);
+function EntryRow({ e, who, onPick }: { e: Entry; who: string; onPick: () => void }) {
   return (
-    <Sheet label={e.label} onClose={onClose}>
-      <p className={s.hsT}>{`${e.label} · ${formatInr(e.amount)}`}</p>
-      <p className={s.hsS}>{`${e.dir === 'spent' ? 'Spent' : 'Received'} at ${istClock(e.at)}${e.note ? ` · ${e.note}` : ''}`}</p>
-      {e.voided === null ? <HoldButton label="Hold to void entry" className={s.hsDanger} onConfirm={() => { m.voidEntry(e.id, 'From History'); onClose(); }}>Hold to void entry</HoldButton> : null}
-    </Sheet>
+    <button type="button" className={[s.hrow, e.voided !== null ? s.hdim : ''].join(' ')} onClick={onPick}>
+      <span className={s.rowMain}><span className={s.hT}>{e.label}{e.voided !== null ? <em className={s.tagR}>Voided</em> : null}</span><span className={s.rowS}>{`${istClock(e.at)} · ${who}`}</span></span>
+      <span className={e.dir === 'spent' ? s.hNeg : s.hAmt}>{`${e.dir === 'spent' ? '−' : '+'}${formatInr(e.amount)}`}</span>
+    </button>
+  );
+}
+
+function DayHead({ dayId, title, onNotes }: { dayId: string; title: string; onNotes: () => void }) {
+  const rec = closing.closeRecord(useApp((x) => x.folded.records.day_note?.[dayId]));
+  const has = rec.text.trim() !== '' || rec.tags.length > 0;
+  return (
+    <div className={s.hdayRow}>
+      <h2 className={s.hdayH}>{title}</h2>
+      <button type="button" className={s.hNotes} aria-label={`Notes for ${title}`} onClick={onNotes}>{has ? 'Notes ✓ ›' : 'Notes ›'}</button>
+    </div>
   );
 }
 
 export function HistoryScreen() {
   const f = useApp((x) => x.folded);
-  const [pick, setPick] = useState<Row | null>(null);
+  const searchOn = f.settings[CONFIG.extras.historySearch] === '1';
+  const [seg, setSeg] = useState<Seg>('orders');
+  const [q, setQ] = useState('');
+  const [pickO, setPickO] = useState<string | null>(null);
+  const [pickE, setPickE] = useState<Entry | null>(null);
+  const [notes, setNotes] = useState<{ id: string; title: string } | null>(null);
   const who = (e: Entry) => { const p = e.parts.find((x) => x.source === 'person'); return e.parts.length > 1 ? 'Mixed' : p ? `Paid by ${f.people[p.personId ?? '']?.name ?? 'someone'}` : e.parts[0]?.source === 'upi' ? 'UPI' : 'Register'; };
   const today = f.days[f.days.length - 1]?.id;
-  const days = [...f.days].reverse().map((d) => ({ d, rows: [
-    ...Object.values(f.orders).filter((o) => !o.deleted && o.dayId === d.id && (o.payments.length > 0 || o.cancel)).map((o): Row => ({ kind: 'order', at: o.payments[0]?.at ?? o.createdAt, o })),
-    ...f.entries.filter((e) => e.dayId === d.id).map((e): Row => ({ kind: 'entry', at: e.at, e })),
-  ].sort((a, b) => b.at - a.at) })).filter((x) => x.rows.length);
+  const all = Object.values(f.orders);
+  const query = searchOn ? q : '';
+  const days = [...f.days].reverse().map((d) => ({
+    d, title: d.id === today ? 'Today' : d.label,
+    orders: history.historyOrders(all, d.id).filter((o) => history.matchOrder(o, query)).sort((a, b) => history.rowAt(b) - history.rowAt(a)),
+    entries: f.entries.filter((e) => e.dayId === d.id).sort((a, b) => b.at - a.at),
+  }));
+  const shown = days.filter((x) => (seg === 'orders' ? x.orders.length : x.entries.length) > 0);
+  const segBtn = (v: Seg, label: string) => <button type="button" role="tab" aria-selected={seg === v} className={seg === v ? s.hSegOn : s.hSegBtn} onClick={() => { setSeg(v); }}>{label}</button>;
+  const empty = query.trim() ? 'No order matches that.' : seg === 'orders' ? 'Nothing yet today. Orders show here once they go to the kitchen.' : 'Nothing spent or received yet.';
   return (
     <StallPage title="History">
-      {days.length === 0 ? <p className={s.empty}>Nothing yet. Paid orders and money entries show here.</p> : null}
-      {days.map(({ d, rows }) => (
+      <div className={s.hSeg} role="tablist" aria-label="Show">{segBtn('orders', 'Orders')}{segBtn('money', 'Money')}</div>
+      {searchOn && seg === 'orders' ? <input className={s.hSearch} type="search" aria-label="Search orders" placeholder="Token, name or item" value={q} onChange={(e) => { setQ(e.target.value); }} /> : null}
+      {shown.length === 0 ? <p className={s.empty}>{empty}</p> : null}
+      {shown.map(({ d, title, orders, entries }) => (
         <section key={d.id} className={s.hday}>
-          <h2 className={s.hdayH}>{d.id === today ? 'Today' : d.label}</h2>
-          {rows.map((r) => (r.kind === 'order' ? (
-            <button type="button" key={r.o.id} className={[s.hrow, r.o.cancel ? s.hdim : ''].join(' ')} onClick={() => { setPick(r); }}>
-              <span className={s.rowMain}><span className={s.hT}>{`Order ${formatToken(r.o.token, CONFIG.tokens.pad)}`}{r.o.cancel ? <em className={s.tagR}>Cancelled</em> : r.o.refunds.length ? <em className={s.tagW}>Refunded</em> : r.o.revision > 0 ? <em className={s.tagI}>Edited</em> : null}</span>
-                <span className={s.rowS}>{`${istClock(r.at)} · ${r.o.revision > 0 ? 'edited' : howPaid(r.o)}`}</span></span>
-              <Money p={bill.paid(r.o)} className={r.o.refunds.length ? s.hAmtQ : s.hAmt} />
-            </button>
-          ) : (
-            <button type="button" key={r.e.id} className={[s.hrow, r.e.voided !== null ? s.hdim : ''].join(' ')} onClick={() => { setPick(r); }}>
-              <span className={s.rowMain}><span className={s.hT}>{r.e.label}{r.e.voided !== null ? <em className={s.tagR}>Voided</em> : null}</span><span className={s.rowS}>{`${istClock(r.at)} · ${who(r.e)}`}</span></span>
-              <span className={r.e.dir === 'spent' ? s.hNeg : s.hAmt}>{`${r.e.dir === 'spent' ? '−' : '+'}${formatInr(r.e.amount)}`}</span>
-            </button>
-          )))}
+          <DayHead dayId={d.id} title={title} onNotes={() => { setNotes({ id: d.id, title }); }} />
+          {seg === 'orders'
+            ? orders.map((o) => <OrderRow key={o.id} o={o} onPick={() => { setPickO(o.id); }} />)
+            : entries.map((e) => <EntryRow key={e.id} e={e} who={who(e)} onPick={() => { setPickE(e); }} />)}
         </section>
       ))}
-      {pick?.kind === 'order' ? <OrderSheet o={f.orders[pick.o.id] ?? pick.o} onClose={() => { setPick(null); }} /> : null}
-      {pick?.kind === 'entry' ? <EntrySheet e={pick.e} onClose={() => { setPick(null); }} /> : null}
+      {pickO && f.orders[pickO] ? <OrderHistorySheet o={f.orders[pickO]} onClose={() => { setPickO(null); }} /> : null}
+      {pickE ? <EntrySheet e={pickE} onClose={() => { setPickE(null); }} /> : null}
+      {notes ? <DayNotesSheet dayId={notes.id} title={notes.title} onClose={() => { setNotes(null); }} /> : null}
     </StallPage>
   );
 }

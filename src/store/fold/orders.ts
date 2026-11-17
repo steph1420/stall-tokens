@@ -2,7 +2,7 @@
 // when committed qty drops or the order is deleted. Sales may push stock below 0 (offline oversell):
 // the count clamps at 0 and the item is flagged `oversold` (plan §8).
 import type { Item, Line, Op, Order, Refund, RefundLine } from '../../contract';
-import { held } from '../rules/bill';
+import { due, held } from '../rules/bill';
 import type { Folded } from './state';
 import { lww } from './lww';
 
@@ -120,7 +120,8 @@ function addRefund(s: Folded, o: Order, op: Op<'refund.add'>): Folded {
   const amount = Math.max(0, Math.min(Math.trunc(op.body.amount), held(o)));
   const lines = (op.body.lines ?? []).map((l) => ({ lineId: l.lineId, qty: Math.trunc(l.qty) }));
   const r = op.body.restock === true ? restock(s, o, lines) : { state: s, order: o, done: [] };
-  const refund: Refund = { refundId: op.body.refundId, amount, source: op.body.source, at: op.wallAt, reason: (op.body.reason ?? '').trim(), lines, restocked: r.done, voided: null };
+  const settled = Math.min(amount, Math.max(0, -due(o)));
+  const refund: Refund = { refundId: op.body.refundId, amount, source: op.body.source, at: op.wallAt, reason: (op.body.reason ?? '').trim(), lines, restocked: r.done, voided: null, settled };
   return withOrder(r.state, { ...r.order, refunds: [...r.order.refunds, refund] });
 }
 

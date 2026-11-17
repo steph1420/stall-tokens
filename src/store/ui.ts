@@ -4,7 +4,7 @@ import type { LineStatus } from '../contract';
 
 export type Screen = 'launch' | 'counter' | 'kitchen' | 'station' | StallScreen;
 /** D-NAV: the quiet Stall section (launch + Counter ⋯). */
-export type StallScreen = 'money' | 'settle' | 'stock' | 'history' | 'settings' | 'float' | 'developer';
+export type StallScreen = 'money' | 'settle' | 'stock' | 'history' | 'settings' | 'float' | 'developer' | 'close';
 /** Q-ORDERS-1: the Counter's two top tabs. */
 export type CounterTab = 'new' | 'open' | 'unpaid';
 /** Station page place (Q-BACK-1 A: Back returns to where it was opened from). */

@@ -24,6 +24,9 @@ export interface Refund {
   readonly reason: string; readonly lines: readonly RefundLine[]; readonly restocked: readonly RefundLine[];
   /** Q-REFUND-INSTANT: set by `refund.void` (Undo). The refund stays on record, struck through; it no longer counts. */
   readonly voided: string | null;
+  /** D-P4-REFUND-DUE (derived in the fold, not in the op): the part of this refund that gave back an overpayment (an edited-down
+   * bill, F-18) at the moment it was applied. The rest is a refund of goods, which never makes the customer owe again. */
+  readonly settled: Paise;
 }
 /** Q-HANDOVER-PAY revised / Q-COMPLETE-2 A: an explicit Complete. Written off = `unpaid` and money still due. */
 export interface Completion { readonly unpaid: boolean; readonly dueAt: Paise; readonly reason: string; readonly at: number; readonly by: string }

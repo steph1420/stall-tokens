@@ -91,3 +91,45 @@
 .reviewList { list-style: none; margin: 0; padding: 0; }
 .reviewRow { display: flex; align-items: center; gap: 0.5rem; padding: 0.625rem 0; border-bottom: var(--dl-stall-hair) solid var(--dl-color-hairline); }
 .reviewRow .rowS { white-space: normal; }
+/* F-64 History (P4): Orders · Money segment, search, day header with Notes ›, one tag per row */
+.hSeg { display: grid; grid-template-columns: 1fr 1fr; gap: 0.125rem; padding: 0.1875rem; border-radius: var(--dl-radius-md); background: var(--dl-color-track); }
+.hSegBtn { min-height: var(--dl-hit-min); border-radius: var(--dl-radius-sm); font-size: 0.9375rem; font-weight: 600; color: var(--dl-color-text-muted); }
+.hSegOn { composes: hSegBtn; color: var(--dl-color-text-display); background: var(--dl-color-surface-solid); box-shadow: var(--dl-stall-card-lift); }
+.hSearch { width: 100%; min-height: 3rem; padding: 0 1rem; border: 0; border-radius: var(--dl-radius-md); font: inherit; font-size: 1rem; color: var(--dl-color-text); background: var(--dl-color-surface); }
+.hdayRow { display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; }
+.hNotes { min-height: var(--dl-hit-min); padding: 0 0.5rem; font-size: 0.9375rem; font-weight: 600; color: var(--dl-stall-info-text); }
+.hT { flex-wrap: wrap; row-gap: 0.125rem; }
+.tagOk { color: var(--dl-stall-pos-text); }
+.hsTag { margin: 0.25rem 0 0; font-size: 1rem; font-weight: 700; }
+.hsGap { margin-bottom: 0.625rem; }
+.wide { width: 100%; }
+/* F-66 Close the day + F-67 Day notes (P4; no mockup, Stall list style, D-P4-CLOSE) */
+.stepLead { margin: 0; padding: 0 0.25rem; font-size: 1rem; color: var(--dl-color-text-muted); }
+.stepH { display: flex; align-items: center; gap: 0.625rem; padding: 0 0.25rem; font-size: 0.9375rem; font-weight: 600; }
+.stepT { flex: 1; font-size: 1.0625rem; font-weight: 700; color: var(--dl-color-text-display); }
+.mark { flex: none; width: 1.75rem; height: 1.75rem; border-radius: 50%; display: grid; place-items: center; font-size: 0.9375rem; font-weight: 700; color: var(--dl-color-text-muted); box-shadow: inset 0 0 0 var(--dl-stall-hair-2) var(--dl-color-hairline); }
+.markDone { composes: mark; color: var(--dl-stall-on-go); background: var(--dl-stall-go); box-shadow: none; }
+.markSkip { composes: mark; color: var(--dl-stall-warn-text); box-shadow: inset 0 0 0 var(--dl-stall-hair-2) var(--dl-color-warning); }
+.stepBody { display: flex; flex-direction: column; align-items: stretch; gap: 0.625rem; padding: 0.875rem 1rem; }
+.stepBody > .row { padding: 0.5rem 0; }
+.stepBody > .small { align-self: flex-start; }
+.stepNote { margin: 0; font-size: 1rem; color: var(--dl-color-text); }
+.stepHint { margin: 0; font-size: 0.8125rem; color: var(--dl-color-text-muted); }
+.skipBtn { width: 100%; min-height: var(--dl-hit-min); border-top: var(--dl-stall-hair) solid var(--dl-color-hairline); font-size: 0.9375rem; font-weight: 600; color: var(--dl-color-text-muted); }
+.cashRow { display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; font-size: 1rem; color: var(--dl-color-text); }
+.cashDiff { margin: 0; text-align: center; font-size: 1.75rem; font-weight: 800; }
+.lockBtn { width: 100%; min-height: 3.5rem; border-radius: var(--dl-radius-lg); font-size: 1.125rem; font-weight: 700; color: var(--dl-color-text-display); background: color-mix(in srgb, var(--dl-color-accent) 16%, var(--dl-color-surface)); }
+.sumBody { display: flex; flex-direction: column; gap: 0.75rem; padding: 0.875rem 1rem; }
+.sumHead { margin: 0; font-size: 1.125rem; font-weight: 700; color: var(--dl-color-text-display); }
+.sumLine { margin: 0; font-size: 1rem; color: var(--dl-color-text); }
+.sumHint { margin: 0; font-size: 0.8125rem; color: var(--dl-color-text-muted); }
+.topList { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; }
+.topList li { display: flex; align-items: center; gap: 0.75rem; min-height: 2.75rem; font-size: 1rem; color: var(--dl-color-text); border-bottom: var(--dl-stall-hair) solid var(--dl-color-hairline); }
+.topList li span { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+.topAmt { min-width: 4.5rem; text-align: right; font-variant-numeric: tabular-nums; color: var(--dl-color-text-muted); }
+.shareBtn { width: 100%; min-height: 3.5rem; border-radius: var(--dl-radius-lg); font-size: 1.125rem; font-weight: 700; color: var(--dl-stall-info-text); background: color-mix(in srgb, var(--dl-color-info) 16%, var(--dl-color-surface)); }
+.tileGo { composes: tile; text-align: left; }
+.chips { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 0.75rem; }
+.chip { min-height: var(--dl-hit-min); padding: 0 1rem; border-radius: var(--dl-radius-pill); font-size: 0.9375rem; font-weight: 600; color: var(--dl-color-text-muted); background: var(--dl-color-surface); box-shadow: inset 0 0 0 var(--dl-stall-hair) var(--dl-color-hairline); }
+.chipOn { composes: chip; color: var(--dl-stall-info-text); background: color-mix(in srgb, var(--dl-color-info) 18%, var(--dl-color-surface)); box-shadow: none; }
+.noteBox { width: 100%; margin-bottom: 0.75rem; padding: 0.875rem 1rem; border: 0; border-radius: var(--dl-radius-lg); resize: vertical; font: inherit; font-size: 1.0625rem; color: var(--dl-color-text); background: var(--dl-color-surface); }

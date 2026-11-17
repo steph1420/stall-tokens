@@ -47,3 +47,7 @@
 .kinds { flex-basis: 100%; display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; padding-bottom: 0.75rem; }
 .kind { min-height: var(--dl-hit-comfortable); border-radius: var(--dl-radius-md); font-size: 0.9375rem; font-weight: 600; color: var(--dl-color-text); background: var(--dl-color-surface-raised, var(--dl-color-surface)); box-shadow: inset 0 0 0 var(--dl-stall-hair) var(--dl-color-hairline); }
 .kindOn { composes: kind; color: var(--dl-stall-on-blue); background: var(--dl-stall-blue); box-shadow: none; }
+/* F-68 Low / Sold out filter chips over the list (P4) */
+.chips { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 0.5rem; }
+.chip { min-height: var(--dl-hit-min); padding: 0 1rem; border-radius: var(--dl-radius-pill); font-size: 0.9375rem; font-weight: 600; color: var(--dl-color-text-muted); background: var(--dl-color-surface); box-shadow: inset 0 0 0 var(--dl-stall-hair) var(--dl-color-hairline); }
+.chipOn { composes: chip; color: var(--dl-stall-warn-text); background: color-mix(in srgb, var(--dl-color-warning) 18%, var(--dl-color-surface)); box-shadow: none; }
