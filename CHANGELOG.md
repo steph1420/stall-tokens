@@ -11,6 +11,9 @@ All notable changes to Stall Tokens. SemVer. Times IST.
 - **Stock:** All at the top of the rail; Low and Sold out are chips. Pasting "Tea 20pcs" with no price just adds 20 to Tea (no Spent).
 - **Fixed:** a refunded order showed up again as Unpaid (and in the Unpaid count) because the refund made the bill look owed. Only the part of a refund that gives back an overpayment counts against the bill now (D-P4-REFUND-DUE).
 
+### pay4 tip like waive (F-62), 17 Nov 2026 — Steve
+- **+ Tip is now a twin of − Waive:** same pill side by side, same chips (₹10, ₹20, Other), same Undo toast. The "No tip" chip and the pencil on the Payment screen are gone; tap a lit chip to take the tip off. An Other amount shows as its own lit chip. Tip choices stay in Settings (₹10, ₹20 by default).
+
 ### pay3 payment (F-63), 17 Nov 2026 — Steve: lock, calculator, no "Cash given"
 - **Removed** the "Cash given" ₹100 / ₹200 / ₹500 row and the "Give back" box. Cash or UPI typed above the amount is clamped to it. Old records with a cash-given amount still read fine.
 - **Padlock on Cash and UPI.** A locked side never changes by itself; the other is always the rest, so Cash + UPI = amount due. Locking one unlocks the other. + Tip / − Waive move the unlocked side; if the locked side is now above the amount it is lowered to fit, with a calm toast. While locked the slider rests (dimmed), and the "rest" box says so when tapped.

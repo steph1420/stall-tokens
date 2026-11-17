@@ -1,6 +1,5 @@
 // pay3 (F-63): lock + calculator sheet fit at phone, iPad (pane) and 200 % text, night and day. Local demo data only.
 // Usage: node e2e/beta-calc-sizes.mjs <outdir>  (BETA_URL to point at a local preview)
-// P4: loops flattened and globals via globalThis so `npm run check` (ESLint, max warnings 0) passes; behaviour unchanged.
 import { chromium } from '@playwright/test';
 import { demoOps } from './seed-plain.mjs';
 
@@ -9,7 +8,7 @@ const BETA = process.env.BETA_URL ?? 'https://steph1420.github.io/stall-tokens-b
 const V = [['421x927', 421, 927, ''], ['421x927-text200', 421, 927, 't'], ['ipad-820x1180', 820, 1180, ''], ['ipad-1180x820', 1180, 820, ''], ['ipad-820x1180-text200', 820, 1180, 't'], ['ipad-1180x820-text200', 1180, 820, 't']];
 const b = await chromium.launch({ executablePath: '/usr/bin/google-chrome', args: ['--no-sandbox'] });
 let fails = 0;
-for (const [theme, [label, w, h, t]] of ['night', 'day'].flatMap((th) => V.map((v) => [th, v]))) {
+async function one(theme, [label, w, h, t]) {
   const ctx = await b.newContext({ viewport: { width: w, height: h }, deviceScaleFactor: 1, hasTouch: true, serviceWorkers: 'block' });
   const p = await ctx.newPage(); p.setDefaultTimeout(8000);
   const errors = []; p.on('pageerror', (e) => errors.push(e.message));
@@ -36,7 +35,7 @@ for (const [theme, [label, w, h, t]] of ['night', 'day'].flatMap((th) => V.map((
     const res = await p.getByLabel('Result').innerText();
     // every key and both Use buttons are reachable (scroll inside the sheet allowed) and no sideways scroll
     const keys = ['Clear', 'Delete', 'Divide', 'Times', '7', '0', 'Point', 'Equals', 'Use as Cash', 'Use as UPI'];
-    const boxes = await Promise.all(keys.map((k) => p.getByRole('button', { name: k, exact: true }).boundingBox()));
+    const boxes = []; for (const k of keys) boxes.push(await p.getByRole('button', { name: k, exact: true }).boundingBox());
     const small = boxes.filter((bb) => !bb || bb.height < 44 || bb.width < 44).length;
     // sideways scroll on the page or inside the calculator sheet (clipped text inside overflow:hidden cards doesn't scroll)
     const hs = await p.evaluate(() => { const d = globalThis.document; const sheet = d.querySelector('[role="dialog"]');
@@ -48,6 +47,7 @@ for (const [theme, [label, w, h, t]] of ['night', 'day'].flatMap((th) => V.map((
   } catch (e) { fails++; console.log(`FAIL | ${label} ${theme} | ${String(e.message ?? e).split('\n')[0]}`); }
   await ctx.close();
 }
+for (const theme of ['night', 'day']) for (const v of V) await one(theme, v);
 await b.close();
 console.log(`SUMMARY ${String(V.length * 2 - fails)}/${String(V.length * 2)} pass`);
 process.exit(fails ? 1 : 0);
