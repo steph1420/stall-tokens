@@ -4,7 +4,7 @@ All notable changes to Stall Tokens. SemVer. Times IST.
 ## [Unreleased]
 
 ### QR label (F-15), 17 Nov 2026 — Steve
-- Next to the Payment QR, the UPI ID and the amount are shown (the ID is selectable). Both are read back from the same `upi://pay` link the QR encodes (`pa` and `am`), so the number on screen is the number that will be scanned. The QR still sits below the split, and still hides while UPI is ₹0.
+- Next to the payee selector, above the Payment QR, the UPI ID and the amount are shown (the ID is selectable). Both are read back from the same `upi://pay` link the QR encodes (`pa` and `am`), so the number on screen is the number that will be scanned. The QR still sits below the split, and still hides while UPI is ₹0.
 
 ### 2.1.0 P4 — History, Money, Close the day, Day notes, Stock (17 Nov 2026, Beta only; F-64..F-68)
 - **History** has Orders · Money. Every order that went to the kitchen is listed (unpaid ones too), with its #004 token and one plain tag: Paid cash / UPI, Unpaid ₹25, Written off, Refund due, Refunded ₹15 cash, Cancelled · Refund due ₹20. Tap a row: Take payment, Edit, Refund (whenever money is held), Print token, Hold to cancel. Each day has **Notes ›**.
