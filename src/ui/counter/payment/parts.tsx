@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { CONFIG } from '../../../config';
 import type { Paise } from '../../../contract';
 import { amounts, useApp } from '../../../store';
+import { Icon } from '../../kit/Icon';
 import { Money } from '../../kit/Money';
 import s from './Payment.module.css';
 
@@ -41,14 +42,14 @@ export function AdjustRow({ tip, waived, onPick, onOther }: { tip: Paise; waived
 
 const SWATCH_OF: Readonly<Record<number, number>> = { 5: 7, 10: 1, 20: 5, 50: 3, 100: 0, 200: 2, 500: 4, 1000: 6, 2000: 1 };
 
-export function CountNotes({ notes, onNotes }: { notes: Record<string, number>; onNotes: (n: Record<string, number>) => void }) {
+export function CountNotes({ notes, onNotes, heading = true }: { notes: Record<string, number>; onNotes: (n: Record<string, number>) => void; heading?: boolean }) {
   const [showMore, setShowMore] = useState(false);
   const more = showMore || Object.keys(notes).some((k) => (CONFIG.payment.moreDenominations as readonly number[]).includes(Number(k)) && (notes[k] ?? 0) > 0);
   const list: readonly number[] = more ? [...CONFIG.payment.denominations, ...CONFIG.payment.moreDenominations] : CONFIG.payment.denominations;
   const set = (d: number, n: number) => { onNotes({ ...notes, [String(d)]: Math.max(0, Math.min(CONFIG.limits.qtyMax, n)) }); };
   return (
     <section className={s.notes} aria-label="Count notes">
-      <div className={s.notesH}>Count notes <em>· optional</em></div>
+      {heading ? <div className={s.notesH}>Count notes <em>· optional</em></div> : null}
       <div className={s.dgrid}>
         {list.map((d) => {
           const n = notes[String(d)] ?? 0;
@@ -70,5 +71,43 @@ export function CountNotes({ notes, onNotes }: { notes: Record<string, number>; 
         {!more ? <button type="button" className={s.moreNotes} onClick={() => { setShowMore(true); }}>More notes</button> : null}
       </div>
     </section>
+  );
+}
+
+export type PayMethod = 'cash' | 'upi' | 'split';
+
+/** D-PAY5-1 / s129b: tall Cash | UPI | Split. Cash and UPI are wider and show the whole amount; Split is quieter. */
+export function MethodSeg({ method, due, onPick }: { method: PayMethod | null; due: Paise; onPick: (m: PayMethod) => void }) {
+  const cashAmt = method === null || method === 'cash' ? due : null;
+  const upiAmt = method === null || method === 'upi' ? due : null;
+  const btn = (m: PayMethod, label: string, amt: Paise | null, tone: string) => {
+    const on = method === m;
+    const name = amt === null ? label : `${label} ₹${String(amt / 100)}`;
+    const cls = [on ? s.segOn : s.segBtn, tone].join(' ');
+    return (
+      <button type="button" className={cls} aria-pressed={on} aria-label={name} onClick={() => { onPick(m); }}>
+        <span className={s.segLab}>{label}</span>
+        {amt !== null ? <Money p={amt} className={s.segAmt} /> : null}
+      </button>
+    );
+  };
+  return (
+    <div className={s.seg} role="group" aria-label="How to pay">
+      {btn('cash', 'Cash', cashAmt, s.segCash ?? '')}
+      {btn('upi', 'UPI', upiAmt, s.segUpi ?? '')}
+      {btn('split', 'Split', null, s.segSplit ?? '')}
+    </div>
+  );
+}
+
+/** D-PAY5-1: inline Count notes drawer. Open/closed is remembered on this phone; first default is hidden. */
+export function CountNotesDrawer({ notes, onNotes, open, onToggle }: { notes: Record<string, number>; onNotes: (n: Record<string, number>) => void; open: boolean; onToggle: () => void }) {
+  return (
+    <div className={s.notesDraw}>
+      <button type="button" className={s.notesHead} aria-expanded={open} onClick={onToggle}>
+        Count notes <Icon name="chevron" className={s.chev} />
+      </button>
+      {open ? <CountNotes notes={notes} onNotes={onNotes} heading={false} /> : null}
+    </div>
   );
 }

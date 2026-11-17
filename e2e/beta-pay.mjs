@@ -28,15 +28,15 @@ for (const theme of (process.env.THEMES ?? 'night,day').split(',')) {
   p.on('pageerror', (e) => errors.push(e.message));
   const T = (n) => `[${theme}] ${n}`;
   const shot = (n) => p.screenshot({ path: `${out}/pay-${n}-${theme}.png` });
-  const box = async (n) => rupees(await p.getByRole('button', { name: new RegExp(`^${n}`) }).first().innerText());
+  const box = async (n) => rupees(await p.getByRole('button', { name: new RegExp(`^${n} ₹`) }).innerText());
   const total = async () => rupees(await p.evaluate(() => [...globalThis.document.querySelectorAll('div')].find((d) => d.textContent === 'To collect')?.nextElementSibling?.textContent ?? ''));
   const type = async (n, digits) => {
-    await p.getByRole('button', { name: new RegExp(`^${n}`) }).first().click();
+    await p.getByRole('button', { name: new RegExp(`^${n} ₹`) }).click();
     for (const k of digits.split('')) await p.getByRole('button', { name: k, exact: true }).click();
     await p.getByRole('button', { name: 'Done', exact: true }).click(); await p.waitForTimeout(150);
   };
   const clear = async (n) => {
-    await p.getByRole('button', { name: new RegExp(`^${n}`) }).first().click();
+    await p.getByRole('button', { name: new RegExp(`^${n} ₹`) }).click();
     for (let i = 0; i < 6; i++) await p.getByRole('button', { name: 'Delete', exact: true }).click();
     await p.getByRole('button', { name: 'Done', exact: true }).click(); await p.waitForTimeout(150);
   };
@@ -51,6 +51,30 @@ for (const theme of (process.env.THEMES ?? 'night,day').split(',')) {
   await p.getByRole('button', { name: /^Bill|items/ }).last().click(); await p.waitForTimeout(300);
   await p.getByRole('button', { name: /^Pay/ }).first().click(); await p.waitForTimeout(300);
   const t0 = await total();
+  await step(T('pay5: opens with Cash | UPI | Split, nothing selected'), async () => {
+    const g = p.getByRole('group', { name: 'How to pay' });
+    const pressed = await Promise.all(['Cash ₹', 'UPI ₹', 'Split'].map(async (n) => g.getByRole('button', { name: n === 'Split' ? 'Split' : new RegExp(`^${n}`) }).getAttribute('aria-pressed')));
+    const confirm = await p.getByRole('button', { name: 'Confirm payment' }).count();
+    await shot('10-pay5-open');
+    return pressed.every((v) => v === 'false') && confirm === 0 ? 'none selected' : false;
+  });
+  await step(T('pay5: Cash takes the whole amount; Count notes starts hidden'), async () => {
+    await p.getByRole('group', { name: 'How to pay' }).getByRole('button', { name: /^Cash ₹/ }).click(); await p.waitForTimeout(150);
+    const confirm = await p.getByRole('button', { name: 'Confirm payment' }).count();
+    const qr = await p.locator('[data-qr]').count();
+    const expanded = await p.getByRole('button', { name: 'Count notes' }).getAttribute('aria-expanded');
+    await shot('11-pay5-cash');
+    return confirm === 1 && qr === 0 && expanded === 'false' ? 'all cash, notes hidden' : false;
+  });
+  await step(T('pay5: UPI shows the QR with the ID and amount straight away'), async () => {
+    await p.getByRole('group', { name: 'How to pay' }).getByRole('button', { name: /^UPI ₹/ }).click(); await p.waitForTimeout(200);
+    const facts = await p.getByRole('group', { name: 'UPI ID and amount on this QR' }).innerText();
+    const qr = await p.locator('[data-qr]').count();
+    await shot('12-pay5-upi');
+    return qr === 1 && /stallone@okbank/.test(facts) ? facts.replace(/\s+/g, ' ') : false;
+  });
+  await p.getByRole('group', { name: 'How to pay' }).getByRole('button', { name: 'Split', exact: true }).click(); await p.waitForTimeout(200);
+  await shot('13-pay5-split');
   await step(T('pay4: + Tip looks and works like − Waive (₹10, ₹20, Other)'), async () => {
     const tipP = p.getByRole('button', { name: /^\+ Tip/ }), waiveP = p.getByRole('button', { name: /^− Waive/ });
     const [a, w] = [await tipP.boundingBox(), await waiveP.boundingBox()];

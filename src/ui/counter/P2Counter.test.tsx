@@ -41,7 +41,7 @@ describe('P2 Counter', () => {
     fireEvent.click(screen.getByRole('button', { name: /Take payment/ }));
     expect(s().ui.orderView).toBeNull();
     expect(s().ui.pages[oid]).toBe('payment');
-    expect(screen.getByRole('button', { name: 'Confirm payment' })).toBeTruthy();
+    expect(screen.getByRole('group', { name: 'How to pay' })).toBeTruthy();
   });
   it('paid screen: one New order button (the header + hides)', async () => {
     const { store, s, id } = await setup();

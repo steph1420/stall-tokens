@@ -63,6 +63,8 @@ export interface DevicePrefs {
   /** Per-device display (FEATURES §0.1): kitchen text size and Quiet (no alert sound). */
   kitchenText: 'normal' | 'large' | 'xl';
   quiet: boolean;
+  /** D-PAY5-1: Count notes drawer on Payment, remembered on this phone. Default hidden. */
+  countNotesOpen: boolean;
 }
 
 /** Per-device settings (not synced on purpose). */

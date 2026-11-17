@@ -11,7 +11,7 @@ import { Sheet } from '../../kit/Sheet';
 import k from '../../kit/kit.module.css';
 import { Numpad } from './Numpad';
 import { CalcSheet } from './CalcSheet';
-import { AdjustRow, CountNotes } from './parts';
+import { AdjustRow, CountNotesDrawer, MethodSeg, type PayMethod } from './parts';
 import s from './Payment.module.css';
 
 type Box = 'cash' | 'upi' | 'tip' | 'waive';
@@ -243,44 +243,77 @@ function Adjust({ d, onOther }: { d: Draft; onOther: (k: 'tip' | 'waive') => voi
   );
 }
 
-export function PaymentScreen() {
-  const o = useApp((st) => (st.ui.orderId ? st.folded.orders[st.ui.orderId] : undefined));
+function DueHead({ method, dueNow, tip, waived, owed, onCalc }: { method: PayMethod | null; dueNow: Paise; tip: Paise; waived: Paise; owed: Paise; onCalc: () => void }) {
+  return (
+    <div className={s.due}>
+      {method === 'split' ? <button type="button" className={s.calcBtn} aria-label="Calculator" onClick={onCalc}><Icon name="calc" /></button> : null}
+      <div className={s.dueLab}>To collect</div>
+      <Money p={dueNow} className={s.dueAmt} />
+      {tip > 0 || waived > 0 ? <div className={s.tipNote}>bill <Money p={Math.max(0, owed)} />{tip > 0 ? <> · tip +<Money p={tip} /></> : null}{waived > 0 ? <> · waived −<Money p={waived} /></> : null}</div> : null}
+    </div>
+  );
+}
+
+function MethodTools({ method, adjOn, d, pad, setPad, setShowAdj }: { method: PayMethod | null; adjOn: boolean; d: Draft; pad: Box | null; setPad: (b: Box) => void; setShowAdj: (v: boolean) => void }) {
+  if (method === 'cash' || method === 'upi') {
+    return adjOn ? <Adjust d={d} onOther={(k2) => { setPad(k2); }} /> : <button type="button" className={s.moreAdj} onClick={() => { setShowAdj(true); }}>Tip or waive</button>;
+  }
+  if (method !== 'split') return null;
+  const cur = d.cur;
+  return (
+    <>
+      <SplitBoxes d={d} pad={pad} setPad={setPad} />
+      <Slider split={cur} covered={cur.cash + cur.upi} locked={!!cur.locked} onSlide={(f) => { d.setSplit(pay.slide(f, cur.cash + cur.upi, CONFIG.money.sliderSnapPaise, d.waived)); }} />
+      <Adjust d={d} onOther={(k2) => { setPad(k2); }} />
+    </>
+  );
+}
+
+function PayOpen({ o, d }: { o: Order; d: Draft }) {
   const c = useApp((st) => st.counter);
-  const d = useDraft(o);
+  const notesOpen = useApp((st) => st.prefs.countNotesOpen);
+  const setPrefs = useApp((st) => st.setPrefs);
   const confirm = useConfirm(d);
   const [pad, setPad] = useState<Box | null>(null);
   const [calc, setCalc] = useState(false);
-  if (!o) return null;
-  if (d.owed <= 0 && (bill.paid(o) !== 0 || bill.waived(o) > 0)) return <Settled o={o} />;
-  if (d.owed === 0 && o.lines.some((l) => l.qty > 0)) return <NothingDue o={o} />;
-  const { cur, check, tip } = d;
+  const [method, setMethod] = useState<PayMethod | null>(null);
+  const [showAdj, setShowAdj] = useState(false);
+  const dueNow = d.toCollect - d.waived;
+  const pickMethod = (m: PayMethod) => {
+    if (m === 'cash' || m === 'upi') d.setSplit({ ...pay.setBox({ ...d.cur, locked: null }, m, d.toCollect, d.toCollect), locked: null, pinned: m });
+    setMethod(m);
+  };
+  const adjOn = method === 'split' || showAdj || d.tip > 0 || d.waived > 0;
   return (
     <>
       <main className={s.stage}>
         <div className={s.body}>
-          <div className={s.due}>
-            <button type="button" className={s.calcBtn} aria-label="Calculator" onClick={() => { setCalc(true); }}><Icon name="calc" /></button>
-            <div className={s.dueLab}>To collect</div>
-            <Money p={d.toCollect - d.waived} className={s.dueAmt} />
-            {tip > 0 || d.waived > 0 ? <div className={s.tipNote}>bill <Money p={Math.max(0, d.owed)} />{tip > 0 ? <> · tip +<Money p={tip} /></> : null}{d.waived > 0 ? <> · waived −<Money p={d.waived} /></> : null}</div> : null}
-          </div>
-          <Adjust d={d} onOther={(k2) => { setPad(k2); }} />
-          <SplitBoxes d={d} pad={pad} setPad={setPad} />
-          <Slider split={cur} covered={cur.cash + cur.upi} locked={!!cur.locked} onSlide={(f) => { d.setSplit(pay.slide(f, cur.cash + cur.upi, CONFIG.money.sliderSnapPaise, d.waived)); }} />
+          <DueHead method={method} dueNow={dueNow} tip={d.tip} waived={d.waived} owed={d.owed} onCalc={() => { setCalc(true); }} />
+          <MethodSeg method={method} due={dueNow} onPick={pickMethod} />
+          <MethodTools method={method} adjOn={adjOn} d={d} pad={pad} setPad={setPad} setShowAdj={setShowAdj} />
           <QrBlock d={d} o={o} />
-          {cur.cash > 0 ? <CountNotes notes={d.notes} onNotes={d.setNotes} /> : null}
+          {method && d.cur.cash > 0 ? <CountNotesDrawer notes={d.notes} onNotes={d.setNotes} open={notesOpen} onToggle={() => { setPrefs({ countNotesOpen: !notesOpen }); }} /> : null}
         </div>
       </main>
       <footer className={s.bar}>
         <button type="button" className={s.back} onClick={() => { c.setPage('billing'); }}><Icon name="backSmall" className={s.ic} />Back</button>
-        <span className={s.paid}>{check.ok && check.gap === 0 ? 'Adds up ✓' : ''}</span>
-        <button type="button" className={s.confirm} disabled={!check.ok} onClick={confirm}>Confirm payment</button>
+        {method ? <span className={s.paid}>{d.check.ok && d.check.gap === 0 ? 'Adds up ✓' : ''}</span> : <span className={s.paid} />}
+        {method ? <button type="button" className={s.confirm} disabled={!d.check.ok} onClick={confirm}>Confirm payment</button> : null}
       </footer>
       {pad ? <Numpad key={pad} rupees={padRupees(pad, d)} onChange={(r) => { d.typed(pad, r); }} onDone={() => { setPad(null); }} /> : null}
-      {calc ? <CalcSheet due={d.toCollect - d.waived} onClose={() => { setCalc(false); }} onUse={(side, p) => { d.setSplit(pay.putInto(cur, side, p, d.toCollect)); setCalc(false); }} /> : null}
+      {calc ? <CalcSheet due={dueNow} onClose={() => { setCalc(false); }} onUse={(side, p) => { d.setSplit(pay.putInto(d.cur, side, p, d.toCollect)); setCalc(false); }} /> : null}
       <WaivedSheetHost by={d.waiver.by} note={d.waiver.note} onSave={(by, note) => { d.setWaiver({ by, note }); }} />
     </>
   );
+}
+
+export function PaymentScreen() {
+  const o = useApp((st) => (st.ui.orderId ? st.folded.orders[st.ui.orderId] : undefined));
+  const d = useDraft(o);
+  if (!o) return null;
+  if (d.owed <= 0 && (bill.paid(o) !== 0 || bill.waived(o) > 0)) return <Settled o={o} />;
+  if (d.owed === 0 && o.lines.some((l) => l.qty > 0)) return <NothingDue o={o} />;
+  return <PayOpen o={o} d={d} />;
 }
 
 function WaivedSheetHost({ by, note, onSave }: { by: string; note: string; onSave: (by: string, note: string) => void }) {

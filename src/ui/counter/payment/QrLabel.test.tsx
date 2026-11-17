@@ -19,6 +19,7 @@ async function payScreen(payees: [string, string][] = [['Stall One', 'stallone@o
   store.setState((x) => ({ ui: { ...x.ui, screen: 'counter' } }));
   act(() => { for (let i = 0; i < 4; i++) s().counter.addItem(id('Tea')); s().counter.sendToKitchen(); s().counter.setPage('payment'); });
   render(<StoreProvider store={store}><CounterShell /><Toast /></StoreProvider>);
+  act(() => { fireEvent.click(screen.getByRole('button', { name: 'Split' })); });
   return { s };
 }
 
