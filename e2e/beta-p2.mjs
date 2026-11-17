@@ -77,6 +77,7 @@ for (const theme of ['night', 'day']) {
     await p.getByRole('tab', { name: /New Orders/ }).click();
     await p.getByRole('button', { name: 'New order' }).last().click(); await tap(p, 'Samosa');
     await p.getByRole('button', { name: /^Bill|items/ }).last().click(); await p.getByRole('button', { name: /^Pay/ }).first().click();
+    await p.getByRole('group', { name: 'How to pay' }).getByRole('button', { name: /^Cash ₹/ }).click();
     await p.getByRole('button', { name: 'Confirm payment' }).click(); await p.waitForTimeout(300); await shot('04-paid');
     const n = await p.getByRole('button', { name: 'New order' }).count();
     return n === 1 ? 'one New order (the header + hides on the paid screen)' : `${String(n)} New order buttons`;

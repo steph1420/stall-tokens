@@ -3,6 +3,10 @@ All notable changes to Stall Tokens. SemVer. Times IST.
 
 ## [Unreleased]
 
+### Payment first tap (s129b, Q-PAY5-1 A), 17 Nov 2026
+- A tall **Cash | UPI | Split** control is the first layer. Nothing is selected when Payment opens. Cash puts the whole amount on Cash; UPI puts it on UPI and shows the QR (with the UPI ID and amount from the link) straight away; Split reveals the existing boxes, locks, calculator, slider, + Tip / − Waive and the Allowed by note.
+- In Cash and UPI, Tip or waive is one tap away (the mockup hides the pills). Count notes is an inline drawer, only when Cash is more than ₹0, hidden the first time, and this phone remembers whether it was left open or closed.
+
 ### Waive note (Steve, 17 Nov 2026)
 - Typing an Other amount for − Waive or + Tip no longer closes the chip row.
 - The Waive picker is only for the amount (₹10, ₹20, Other). Once a waiver is set, a calm note under the amounts reads "₹30 waived · Allowed by Choose ▾". Tapping it opens the existing Waived sheet (optional name and reason; Confirm never waits for it).

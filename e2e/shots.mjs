@@ -25,13 +25,16 @@ for (const theme of ['night', 'day']) {
   await p.getByRole('button', { name: /^Bill|items/ }).last().click().catch(() => console.log('no bill button'));
   await shot('04-billing');
   await p.getByRole('button', { name: /^Pay$/ }).click().catch(() => console.log('no pay'));
+  await p.getByRole('group', { name: 'How to pay' }).getByRole('button', { name: /^Cash ₹/ }).click().catch(() => console.log('no cash'));
   await shot('05-payment-cash');
-  await p.getByRole('button', { name: /^UPI/ }).first().click();
+  await p.getByRole('group', { name: 'How to pay' }).getByRole('button', { name: 'Split' }).click();
+  await p.getByRole('button', { name: /^UPI ₹/ }).click();
   await shot('06-numpad');
   for (const k of ['5', '0']) await p.getByRole('button', { name: k, exact: true }).click();
   await p.getByRole('button', { name: 'Done' }).click();
   await shot('07-payment-split');
   await p.getByRole('radio', { name: '₹10' }).click().catch(() => console.log('no tip'));
+  await p.getByRole('button', { name: 'Count notes' }).click();
   await p.getByRole('button', { name: 'Add a ₹100 note' }).click();
   await shot('08-payment-tip-notes');
   await p.mouse.wheel(0, 2000); await shot('09-payment-scrolled');

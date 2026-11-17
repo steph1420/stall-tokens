@@ -19,10 +19,11 @@ async function payScreen() {
   store.setState((x) => ({ ui: { ...x.ui, screen: 'counter' } }));
   act(() => { for (let i = 0; i < 4; i++) s().counter.addItem(id('Tea')); s().counter.sendToKitchen(); s().counter.setPage('payment'); });
   render(<StoreProvider store={store}><CounterShell /><Toast /></StoreProvider>);
+  act(() => { fireEvent.click(screen.getByRole('button', { name: 'Split' })); });
   return { s };
 }
 const due = () => screen.getByText('To collect').nextElementSibling?.textContent ?? '';
-const box = (n: string) => screen.getByRole('button', { name: new RegExp(`^${n}`) }).textContent;
+const box = (n: string) => screen.getByRole('button', { name: new RegExp(`^${n} ₹`) }).textContent;
 const tap = (name: string | RegExp) => { act(() => { fireEvent.click(screen.getByRole('button', { name })); }); };
 
 describe('pay2', () => {

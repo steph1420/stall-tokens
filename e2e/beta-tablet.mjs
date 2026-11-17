@@ -39,7 +39,8 @@ for (const [label, w, h] of [['1180x820', 1180, 820], ['820x1180', 820, 1180]]) 
   });
   await step(T('Payment beside the menu; number pad stays in its pane'), async () => {
     await p.getByRole('button', { name: 'To kitchen' }).first().click(); await p.getByRole('button', { name: /^Pay/ }).first().click(); await p.waitForTimeout(300);
-    await p.getByRole('button', { name: /^Cash/ }).first().click(); await p.waitForTimeout(200); await shot('02-payment-pad');
+    await p.getByRole('group', { name: 'How to pay' }).getByRole('button', { name: 'Split' }).click(); await p.waitForTimeout(150);
+    await p.getByRole('button', { name: /^Cash ₹/ }).click(); await p.waitForTimeout(200); await shot('02-payment-pad');
     const r = await p.getByRole('dialog', { name: 'Number pad' }).boundingBox(); const pane = await p.locator('section').nth(1).boundingBox();
     await p.getByRole('button', { name: 'Done', exact: true }).click();
     const menuStill = await p.getByRole('button', { name: /^Tea, add one/ }).count();

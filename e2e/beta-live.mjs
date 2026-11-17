@@ -48,6 +48,7 @@ for (const theme of ['night', 'day']) {
   });
   await step(T('pay in cash (Confirm payment)'), async () => {
     await p.getByRole('button', { name: /^Pay/ }).first().click(); await p.waitForTimeout(300);
+    await p.getByRole('group', { name: 'How to pay' }).getByRole('button', { name: /^Cash ₹/ }).click(); await p.waitForTimeout(150);
     await p.getByRole('button', { name: 'Confirm payment' }).click(); await p.waitForTimeout(400); await shot('04-paid');
     return (await p.getByText(/Paid ✓|Paid$/).count()) > 0 ? 'Paid shown' : false;
   });
