@@ -3,6 +3,14 @@ All notable changes to Stall Tokens. SemVer. Times IST.
 
 ## [Unreleased]
 
+### 2.1.0 P4 — History, Money, Close the day, Day notes, Stock (17 Nov 2026, Beta only; F-64..F-68)
+- **History** has Orders · Money. Every order that went to the kitchen is listed (unpaid ones too), with its #004 token and one plain tag: Paid cash / UPI, Unpaid ₹25, Written off, Refund due, Refunded ₹15 cash, Cancelled · Refund due ₹20. Tap a row: Take payment, Edit, Refund (whenever money is held), Print token, Hold to cancel. Each day has **Notes ›**.
+- **Money** shows what came in, a separate **Refunds** tile, **Unpaid ₹X · n** (opens the Unpaid tab) and **Written off**.
+- **Close the day** (switch on in Settings › Extras): Unpaid, Refunds due, Cash in the box (count notes; "₹20 short"), Day notes, Lock the day, then a **Day summary** with top sellers and Hold to share.
+- **History search** (switch on in Settings › Extras): token, name or item.
+- **Stock:** All at the top of the rail; Low and Sold out are chips. Pasting "Tea 20pcs" with no price just adds 20 to Tea (no Spent).
+- **Fixed:** a refunded order showed up again as Unpaid (and in the Unpaid count) because the refund made the bill look owed. Only the part of a refund that gives back an overpayment counts against the bill now (D-P4-REFUND-DUE).
+
 ### pay3 payment (F-63), 17 Nov 2026 — Steve: lock, calculator, no "Cash given"
 - **Removed** the "Cash given" ₹100 / ₹200 / ₹500 row and the "Give back" box. Cash or UPI typed above the amount is clamped to it. Old records with a cash-given amount still read fine.
 - **Padlock on Cash and UPI.** A locked side never changes by itself; the other is always the rest, so Cash + UPI = amount due. Locking one unlocks the other. + Tip / − Waive move the unlocked side; if the locked side is now above the amount it is lowered to fit, with a calm toast. While locked the slider rests (dimmed), and the "rest" box says so when tapped.
