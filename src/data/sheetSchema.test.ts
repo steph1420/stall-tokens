@@ -10,12 +10,16 @@ import code from '../../apps-script/Code.gs?raw';
 type Row = Record<string, unknown>;
 interface Gs {
   TABS: Record<string, [string, string, string][]>; INFO_ORDER: string[]; LOG_TABS: string[];
+  SCHEMA_VERSION: number;
+  CFG: { VERSION: string };
   infoCols_: (t: string) => [string, string, string][];
   project_: (op: unknown) => [string, Row] | null;
   foldState_: (ops: unknown[]) => { conflicts: { winner: string; loser: string; rule: string }[] };
   renderRows_: (s: unknown) => Record<string, Row[]>;
   rowToOps_: (tab: string, row: Row, edited: string[]) => { kind: string; body: Row }[];
   gaps_: (vv: VV, ops: unknown[]) => { writer: string; fromSeq: number }[];
+  digest_: (ops: unknown[]) => { total: number; vv: VV; checksum: string };
+  compactPlan_: (ops: unknown[], nowMs?: number) => { compactable: number; oldestAgeDays: number; plan: string[] };
 }
 // The .gs file is plain ES5; load it the way Apps Script would, as one script, and read what it exports for tests.
 // eslint-disable-next-line @typescript-eslint/no-implied-eval -- test-only load of the repo's own Apps Script file
@@ -79,5 +83,29 @@ describe('sheet bridge (F-35 F-48 Q-HARM-10)', () => {
   it('a gap in seq asks for a resend from the first missing op', () => {
     expect(gs.gaps_({ 'aaaa.1': 2 }, [{ writer: 'aaaa.1', seq: 5 }, { writer: 'bbbb.1', seq: 1 }])).toEqual([{ writer: 'aaaa.1', fromSeq: 3 }]);
     expect(gs.gaps_({}, [{ writer: 'x.1', seq: 1 }, { writer: 'x.1', seq: 2 }])).toEqual([]);
+  });
+  it('schema 3 (2.1.0) defines categories, day_notes, station icon/colour, digest and compaction plan', () => {
+    expect(gs.SCHEMA_VERSION).toBe(3);
+    expect(gs.CFG.VERSION).toBe('2.1.0');
+    expect(gs.INFO_ORDER).toContain('categories');
+    expect(gs.INFO_ORDER).toContain('day_notes');
+    const stationCols = gs.infoCols_('stations').map((c) => c[0]);
+    expect(stationCols).toContain('icon');
+    expect(stationCols).toContain('colour');
+
+    const catOps = gs.rowToOps_('categories', { category_id: 'c1', name: 'Chai', default_swatch: 2 }, ['name', 'default_swatch']);
+    expect(catOps).toEqual([{ kind: 'record.set', body: { table: 'category', id: 'c1', fields: { name: 'Chai', default_swatch: 2 }, removed: false } }]);
+
+    const noteOps = gs.rowToOps_('day_notes', { day_id: 'd1', text: 'Sunny day', tags: 'Weather' }, ['text', 'tags']);
+    expect(noteOps).toEqual([{ kind: 'record.set', body: { table: 'day_note', id: 'd1', fields: { text: 'Sunny day', tags: 'Weather' }, removed: false } }]);
+
+    expect(gs.compactPlan_([], Date.now()).compactable).toBe(0);
+    const oldOp = op('a', 1, 1, {}, 'day.start', { dayId: 'd1', label: '2026-09-01' }, Date.now() - (70 * DAY));
+    expect(gs.compactPlan_([oldOp], Date.now()).plan).toEqual(['backup_drive', 'generate_base_ops', 'archive_old_ops']);
+
+    const d = gs.digest_([op('w.1', 1, 1, {}, 'day.start', { dayId: 'd1', label: '2026-09-01' })]);
+    expect(d.total).toBe(1);
+    expect(d.vv['w.1']).toBe(1);
+    expect(typeof d.checksum).toBe('string');
   });
 });
