@@ -20,6 +20,8 @@ import { moneyActions } from './money';
 import { settleActions } from './settle';
 import { stockActions } from './stock';
 export { kindKey, type NewKinds } from './stock';
+import { backupActions, type BackupActions } from './backup';
+export { backupActions, type BackupActions } from './backup';
 import { liveOrders as live } from './fold/fold';
 import { pauseMoves } from './rules/kitchen';
 import type { Screen, Sheet, StallScreen } from './ui';
@@ -36,7 +38,7 @@ export { extraOn, type Extra } from './close';
 export type { Split } from './rules/settle';
 export * as kitchen from './rules/kitchen';
 export type { Folded } from './fold/state';
-export type { DevicePrefs } from '../data';
+export type { DevicePrefs, SnapshotSummary, StorageEstimate } from '../data';
 export { isSheetUrl, joinUrl, readJoin, type JoinLink, bluetoothPrint, canBluetoothPrint, dropReceipt, getReceipt, putReceipt, receiptIds } from '../data';
 export { escposSlip, type SlipText } from './rules/escpos';
 export type { OrderStatus, Page } from './rules/status';
@@ -69,6 +71,8 @@ export interface AppState extends CoreState {
   readonly stock: ReturnType<typeof stockActions>;
   /** F-66 / F-67 Close the day, day notes, the Extras switches. */
   readonly close: ReturnType<typeof closeActions>;
+  /** F-70 Data backup, snapshots, and database reset. */
+  readonly backup: BackupActions;
   /** D-NAV: open a Stall screen; Back returns to the launch screen or the Counter. */
   readonly openStall: (screen: StallScreen) => void;
   readonly closeStall: () => void;
@@ -140,6 +144,7 @@ function actionsOf(core: Core, l: L, get: () => AppState) {
     settle: settleActions(core, l),
     stock: stockActions(core, l, (amount, label, note, parts) => get().money.addEntry({ dir: 'spent', amount, label, kind: 'normal', parts, note, personId: null })),
     close: closeActions(core, l, () => get().settle.lockDay()),
+    backup: backupActions(core, l),
     ...navActions(core),
   };
 }

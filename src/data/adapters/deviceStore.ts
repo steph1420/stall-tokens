@@ -16,7 +16,7 @@ function readTabRole(tab: Storage | null): string | null {
 
 export const defaultPrefs = (makeId: () => string): DevicePrefs => ({
   deviceId: makeId(), theme: 'night', servingName: '', rangeIndex: 0, haptics: 'normal', autoPrep: true, stationLook: 'full', openLook: 'lines', passcode: '', passcodeOff: true, syncUrl: CONFIG.sync.bakedUrl, syncKey: CONFIG.sync.bakedKey, role: '',
-  orderId: '', page: 'menu', lastRole: '', kitchenText: 'normal', quiet: false, countNotesOpen: false,
+  orderId: '', page: 'menu', lastRole: '', kitchenText: 'normal', quiet: false, countNotesOpen: false, alertTone: 'chime',
 });
 
 function merge(base: DevicePrefs, raw: unknown): DevicePrefs {
@@ -25,7 +25,7 @@ function merge(base: DevicePrefs, raw: unknown): DevicePrefs {
   const pick = <K extends keyof DevicePrefs>(k: K, ok: (v: unknown) => boolean): DevicePrefs[K] => (ok(r[k]) ? r[k] as DevicePrefs[K] : base[k]);
   return {
     deviceId: pick('deviceId', (v) => typeof v === 'string' && v.length >= 8),
-    theme: pick('theme', (v) => v === 'night' || v === 'day'),
+    theme: pick('theme', (v) => v === 'night' || v === 'day' || v === 'auto'),
     servingName: pick('servingName', (v) => typeof v === 'string'),
     rangeIndex: pick('rangeIndex', (v) => typeof v === 'number' && v >= 0 && v < CONFIG.tokens.ranges.length),
     haptics: pick('haptics', (v) => v === 'off' || v === 'light' || v === 'normal' || v === 'strong'),
@@ -43,6 +43,7 @@ function merge(base: DevicePrefs, raw: unknown): DevicePrefs {
     kitchenText: pick('kitchenText', (v) => v === 'normal' || v === 'large' || v === 'xl'),
     quiet: pick('quiet', (v) => typeof v === 'boolean'),
     countNotesOpen: pick('countNotesOpen', (v) => typeof v === 'boolean'),
+    alertTone: pick('alertTone', (v) => v === 'chime' || v === 'bell' || v === 'pluck' || v === 'harp'),
   };
 }
 

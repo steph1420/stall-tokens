@@ -10,7 +10,7 @@ const results = [];
 const rec = (name, ok, ev = '') => { results.push({ name, ok, ev }); console.log(`${ok ? 'PASS' : 'FAIL'} | ${name} | ${ev}`); };
 const step = async (name, f) => { try { const ev = await f(); rec(name, ev !== false, typeof ev === 'string' ? ev : ''); } catch (e) { rec(name, false, String(e.message ?? e).split('\n')[0]); } };
 const rupees = (t) => Number(String(t).replace(/[^0-9.]/g, '') || 'NaN');
-const b = await chromium.launch({ executablePath: '/usr/bin/google-chrome', args: ['--no-sandbox'] });
+const b = await chromium.launch({ executablePath: process.env.CHROME_PATH || (process.platform === 'darwin' ? undefined : '/usr/bin/google-chrome'), args: ['--no-sandbox'] });
 
 async function seed(p, theme) {
   await p.evaluate(async ({ theme, ops }) => {

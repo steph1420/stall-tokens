@@ -18,7 +18,11 @@ export function App() {
   const ready = useApp((s) => s.ready);
   const start = useApp((s) => s.start);
   useBackTrap(); // W-13: the phone's Back steps back inside the app
-  useEffect(() => { document.documentElement.dataset.theme = CONFIG.themes[theme]; }, [theme]);
+  useEffect(() => {
+    const isDark = typeof window !== 'undefined' && window.matchMedia('(prefers-color-scheme: dark)').matches;
+    const effective: 'night' | 'day' = theme === 'auto' ? (isDark ? 'night' : 'day') : theme;
+    document.documentElement.dataset.theme = CONFIG.themes[effective];
+  }, [theme]);
   const [failed, setFailed] = useState(false);
   useEffect(() => { start().catch((e: unknown) => { console.error('could not open the op log', e); setFailed(true); }); }, [start]);
   if (failed) return <div className={k.banner} role="alert"><span>This phone could not open its saved orders.</span><button type="button" className={k.bannerBtn} onClick={() => { window.location.reload(); }}>Try again</button></div>;

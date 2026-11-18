@@ -23,14 +23,14 @@
  * Money: integer paise in log tabs (*_paise); rupees (*_inr) on info tabs for hand editing. Times ISO-8601.
  */
 var CFG = {
-  VERSION: '2.0.0', // bridge script version (shown by GET and in _meta.bridge_version)
+  VERSION: '2.1.0', // bridge script version (shown by GET and in _meta.bridge_version)
   PULL_MAX: 500, PUSH_MAX: 500, LOCK_MS: 20000, TEXT_MAX: 500,
   SHEET_WRITER: 'sheet' // writer id of hand edits (Q-HARM-10)
 };
-var SCHEMA_VERSION = 2;
+var SCHEMA_VERSION = 3;
 var CONTRACT_VERSION = 2;
 var IST_MS = 330 * 60000;
-var RECORD_TABLES = ['business', 'event', 'event_day', 'source', 'source_item', 'station', 'person_info', 'item_info'];
+var RECORD_TABLES = ['business', 'event', 'event_day', 'source', 'source_item', 'station', 'person_info', 'item_info', 'category', 'day_note', 'day_summary'];
 /** v1 -> v2 add-only migration: the v1 per-op tabs keep their rows under a *_log name; the plain names become info tabs. */
 var V1_RENAMES = { menu: 'menu_log', people: 'people_log', payees: 'payees_log', settings: 'settings_log' };
 var LOG_TABS = ['ops', 'conflicts', 'days', 'orders', 'order_events', 'order_lines', 'line_events', 'payments', 'refunds', 'money', 'settlements',
@@ -103,11 +103,15 @@ var INFO = {
     ['item_id', 'id', ''], ['name', 'text', ''], ['on_hand', 'int', 'Blank = not counted'], ['unit', 'text', ''], ['low_at', 'int', 'Low-stock warning at'],
     ['sold', 'ro', 'Sold since counting began'], ['source_id', 'text', 'Usual source (sources)'], ['stock_only', 'bool', ''], ['notes', 'text', '']] },
   stations: { key: 'station_id', record: 'station', cols: [
-    ['station_id', 'id', 'As used by menu.station'], ['name', 'text', ''], ['sort_order', 'int', ''], ['active', 'bool', ''], ['notes', 'text', '']] },
+    ['station_id', 'id', 'As used by menu.station'], ['name', 'text', ''], ['icon', 'text', 'Icon or emoji'], ['colour', 'text', 'Swatch/hex'], ['sort_order', 'int', ''], ['active', 'bool', ''], ['notes', 'text', '']] },
+  categories: { key: 'category_id', record: 'category', cols: [
+    ['category_id', 'id', ''], ['name', 'text', ''], ['sort_order', 'int', ''], ['default_station', 'text', ''], ['default_swatch', 'int', ''], ['active', 'bool', 'Off = removed'], ['notes', 'text', '']] },
+  day_notes: { key: 'day_id', record: 'day_note', cols: [
+    ['day_id', 'id', 'From days/event_days'], ['text', 'text', ''], ['tags', 'text', 'Comma-separated chips'], ['notes', 'text', '']] },
   payees: { key: 'payee_id', cols: [['payee_id', 'id', ''], ['name', 'text', ''], ['upi_id', 'text', 'name@bank'], ['active', 'bool', '']] },
   settings: { key: 'key', cols: [['key', 'id', 'Setting name'], ['value', 'text', '']] }
 };
-var INFO_ORDER = ['business', 'events', 'event_days', 'partners', 'associates', 'sources', 'source_items', 'menu', 'stock_current', 'stations', 'payees', 'settings'];
+var INFO_ORDER = ['business', 'events', 'event_days', 'partners', 'associates', 'sources', 'source_items', 'menu', 'stock_current', 'categories', 'stations', 'day_notes', 'payees', 'settings'];
 function infoCols_(tab) { return INFO[tab].cols.concat(META_COLS); }
 
 /** Formula views (read-only; rebuilt by setup). */
@@ -305,6 +309,8 @@ function renderRows_(S) {
   out.events = recRows_(S, 'event', 'event_id');
   out.sources = recRows_(S, 'source', 'source_id');
   out.source_items = recRows_(S, 'source_item', 'source_item_id');
+  out.categories = recRows_(S, 'category', 'category_id');
+  out.day_notes = recRows_(S, 'day_note', 'day_id');
   out.menu = []; out.stock_current = [];
   var info = S.rec.item_info || {};
   for (id in S.items) {
@@ -316,7 +322,7 @@ function renderRows_(S) {
   var stations = {}; var st = S.rec.station || {};
   for (id in S.items) if (S.items[id].stationId) stations[S.items[id].stationId] = 1;
   for (id in st) stations[id] = 1;
-  out.stations = Object.keys(stations).map(function (sid) { var r = st[sid] || { fields: {}, removed: false }; return withMeta_({ station_id: sid, name: v_(r.fields.name) || sid, sort_order: v_(r.fields.sort_order), active: !r.removed, notes: v_(r.fields.notes) }, S.meta['rec:station|' + sid]); });
+  out.stations = Object.keys(stations).map(function (sid) { var r = st[sid] || { fields: {}, removed: false }; return withMeta_({ station_id: sid, name: v_(r.fields.name) || sid, icon: v_(r.fields.icon), colour: v_(r.fields.colour), sort_order: v_(r.fields.sort_order), active: !r.removed, notes: v_(r.fields.notes) }, S.meta['rec:station|' + sid]); });
   out.partners = []; out.associates = [];
   var pinfo = S.rec.person_info || {};
   for (id in S.people) {
@@ -628,10 +634,46 @@ function doPost(e) {
     if (body.action === 'push') return reply_(push_(body.ops));
     if (body.action === 'pull') return reply_(pull_(body.cursor));
     if (body.action === 'beat') return reply_(beat_(body));
+    if (body.action === 'digest') return reply_({ ok: true, digest: digest_(readAllOps_()), bridge: CFG.VERSION });
     return reply_({ ok: false, error: 'unknown action' });
   } catch (err) {
     return reply_({ ok: false, error: String(err && err.message ? err.message : err) });
   }
+}
+
+/** Heartbeat digest freshness check (Q-SYNC-GO, Q-GO-WHEN B). */
+function digest_(ops) {
+  var list = ops || [];
+  var total = list.length;
+  var vv = {};
+  var hash = 0x811c9dc5;
+  for (var i = 0; i < total; i++) {
+    var op = list[i];
+    if (op && op.writer) {
+      if ((vv[op.writer] || 0) < op.seq) vv[op.writer] = op.seq;
+      var str = op.opId || '';
+      for (var j = 0; j < str.length; j++) {
+        hash = (hash ^ str.charCodeAt(j)) * 0x01000193;
+        hash = hash >>> 0;
+      }
+    }
+  }
+  return { total: total, vv: vv, checksum: hash.toString(16) };
+}
+
+/** Compaction plan dry-run (Q-SHEET-COMPACT A, P6). */
+function compactPlan_(ops, nowMs) {
+  var now = nowMs || Date.now();
+  var limit = now - (60 * 86400000);
+  var list = ops || [];
+  if (!list.length) return { compactable: 0, oldestAgeDays: 0, plan: [] };
+  var oldest = list[0];
+  var oldestAgeDays = Math.round((now - (oldest.wallAt || now)) / 86400000);
+  if (oldest.wallAt && oldest.wallAt > limit) {
+    return { compactable: 0, oldestAgeDays: oldestAgeDays, reason: 'oldest op < 60 days', plan: [] };
+  }
+  var oldOps = list.filter(function (op) { return (op.wallAt || 0) <= limit; });
+  return { compactable: oldOps.length, oldestAgeDays: oldestAgeDays, plan: ['backup_drive', 'generate_base_ops', 'archive_old_ops'] };
 }
 
 /** s127 presence (Q-TAKE-ALIVE A): "last heard from" per device, kept in the script cache, never in the Sheet or the op
@@ -658,4 +700,4 @@ function setup() { props_().deleteProperty('SCHEMA_DONE'); ensureSchema_(); var 
 
 function reply_(obj) { return ContentService.createTextOutput(JSON.stringify(obj)).setMimeType(ContentService.MimeType.JSON); }
 
-if (typeof module !== 'undefined') module.exports = { TABS: TABS, INFO: INFO, INFO_ORDER: INFO_ORDER, LOG_TABS: LOG_TABS, VIEWS: VIEWS, SCHEMA_VERSION: SCHEMA_VERSION, CFG: CFG, project_: project_, iso_: iso_, foldState_: foldState_, renderRows_: renderRows_, rowToOps_: rowToOps_, gaps_: gaps_, infoCols_: infoCols_ };
+if (typeof module !== 'undefined') module.exports = { TABS: TABS, INFO: INFO, INFO_ORDER: INFO_ORDER, LOG_TABS: LOG_TABS, VIEWS: VIEWS, SCHEMA_VERSION: SCHEMA_VERSION, CFG: CFG, project_: project_, iso_: iso_, foldState_: foldState_, renderRows_: renderRows_, rowToOps_: rowToOps_, gaps_: gaps_, infoCols_: infoCols_, digest_: digest_, compactPlan_: compactPlan_ };

@@ -38,7 +38,7 @@ export interface TabChannel {
 
 export interface DevicePrefs {
   deviceId: string;
-  theme: 'night' | 'day';
+  theme: 'night' | 'day' | 'auto';
   servingName: string;
   rangeIndex: number;
   haptics: 'off' | 'light' | 'normal' | 'strong';
@@ -65,6 +65,43 @@ export interface DevicePrefs {
   quiet: boolean;
   /** D-PAY5-1: Count notes drawer on Payment, remembered on this phone. Default hidden. */
   countNotesOpen: boolean;
+  /** Q-KITCHEN-ALERT: Chime + flash with selectable tone (Steve locked). */
+  alertTone: 'chime' | 'bell' | 'pluck' | 'harp';
+}
+
+export interface BackupMeta {
+  readonly contractVersion: number;
+  readonly appVersion: string;
+  readonly exportedAt: string;
+  readonly deviceId: string;
+  readonly opCount: number;
+  readonly hash: string;
+}
+
+export interface BackupFileContent {
+  readonly meta: BackupMeta;
+  readonly ops: readonly Op[];
+  readonly prefs?: Partial<DevicePrefs> | undefined;
+}
+
+export interface SnapshotSummary {
+  readonly id: string;
+  readonly createdAt: number;
+  readonly reason: string;
+  readonly opCount: number;
+  readonly hash: string;
+}
+
+export interface SnapshotRecord extends SnapshotSummary {
+  readonly ops: readonly Op[];
+  readonly prefs?: Partial<DevicePrefs> | undefined;
+}
+
+export interface SnapshotsStore {
+  save(reason: string, ops: readonly Op[], prefs?: Partial<DevicePrefs>): Promise<string>;
+  list(): Promise<readonly SnapshotSummary[]>;
+  load(id: string): Promise<SnapshotRecord | null>;
+  delete(id: string): Promise<void>;
 }
 
 /** Per-device settings (not synced on purpose). */
@@ -73,9 +110,23 @@ export interface DeviceStore {
   write(prefs: DevicePrefs): void;
 }
 
+export interface StorageEstimate {
+  readonly usageBytes: number;
+  readonly quotaBytes: number;
+  readonly warning: boolean;
+  readonly persisted: boolean;
+}
+
+export interface StorageInfoStore {
+  estimate(): Promise<StorageEstimate>;
+  persist(): Promise<boolean>;
+}
+
 export interface DataSource {
   readonly ops: OpStore;
   readonly device: DeviceStore;
   readonly channel: TabChannel;
   readonly transports: readonly Transport[];
+  readonly snapshots?: SnapshotsStore | undefined;
+  readonly storageInfo?: StorageInfoStore | undefined;
 }
