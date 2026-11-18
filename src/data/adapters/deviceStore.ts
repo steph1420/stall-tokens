@@ -25,7 +25,7 @@ function merge(base: DevicePrefs, raw: unknown): DevicePrefs {
   const pick = <K extends keyof DevicePrefs>(k: K, ok: (v: unknown) => boolean): DevicePrefs[K] => (ok(r[k]) ? r[k] as DevicePrefs[K] : base[k]);
   return {
     deviceId: pick('deviceId', (v) => typeof v === 'string' && v.length >= 8),
-    theme: pick('theme', (v) => v === 'night' || v === 'day'),
+    theme: pick('theme', (v) => v === 'night' || v === 'day' || v === 'auto'),
     servingName: pick('servingName', (v) => typeof v === 'string'),
     rangeIndex: pick('rangeIndex', (v) => typeof v === 'number' && v >= 0 && v < CONFIG.tokens.ranges.length),
     haptics: pick('haptics', (v) => v === 'off' || v === 'light' || v === 'normal' || v === 'strong'),

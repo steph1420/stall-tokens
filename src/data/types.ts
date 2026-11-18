@@ -38,7 +38,7 @@ export interface TabChannel {
 
 export interface DevicePrefs {
   deviceId: string;
-  theme: 'night' | 'day';
+  theme: 'night' | 'day' | 'auto';
   servingName: string;
   rangeIndex: number;
   haptics: 'off' | 'light' | 'normal' | 'strong';
@@ -110,10 +110,23 @@ export interface DeviceStore {
   write(prefs: DevicePrefs): void;
 }
 
+export interface StorageEstimate {
+  readonly usageBytes: number;
+  readonly quotaBytes: number;
+  readonly warning: boolean;
+  readonly persisted: boolean;
+}
+
+export interface StorageInfoStore {
+  estimate(): Promise<StorageEstimate>;
+  persist(): Promise<boolean>;
+}
+
 export interface DataSource {
   readonly ops: OpStore;
   readonly device: DeviceStore;
   readonly channel: TabChannel;
   readonly transports: readonly Transport[];
-  readonly snapshots?: SnapshotsStore;
+  readonly snapshots?: SnapshotsStore | undefined;
+  readonly storageInfo?: StorageInfoStore | undefined;
 }

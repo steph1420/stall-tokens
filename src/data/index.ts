@@ -5,10 +5,11 @@ import { createLocalIdb } from './adapters/localIdb';
 import { createTabChannel } from './adapters/tabChannel';
 import { createSheetTransport, isSheetUrl } from './adapters/sheetTransport';
 import { createIdbSnapshotsStore, createMemorySnapshotsStore } from './adapters/snapshots';
+import { createBrowserStorageInfo } from './adapters/storageInfo';
 import { applyJoinFromLocation } from './join';
 import type { DataSource, Transport } from './types';
 
-export type { Beat, DataSource, DevicePrefs, OpStore, Seen, Transport, TabChannel, DeviceStore, BackupMeta, BackupFileContent, SnapshotSummary, SnapshotRecord, SnapshotsStore } from './types';
+export type { Beat, DataSource, DevicePrefs, OpStore, Seen, Transport, TabChannel, DeviceStore, BackupMeta, BackupFileContent, SnapshotSummary, SnapshotRecord, SnapshotsStore, StorageEstimate, StorageInfoStore } from './types';
 export { createSyncEngine, type Presence, type SyncEngine, type SyncStatus } from './sync/engine';
 export { createMemoryOpStore, createMemoryChannelHub } from './adapters/memory';
 export { createFakeHub, createFakeTransport, type FakeHub } from './adapters/fakeTransport';
@@ -21,6 +22,7 @@ export { dropReceipt, getReceipt, putReceipt, receiptIds } from './adapters/rece
 export { backupFilename, createBackupData, computeOpLogHash, parseBackupJson, triggerFileDownload } from './adapters/backupFile';
 export { createIdbSnapshotsStore, createMemorySnapshotsStore } from './adapters/snapshots';
 export { resetAllLocalData, resetBrowserData } from './adapters/reset';
+export { createBrowserStorageInfo, createMemoryStorageInfo } from './adapters/storageInfo';
 
 function safeLocalStorage(): Storage | null {
   try { return globalThis.localStorage; } catch (e) {
@@ -43,5 +45,5 @@ export function createBrowserDataSource(makeId: () => string, transports?: reado
   const { syncUrl, syncKey } = device.read();
   const sheet = isSheetUrl(syncUrl) && syncKey ? [createSheetTransport({ url: syncUrl, key: syncKey })] : [];
   const snapshots = idb ? createIdbSnapshotsStore(idb) : createMemorySnapshotsStore();
-  return { ops: createFallbackOpStore(idb ? createLocalIdb(idb) : null), device, channel: createTabChannel(), transports: transports ?? sheet, snapshots };
+  return { ops: createFallbackOpStore(idb ? createLocalIdb(idb) : null), device, channel: createTabChannel(), transports: transports ?? sheet, snapshots, storageInfo: createBrowserStorageInfo() };
 }

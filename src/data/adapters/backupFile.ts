@@ -112,7 +112,7 @@ export function parseBackupJson(rawJson: string): ParseResult {
 
 /** Browser trigger: downloads a text blob as a file. */
 export function triggerFileDownload(filename: string, content: string): void {
-  if (typeof window === 'undefined' || typeof document === 'undefined') return;
+  if (typeof window === 'undefined' || typeof document === 'undefined' || typeof URL.createObjectURL !== 'function') return;
   const blob = new Blob([content], { type: 'application/json' });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');

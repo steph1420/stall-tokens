@@ -4,11 +4,14 @@ import {
   backupFilename,
   createBackupData,
   createMemorySnapshotsStore,
+  createMemoryStorageInfo,
   parseBackupJson,
   resetBrowserData,
   triggerFileDownload,
   type SnapshotSummary,
   type SnapshotsStore,
+  type StorageEstimate,
+  type StorageInfoStore,
 } from '../data';
 import type { Core, Log } from './core';
 
@@ -21,12 +24,18 @@ export interface BackupActions {
   restoreSnapshot(id: string): Promise<{ ok: boolean; error?: string }>;
   deleteSnapshot(id: string): Promise<void>;
   resetAll(deleteSnapshots?: boolean): Promise<void>;
+  getStorageEstimate(): Promise<StorageEstimate>;
+  persistStorage(): Promise<boolean>;
 }
 
 function resolveSnapshots(core: Core, custom?: SnapshotsStore): SnapshotsStore {
   if (custom) return custom;
   if (core.env.ds.snapshots) return core.env.ds.snapshots;
   return createMemorySnapshotsStore();
+}
+
+function resolveStorage(core: Core): StorageInfoStore {
+  return core.env.ds.storageInfo ?? createMemoryStorageInfo();
 }
 
 function applyImportedPrefs(core: Core, rawPrefs: Record<string, unknown>): void {
@@ -78,6 +87,7 @@ async function performReset(core: Core, log: Log, store: SnapshotsStore, deleteS
 
 export function backupActions(core: Core, log: Log, customSnapshots?: SnapshotsStore): BackupActions {
   const snapshots = resolveSnapshots(core, customSnapshots);
+  const storage = resolveStorage(core);
 
   return {
     exportData() {
@@ -91,26 +101,18 @@ export function backupActions(core: Core, log: Log, customSnapshots?: SnapshotsS
       triggerFileDownload(filename, json);
       return filename;
     },
-    importBackup(jsonText: string) {
-      return Promise.resolve(importBackupData(core, log, jsonText));
-    },
-    createSnapshot(reason: string) {
-      return recordSnapshot(core, log, snapshots, reason);
-    },
-    listSnapshots() {
-      return snapshots.list();
-    },
+    importBackup(jsonText: string) { return Promise.resolve(importBackupData(core, log, jsonText)); },
+    createSnapshot(reason: string) { return recordSnapshot(core, log, snapshots, reason); },
+    listSnapshots() { return snapshots.list(); },
     async restoreSnapshot(id: string) {
       const snap = await snapshots.load(id);
       if (!snap) return { ok: false, error: 'Snapshot not found.' };
       if (snap.ops.length > 0) log.intake(snap.ops, true);
       return { ok: true };
     },
-    deleteSnapshot(id: string) {
-      return snapshots.delete(id);
-    },
-    resetAll(deleteSnapshots = true) {
-      return performReset(core, log, snapshots, deleteSnapshots);
-    },
+    deleteSnapshot(id: string) { return snapshots.delete(id); },
+    resetAll(deleteSnapshots = true) { return performReset(core, log, snapshots, deleteSnapshots); },
+    getStorageEstimate() { return storage.estimate(); },
+    persistStorage() { return storage.persist(); },
   };
 }

@@ -15,7 +15,7 @@ export function AmountsEdit({ k, onDone }: { k: amounts.AmountsKey; onDone: () =
   return (
     <div className={kit.amountsEdit}>
       <label className={kit.fieldLab} htmlFor={`amt-${k}`}>{LABEL[k]}</label>
-      <input id={`amt-${k}`} className={kit.input} inputMode="decimal" value={text} placeholder="10, 20" onChange={(e) => { setText(e.target.value); setErr(''); }} onKeyDown={(e) => { if (e.key === 'Enter') save(); }} />
+      <input id={`amt-${k}`} className={kit.input} inputMode="decimal" value={text} placeholder={k === 'roundOffSteps' ? '5, 10' : '10, 20'} onChange={(e) => { setText(e.target.value); setErr(''); }} onKeyDown={(e) => { if (e.key === 'Enter') save(); }} />
       <div className={kit.hint}>{err || 'Shared with every phone. Separate with commas.'}</div>
       <div className={kit.row}>
         <button type="button" className={kit.quiet} onClick={onDone}>Cancel</button>
