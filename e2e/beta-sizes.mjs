@@ -12,7 +12,7 @@ const SIZES = [['360x740', 360, 740], ['390x844', 390, 844], ['421x927', 421, 92
 const VARIANTS = [...SIZES.map((s) => [...s, 'night', '']), ['421x927', 421, 927, 'day', ''], ['421x927-text200', 421, 927, 'night', 'text200'], ['421x927-safearea', 421, 927, 'night', 'safe'],
   ['ipad-820x1180', 820, 1180, 'day', ''], ['ipad-1180x820', 1180, 820, 'day', ''], ['tab-1024x768', 1024, 768, 'day', ''], ['tab-768x1024', 768, 1024, 'day', ''],
   ['ipad-820x1180-text200', 820, 1180, 'night', 'text200'], ['ipad-1180x820-text200', 1180, 820, 'day', 'text200']];
-const b = await chromium.launch({ executablePath: '/usr/bin/google-chrome', args: ['--no-sandbox'] });
+const b = await chromium.launch({ executablePath: process.env.CHROME_PATH || (process.platform === 'darwin' ? undefined : '/usr/bin/google-chrome'), args: ['--no-sandbox'] });
 
 const measure = (p) => p.evaluate(() => {
   const vw = innerWidth, vh = innerHeight, de = document.documentElement;
