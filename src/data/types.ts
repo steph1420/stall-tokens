@@ -65,6 +65,43 @@ export interface DevicePrefs {
   quiet: boolean;
   /** D-PAY5-1: Count notes drawer on Payment, remembered on this phone. Default hidden. */
   countNotesOpen: boolean;
+  /** Q-KITCHEN-ALERT: Chime + flash with selectable tone (Steve locked). */
+  alertTone: 'chime' | 'bell' | 'pluck' | 'harp';
+}
+
+export interface BackupMeta {
+  readonly contractVersion: number;
+  readonly appVersion: string;
+  readonly exportedAt: string;
+  readonly deviceId: string;
+  readonly opCount: number;
+  readonly hash: string;
+}
+
+export interface BackupFileContent {
+  readonly meta: BackupMeta;
+  readonly ops: readonly Op[];
+  readonly prefs?: Partial<DevicePrefs> | undefined;
+}
+
+export interface SnapshotSummary {
+  readonly id: string;
+  readonly createdAt: number;
+  readonly reason: string;
+  readonly opCount: number;
+  readonly hash: string;
+}
+
+export interface SnapshotRecord extends SnapshotSummary {
+  readonly ops: readonly Op[];
+  readonly prefs?: Partial<DevicePrefs> | undefined;
+}
+
+export interface SnapshotsStore {
+  save(reason: string, ops: readonly Op[], prefs?: Partial<DevicePrefs>): Promise<string>;
+  list(): Promise<readonly SnapshotSummary[]>;
+  load(id: string): Promise<SnapshotRecord | null>;
+  delete(id: string): Promise<void>;
 }
 
 /** Per-device settings (not synced on purpose). */
@@ -78,4 +115,5 @@ export interface DataSource {
   readonly device: DeviceStore;
   readonly channel: TabChannel;
   readonly transports: readonly Transport[];
+  readonly snapshots?: SnapshotsStore;
 }

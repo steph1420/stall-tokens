@@ -29,7 +29,9 @@ export const CONFIG = Object.freeze({
   },
   ports: { dev: 5173, preview: 4173 },
   // Shared github.io origin: every storage key and DB name starts with this prefix (ARCHITECTURE §9). Beta has its own (§4.7, F-49).
-  storage: { prefix: CHANNELS[channel].prefix, dbVersion: 1 },
+  storage: { prefix: CHANNELS[channel].prefix, dbVersion: 1, warningRatio: 0.8 },
+  backup: { keep: 20 },
+  alertTones: ['chime', 'bell', 'pluck', 'harp'] as const,
   themes: { night: 'stall-night', day: 'stall-day' },
   // D-TOKEN: each Counter device picks one range; tokens restart per day.
   tokens: { ranges: [{ from: 1, to: 500 }, { from: 501, to: 1000 }], pad: 3 },
