@@ -1,7 +1,20 @@
 # Changelog
 All notable changes to Stall Tokens. SemVer. Times IST.
 
-## [Unreleased]
+## [2.1.0] - 18 Nov 2026 (Beta)
+
+### 2.1.0 P6 — Sheet Bridge Code.gs 2.1.0 & Schema 3 (18 Nov 2026, Beta; F-35)
+- **Code.gs 2.1.0 (Schema 3):** Added `category` and `day_note` to record tables; visible info tabs `categories` and `day_notes` with automatic formatting; added `icon` and `colour` columns to stations.
+- `order.complete` projection support for Google Sheets.
+- Added `digest_` freshness check endpoint (`action === 'digest'`) for bridge heartbeats.
+- Added `compactPlan_` 60-day compaction dry-run support.
+
+### 2.1.0 P5 — Settings regrouped & Data Layer (18 Nov 2026, Beta; F-69, F-70)
+- **Settings regrouped (F-69):** Apple HIG quiet grouped rows with chevrons across General, Display, Menu, Kitchen, Money, Sync, Extras, Data, Account, Passcode, Developer, and About.
+- **Categories & Stations editors:** Reorder (↑/↓), rename, default station, colour swatch picker, hide categories; name, icon, colour, active toggles for stations.
+- **Display & Audio:** Appearance (Night/Day/Auto), Haptics, Kitchen text size, selectable alert tone (`chime`, `bell`, `pluck`, `harp`) and quiet toggle.
+- **Data layer & Backup Engine (F-70):** Back up now (JSON export with timestamp and device ID), Restore from file with op fold integrity, Snapshots list with one-tap rollback (keeping up to 20 local IDB snapshots), Reset app with 3-second hold-to-confirm preserving device ID, and storage persistence & warning (>=80% usage).
+- **Developer 7-tap (Q-DEV-7TAP):** Tapping the version stamp 7 times within 1.5 seconds unlocks Developer options with countdown toasts. Sign-in links moved under Account group.
 
 ### Payment first tap (s129b, Q-PAY5-1 A), 17 Nov 2026
 - A tall **Cash | UPI | Split** control is the first layer. Nothing is selected when Payment opens. Cash puts the whole amount on Cash; UPI puts it on UPI and shows the QR (with the UPI ID and amount from the link) straight away; Split reveals the existing boxes, locks, calculator, slider, + Tip / − Waive and the Allowed by note.
