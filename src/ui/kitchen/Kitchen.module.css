@@ -39,7 +39,7 @@
 
 /* Order cards */
 .klist { flex: 1; min-height: 0; overflow-y: auto; padding: 0.5rem 1rem 1rem; display: flex; flex-direction: column; gap: 0.5rem; }
-.empty { margin: 3rem 0 0; text-align: center; color: var(--dl-color-text-faint); }
+.empty { margin: 3rem 0 0; text-align: center; color: var(--dl-color-text-muted); font-size: 1rem; line-height: 1.5; }
 .kcard {
   position: relative; flex: none; padding: 0.875rem 1rem 0.75rem; border-radius: var(--dl-card-radius);
   background: var(--dl-card-bg); backdrop-filter: blur(var(--dl-blur-card)) saturate(160%);

@@ -21,7 +21,7 @@
 .pos { color: var(--dl-stall-pos-text); }
 .warn { color: var(--dl-stall-warn-text); }
 .muted { opacity: 0.5; }
-.empty { padding: 1rem; font-size: 0.875rem; color: var(--dl-color-text-faint); }
+.empty { padding: 2rem 1rem; text-align: center; font-size: 0.9375rem; color: var(--dl-color-text-muted); line-height: 1.5; }
 .tiles { display: grid; grid-template-columns: 1fr 1fr; gap: 0.625rem; }
 .tile { border-radius: var(--dl-card-radius); padding: 0.75rem 0.875rem; background: var(--dl-color-surface); box-shadow: var(--dl-stall-card-edge), var(--dl-stall-card-lift); display: flex; flex-direction: column; gap: 0.25rem; }
 .tileL { font-size: 0.75rem; color: var(--dl-color-text-muted); }
