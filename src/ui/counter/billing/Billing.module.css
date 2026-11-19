@@ -87,11 +87,12 @@
 .prioIc svg { width: 1rem; height: 1rem; display: block; }
 .prioOn { composes: prio; color: var(--dl-stall-st-priority); background: color-mix(in srgb, var(--dl-stall-st-priority) 14%, transparent); }
 
-/* P2 large text (200 %): under 18rem of card the table reflows into stacked rows (item on top; qty left, amount right)
-   and the action row wraps two by two, so nothing is cut off and every button stays 44px+. */
+/* Fluid responsive reflow (FIND-UI-01): under 25rem of card the table reflows into stacked rows
+   (item on top; qty left, amount right) so items never get squished at 125%-200% font scale.
+   Action row wraps two by two under 22rem so buttons stay 44px+ touch targets. */
 .num { font-variant-numeric: tabular-nums; }
 .qtyCell { white-space: nowrap; }
-@container (max-width: 18rem) {
+@container (max-width: 25rem) {
   .sheet, .sheet tbody, .sheet tfoot { display: block; }
   .sheet thead { display: none; }
   .sheet tbody tr { display: grid; grid-template-columns: 1fr auto; align-items: center; column-gap: 0.5rem; padding: 0.375rem 0.75rem;
@@ -104,7 +105,7 @@
   .sheet tfoot tr { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.25rem 0.5rem; padding: 0.25rem 0.75rem; }
   .sheet tfoot td { display: block; height: auto; padding: 0; }
 }
-@container counter (max-width: 18rem) {
+@container counter (max-width: 22rem) {
   .row { flex-wrap: wrap; }
   .back, .del, .kitchen, .pay { flex: 1 1 40%; }
 }
