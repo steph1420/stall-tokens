@@ -29,12 +29,12 @@ export const total = (o: Pick<Order, 'lines' | 'discount' | 'roundOff'>): Paise 
 
 /** Refunds that count: a voided (Undo) refund stays on record but gives nothing back (Q-REFUND-INSTANT). */
 export const refunded = (o: Pick<Order, 'refunds'>): Paise => o.refunds.reduce((t, r) => t + (r.voided ? 0 : r.amount), 0);
-/** Money received for the bill (tips excluded, live refunds taken off). */
+/** Money received for the bill (tips excluded, live refunds taken off, clamped to non-negative, FIN-02). */
 export const paid = (o: Pick<Order, 'payments' | 'refunds'>): Paise =>
-  o.payments.reduce((t, p) => t + p.cash + p.upi - p.tip, 0) - refunded(o);
+  Math.max(0, o.payments.reduce((t, p) => t + p.cash + p.upi - p.tip, 0) - refunded(o));
 /** Money the stall holds for this order, tips included (what a refund may give back at most, Q-REFUND-1 A). */
 export const held = (o: Pick<Order, 'payments' | 'refunds'>): Paise =>
-  o.payments.reduce((t, p) => t + p.cash + p.upi, 0) - refunded(o);
+  Math.max(0, o.payments.reduce((t, p) => t + p.cash + p.upi, 0) - refunded(o));
 export const waived = (o: Pick<Order, 'payments'>): Paise => o.payments.reduce((t, p) => t + p.waived, 0);
 export const tips = (o: Pick<Order, 'payments'>): Paise => o.payments.reduce((t, p) => t + p.tip, 0);
 

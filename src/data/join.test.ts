@@ -13,5 +13,8 @@ describe('sign-in links (F-44)', () => {
     expect(readJoin('#join=bm9wZQ')).toBeNull();
     const http = joinUrl('https://a/', { url: 'http://x/exec', key: 'k', role: 'counter', name: '' });
     expect(readJoin(`#${http.split('#')[1] ?? ''}`)).toBeNull();
+    // Rejects non-whitelisted domains (SEC-01)
+    const attacker = joinUrl('https://a/', { url: 'https://attacker.com/malicious/exec', key: 'k', role: 'counter', name: '' });
+    expect(readJoin(`#${attacker.split('#')[1] ?? ''}`)).toBeNull();
   });
 });

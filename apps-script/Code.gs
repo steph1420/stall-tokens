@@ -129,7 +129,12 @@ function iso_(ms, offset) {
 }
 function day_(ms) { return iso_(ms, IST_MS).slice(0, 10); }
 function json_(x) { return JSON.stringify(x === undefined ? null : x); }
-function v_(x) { return x === undefined || x === null ? '' : x; }
+function sanitizeCell_(x) {
+  if (x === undefined || x === null) return '';
+  if (typeof x === 'string' && /^[=+\-@\t\r]/.test(x)) return "'" + x;
+  return x;
+}
+function v_(x) { return sanitizeCell_(x); }
 
 /** op -> [tab, row object] or null. Every row carries op_id + ts_ist. */
 function project_(op) {
@@ -161,11 +166,6 @@ function project_(op) {
   if (k === 'setting.set') return row('settings_log', { key: b.key, value: b.value });
   if (k === 'record.set') return row('records_log', { table: b.table, record_id: b.id, writer: op.writer, removed: b.removed, fields_json: json_(b.fields) });
   return null; // a newer kind: kept in ops, projected once this script learns it
-}
-
-function entityId_(op) {
-  var b = op.body || {};
-  return v_(b.orderId || b.entryId || b.itemId || b.personId || b.payeeId || b.dayId || b.payId || b.clearId || b.targetId || b.key || '');
 }
 
 function entityId_(op) {
@@ -222,19 +222,52 @@ function setQty_(S, o, lineId, raw) {
 /** The order ops that move stock (mirror of src/store/fold/orders.ts); everything else about orders stays in logs. */
 function foldOrder_(S, op) {
   var b = op.body; var o = S.orders[b.orderId];
-  if (op.kind === 'order.create') { if (!o) S.orders[b.orderId] = { lines: [], sent: false, payments: {} }; return; }
+  if (op.kind === 'order.create') { if (!o) S.orders[b.orderId] = { lines: [], sent: false, payments: {}, refunds: {} }; return; }
   if (!o) return;
+  if (!o.refunds) o.refunds = {};
   if (op.kind === 'line.add') {
     if (o.lines.some(function (l) { return l.lineId === b.lineId; })) return;
-    o.lines.push({ lineId: b.lineId, itemId: b.itemId, qty: 0, committed: 0, status: 'draft' });
+    o.lines.push({ lineId: b.lineId, itemId: b.itemId, qty: 0, committed: 0, restocked: 0, status: 'draft' });
     setQty_(S, o, b.lineId, b.qty);
   } else if (op.kind === 'line.qty') setQty_(S, o, b.lineId, b.qty);
   else if (op.kind === 'line.status') o.lines.forEach(function (l) { if (l.lineId === b.lineId) l.status = b.status; });
   else if (op.kind === 'line.finish') o.lines.forEach(function (l) { if (l.lineId === b.lineId && l.status !== 'draft' && l.status !== 'handed') l.status = 'ready'; });
   else if (op.kind === 'order.send') commit_(S, o);
   else if (op.kind === 'payment.add') { if (o.payments[b.paymentId]) return; o.payments[b.paymentId] = 1; commit_(S, o); }
-  else if (op.kind === 'order.delete') o.lines.forEach(function (l) { moveStock_(S, l.itemId, -l.committed); l.committed = 0; });
-  else if (op.kind === 'order.cancel') o.lines.forEach(function (l) { if (NOT_STARTED[l.status]) { moveStock_(S, l.itemId, -l.committed); l.committed = 0; } });
+  else if (op.kind === 'refund.add') {
+    if (o.refunds[b.refundId]) return;
+    var done = [];
+    if (b.restock === true && Array.isArray(b.lines)) {
+      b.lines.forEach(function (rl) {
+        o.lines.forEach(function (l) {
+          if (l.lineId === rl.lineId) {
+            var restocked = l.restocked || 0;
+            var ask = Math.max(0, Math.trunc(rl.qty));
+            var qty = Math.min(ask, Math.max(0, l.committed - restocked));
+            if (qty > 0) {
+              moveStock_(S, l.itemId, -qty);
+              l.restocked = restocked + qty;
+              done.push({ lineId: l.lineId, qty: qty, itemId: l.itemId });
+            }
+          }
+        });
+      });
+    }
+    o.refunds[b.refundId] = { done: done, voided: false };
+  } else if (op.kind === 'refund.void') {
+    if (!o.refunds[b.refundId] || o.refunds[b.refundId].voided) return;
+    var ref = o.refunds[b.refundId];
+    ref.voided = true;
+    ref.done.forEach(function (d) {
+      o.lines.forEach(function (l) {
+        if (l.lineId === d.lineId) {
+          moveStock_(S, d.itemId, d.qty);
+          l.restocked = Math.max(0, (l.restocked || 0) - d.qty);
+        }
+      });
+    });
+  } else if (op.kind === 'order.delete') o.lines.forEach(function (l) { moveStock_(S, l.itemId, -(l.committed - (l.restocked || 0))); l.committed = 0; });
+  else if (op.kind === 'order.cancel') o.lines.forEach(function (l) { if (NOT_STARTED[l.status]) { moveStock_(S, l.itemId, -(l.committed - (l.restocked || 0))); l.committed = 0; } });
 }
 
 function foldItem_(S, op) {
@@ -280,7 +313,7 @@ function foldState_(ops) {
     else if (k === 'setting.set') { if (lww_(S, 'settings', b.key, op)) { S.settings[b.key] = b.value; touch_(S, 'setting', b.key, op); } }
     else if (k === 'day.start') { if (!S.days[b.dayId]) S.days[b.dayId] = { label: b.label }; touch_(S, 'day', b.dayId, op); }
     else if (k === 'record.set') foldRecord_(S, op);
-    else if (k.indexOf('order.') === 0 || k.indexOf('line.') === 0 || k === 'payment.add') foldOrder_(S, op);
+    else if (k.indexOf('order.') === 0 || k.indexOf('line.') === 0 || k === 'payment.add' || k === 'refund.add' || k === 'refund.void') foldOrder_(S, op);
   });
   return S;
 }
@@ -502,7 +535,7 @@ function appendOps_(ops) {
 function appendObjects_(sh, objs) {
   if (!objs.length) return;
   var h = headers_(sh);
-  var rows = objs.map(function (o) { return h.map(function (c) { return o[c] === undefined ? '' : o[c]; }); });
+  var rows = objs.map(function (o) { return h.map(function (c) { return sanitizeCell_(o[c]); }); });
   sh.getRange(sh.getLastRow() + 1, 1, rows.length, h.length).setValues(rows);
 }
 
@@ -581,7 +614,7 @@ function writeInfo_(sh, tab, objs) {
   objs.forEach(function (o) {
     var i = at[String(o[key])];
     if (i === undefined) { i = vals.length; vals.push(h.map(function () { return ''; })); at[String(o[key])] = i; }
-    h.forEach(function (c, j) { if (known[c] && o[c] !== undefined) vals[i][j] = o[c]; });
+    h.forEach(function (c, j) { if (known[c] && o[c] !== undefined) vals[i][j] = sanitizeCell_(o[c]); });
   });
   if (vals.length) sh.getRange(2, 1, vals.length, h.length).setValues(vals);
 }

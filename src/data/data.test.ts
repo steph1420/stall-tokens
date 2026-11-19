@@ -7,6 +7,7 @@ import { createFakeHub, createFakeTransport } from './adapters/fakeTransport';
 import { createFallbackOpStore } from './adapters/fallback';
 import { createLocalIdb, DB_NAME } from './adapters/localIdb';
 import { DB as RECEIPTS_DB } from './adapters/receipts';
+import { createSyncStateStore } from './adapters/syncState';
 import { createSyncEngine } from './sync/engine';
 
 describe('LocalIdb (F-03)', () => {
@@ -80,6 +81,35 @@ describe('sync engine with the fake transport (F-03)', () => {
     const got = await b.round();
     expect(got.map((o) => o.opId)).toEqual(['devA.1:1']);
     expect(a.nextDelayMs()).toBe(4000);
+  });
+
+  it('rehydrates outbox across reloads and persists pull cursor (SYNC-P0-01, SYNC-P1-01)', async () => {
+    const hub = createFakeHub();
+    const syncState = createSyncStateStore(localStorage);
+    const mk = opMaker('devA.1');
+    const op1 = mk('day.start', { dayId: 'd', label: '' });
+    const op2 = mk('order.create', { orderId: 'o1', dayId: 'd', token: 1, servedBy: '' });
+
+    // Session 1: create ops while offline, then reload
+    const eng1 = createSyncEngine([createFakeTransport(hub)], () => false, () => 1, () => [], syncState);
+    eng1.enqueue([op1, op2]);
+    expect(eng1.status().pending).toBe(2);
+
+    // Simulate restart/reload: new engine instance with rehydrate
+    const eng2 = createSyncEngine([createFakeTransport(hub)], () => false, () => 1, () => [], syncState);
+    // Before rehydrate, outbox has 0 in-memory
+    expect(eng2.status().pending).toBe(0);
+    // Rehydrate from loaded ops
+    eng2.rehydrate([op1, op2], 'devA');
+    expect(eng2.status().pending).toBe(2);
+
+    // Now transport comes online and syncs
+    await eng2.round();
+    expect(eng2.status().pending).toBe(0);
+    expect(hub.log.map((o) => o.opId)).toEqual([op1.opId, op2.opId]);
+
+    // Pull cursor is saved in syncState
+    expect(syncState.read('fake').cursor).toBeTruthy();
   });
 });
 

@@ -159,17 +159,24 @@ describe('backupActions in AppStore', () => {
     const initialFold = store.getState().folded;
     expect(initialFold.items['item-1']?.name).toBe('Hot Tea');
 
-    // 2. Export backup
+    // 2. Export backup (assert sensitive secrets are stripped: SEC-02)
     const exported = store.getState().backup.exportData();
     expect(exported.json).toBeTruthy();
+    const parsedJson = JSON.parse(exported.json) as { prefs?: Record<string, unknown> };
+    expect(parsedJson.prefs?.syncKey).toBeUndefined();
+    expect(parsedJson.prefs?.syncUrl).toBeUndefined();
+    expect(parsedJson.prefs?.passcode).toBeUndefined();
 
     // 3. Reset database
     await store.getState().backup.resetAll(false);
     expect(Object.keys(store.getState().folded.items)).toHaveLength(0);
 
-    // 4. Import backup
-    const importRes = await store.getState().backup.importBackup(exported.json);
+    // 4. Import backup (assert passcode is not overwritten: SEC-05)
+    store.getState().setPrefs({ passcode: '1234' });
+    const importPayload = JSON.stringify({ ...parsedJson, prefs: { ...parsedJson.prefs, passcode: '9999' } });
+    const importRes = await store.getState().backup.importBackup(importPayload);
     expect(importRes.ok).toBe(true);
+    expect(store.getState().prefs.passcode).toBe('1234');
 
     // 5. Verify restored state matches initial state
     const restoredFold = store.getState().folded;

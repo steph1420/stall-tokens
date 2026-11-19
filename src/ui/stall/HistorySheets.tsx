@@ -14,7 +14,7 @@ export function OrderHistorySheet({ o, onClose }: { o: Order; onClose: () => voi
   const tag = history.historyTag(o);
   const token = formatToken(o.token, CONFIG.tokens.pad);
   const toCounter = (sheet: CounterSheet | null) => { a.go('counter'); a.open.editInBilling(o.id); if (sheet) a.openSheet(sheet); };
-  const hold = bill.paid(o);
+  const hold = bill.held(o);
   return (
     <Sheet label={`Order ${token}`} onClose={onClose}>
       <p className={s.hsT}>{`Order ${token} · ${formatInr(bill.total(o))}`}</p>

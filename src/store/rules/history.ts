@@ -1,7 +1,7 @@
 // F-64 History rows (W-08 every sent order, W-18 padded tokens, W-21 refund state of a cancel, W-10 refund when money is held). Pure.
 import type { Order, Refund } from '../../contract';
 import { formatInr } from '../../contract';
-import { due, paid, refunded } from './bill';
+import { due, held, refunded } from './bill';
 import { unpaid, writtenOff } from './status';
 
 export type Tone = 'ok' | 'warn' | 'danger' | 'info';
@@ -24,7 +24,7 @@ const refundWay = (rs: readonly Refund[]): string => {
 export function historyTag(o: Order): HistoryTag {
   const back = refunded(o);
   if (o.cancel) {
-    const hold = paid(o);
+    const hold = held(o);
     if (hold > 0) return { text: `Cancelled · Refund due ${formatInr(hold)}`, tone: 'danger' };
     return { text: back > 0 ? `Cancelled · Refunded ${formatInr(back)}${refundWay(o.refunds)}` : 'Cancelled', tone: 'danger' };
   }

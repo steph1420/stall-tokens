@@ -2,7 +2,7 @@
 import { CONFIG } from '../config';
 import type { EntryBody, MoneyPart, PaySource } from '../contract';
 import type { Core, Log } from './core';
-import { paid } from './rules/bill';
+import { held } from './rules/bill';
 import { checkEntry } from './rules/money';
 
 export type EntryDraft = Omit<EntryBody, 'entryId' | 'dayId'>;
@@ -60,10 +60,10 @@ export function moneyActions(core: Core, log: Log) {
       log.dispatch('person.set', { personId: id, name: n, isPartner: partner?.isPartner ?? prev?.isPartner ?? false, sharePct: partner?.sharePct ?? prev?.sharePct ?? 0, removed: false });
       return id;
     },
-    /** Q-CANCEL-1 A: give back what a cancelled order holds. */
+    /** Q-CANCEL-1 A: give back what a cancelled order holds (including tips, FIN-01). */
     refundCancelled(orderId: string, source: PaySource): boolean {
       const o = st().folded.orders[orderId];
-      const due = o?.cancel ? paid(o) : 0;
+      const due = o?.cancel ? held(o) : 0;
       if (!o || due <= 0) return false;
       log.dispatch('refund.add', { refundId: core.env.makeId(), orderId, amount: due, source });
       fl.toast(`Refunded #${String(o.token).padStart(CONFIG.tokens.pad, '0')}`);

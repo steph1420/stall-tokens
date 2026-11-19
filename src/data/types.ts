@@ -129,4 +129,5 @@ export interface DataSource {
   readonly transports: readonly Transport[];
   readonly snapshots?: SnapshotsStore | undefined;
   readonly storageInfo?: StorageInfoStore | undefined;
+  readonly syncState?: import('./adapters/syncState').SyncStateStore | undefined;
 }

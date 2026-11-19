@@ -1,7 +1,7 @@
 // F-23..F-25 Money rules (pure). Q-MIXED-1: parts must cover the amount exactly; only person parts touch balances.
 // D-MONEY: tips are their own pot; donations and round-off count in profit. Refunds due come from cancelled orders (Q-CANCEL-1 A).
 import type { Entry, MoneyPart, Order, Paise } from '../../contract';
-import { due, paid, tips, waived } from './bill';
+import { due, held, tips, waived } from './bill';
 import { unpaid, writtenOff } from './status';
 
 export const partsSum = (parts: readonly MoneyPart[]): Paise => parts.reduce((t, p) => t + p.amount, 0);
@@ -19,9 +19,9 @@ export function checkEntry(amount: Paise, parts: readonly MoneyPart[]): string |
 }
 
 export interface RefundDue { readonly order: Order; readonly due: Paise }
-/** Cancelled orders that still hold the customer's money. */
+/** Cancelled orders that still hold the customer's money (held includes tips, FIN-01). */
 export const refundsDue = (orders: readonly Order[]): RefundDue[] =>
-  orders.filter((o) => o.cancel && !o.deleted).map((o) => ({ order: o, due: paid(o) })).filter((r) => r.due > 0);
+  orders.filter((o) => o.cancel && !o.deleted).map((o) => ({ order: o, due: held(o) })).filter((r) => r.due > 0);
 
 export interface DayMoney {
   readonly cashSales: Paise; readonly upiSales: Paise; readonly tips: Paise; readonly waived: Paise; readonly refunds: { cash: Paise; upi: Paise };

@@ -109,7 +109,13 @@ export function createAppStore(ds: DataSource, opts: StoreOptions = {}): AppStor
   const prefs = ds.device.read();
   const writer = `${prefs.deviceId.slice(0, 8)}.${opts.loadId ?? makeId().slice(0, 4)}`;
   let log: ReturnType<typeof createLog> | null = null;
-  const engine = createSyncEngine(ds.transports, (id) => store.getState().folded.applied.has(id), now, (w, from) => (log?.all() ?? []).filter((o) => o.writer === w && o.seq >= from));
+  const engine = createSyncEngine(
+    ds.transports,
+    (id) => store.getState().folded.applied.has(id),
+    now,
+    (w, from) => (log?.all() ?? []).filter((o) => o.writer === w && o.seq >= from),
+    ds.syncState
+  );
   const store = createZustand<AppState>()((set, get) => {
     const core: Core = { get, set: (p) => { set(p as Partial<AppState>); }, env: { ds, engine, makeId, now } };
     // Q-PAUSE-1 A: Priority pauses / resumes other orders' lines through real ops (rules/kitchen.ts pauseMoves).
@@ -151,8 +157,14 @@ function actionsOf(core: Core, l: L, get: () => AppState) {
 
 async function startApp(core: Core, l: L, get: () => AppState) {
   const { ds, engine, now } = core.env;
-  l.load(await ds.ops.load()); resume21(core); migrate21(core, l); // W-12 resume, Q-SYNC-ALL first start
-  ds.channel.subscribe((ops) => { l.intake(ops, false); });
+  const loaded = await ds.ops.load();
+  l.load(loaded); resume21(core); migrate21(core, l); // W-12 resume, Q-SYNC-ALL first start
+  engine.rehydrate(loaded, core.get().prefs.deviceId.slice(0, 8));
+  ds.channel.subscribe((ops) => {
+    l.intake(ops, false);
+    const mine = ops.filter((o) => o.writer.startsWith(core.get().prefs.deviceId.slice(0, 8)));
+    if (mine.length) engine.enqueue(mine);
+  });
   if (ds.transports.length === 0) return;
   core.set({ syncSince: now() });
   const tick = () => { void get().syncNow().finally(() => { setTimeout(tick, engine.nextDelayMs()); }); };

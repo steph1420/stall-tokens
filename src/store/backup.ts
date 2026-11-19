@@ -43,6 +43,8 @@ function applyImportedPrefs(core: Core, rawPrefs: Record<string, unknown>): void
   delete allowed.deviceId;
   delete allowed.syncUrl;
   delete allowed.syncKey;
+  delete allowed.passcode;
+  delete allowed.passcodeOff;
   core.set((s) => ({ prefs: { ...s.prefs, ...allowed } }));
   core.env.ds.device.write(core.get().prefs);
 }
@@ -58,8 +60,8 @@ function importBackupData(core: Core, log: Log, jsonText: string): { ok: boolean
 
 async function recordSnapshot(core: Core, log: Log, store: SnapshotsStore, reason: string): Promise<string> {
   const ops = log.all();
-  const prefs = core.get().prefs;
-  const id = await store.save(reason, ops, prefs);
+  const { syncKey, syncUrl, passcode, ...safePrefs } = core.get().prefs;
+  const id = await store.save(reason, ops, safePrefs);
   const lastOp = ops[ops.length - 1];
   try {
     log.dispatch('snapshot.note', {
@@ -77,7 +79,8 @@ async function recordSnapshot(core: Core, log: Log, store: SnapshotsStore, reaso
 
 async function performReset(core: Core, log: Log, store: SnapshotsStore, deleteSnapshots: boolean): Promise<void> {
   try {
-    await store.save('Safety snapshot before reset', log.all(), core.get().prefs);
+    const { syncKey, syncUrl, passcode, ...safePrefs } = core.get().prefs;
+    await store.save('Safety snapshot before reset', log.all(), safePrefs);
   } catch (err) {
     console.warn('Safety snapshot failed:', err);
   }
@@ -92,9 +95,9 @@ export function backupActions(core: Core, log: Log, customSnapshots?: SnapshotsS
   return {
     exportData() {
       const ops = log.all();
-      const prefs = core.get().prefs;
-      const data = createBackupData(ops, prefs.deviceId, prefs);
-      return { filename: backupFilename(prefs.deviceId), json: JSON.stringify(data, null, 2) };
+      const { syncKey, syncUrl, passcode, ...safePrefs } = core.get().prefs;
+      const data = createBackupData(ops, safePrefs.deviceId, safePrefs);
+      return { filename: backupFilename(safePrefs.deviceId), json: JSON.stringify(data, null, 2) };
     },
     downloadBackup() {
       const { filename, json } = this.exportData();
