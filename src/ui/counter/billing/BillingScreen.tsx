@@ -60,6 +60,8 @@ function Totals() {
   const ro = bill.roundOffAmount(o);
   const owed = bill.due(o);
   const paid = bill.paid(o);
+  const tip = bill.tips(o);
+  const waived = bill.waived(o);
   const adjust = () => { openSheet({ kind: 'adjust' }); };
   return (
     <tfoot>
@@ -77,6 +79,8 @@ function Totals() {
         </td>
         <td className={s.totAmt}><Money p={bill.total(o)} /></td>
       </tr>
+      {tip > 0 ? <tr className={s.disc}><td colSpan={4} className={s.lab}>Tip</td><td className={s.amt}><Money p={tip} sign="+" /></td></tr> : null}
+      {waived > 0 ? <tr className={s.disc}><td colSpan={4} className={s.lab}>Waived</td><td className={s.discAmt}><Money p={-waived} /></td></tr> : null}
       {paid !== 0 ? <tr className={s.paidRow}><td colSpan={4} className={s.lab}>{owed < 0 ? 'Refund' : owed > 0 ? 'Paid so far' : 'Paid'}</td><td className={s.amt}><Money p={owed < 0 ? -owed : paid} /></td></tr> : null}
     </tfoot>
   );

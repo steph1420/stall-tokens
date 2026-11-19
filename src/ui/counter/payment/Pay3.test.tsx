@@ -52,7 +52,7 @@ describe('pay3 split lock', () => {
     expect(box('UPI')).toBe(0);
     expect(screen.getByRole('status').textContent).toMatch(/Cash lowered to fit/);
   });
-  it('the slider rests while a side is locked; locking one unlocks the other; the rest is not typeable', async () => {
+  it('the slider rests while a side is locked; locking one unlocks the other; the other is freely changeable', async () => {
     await payScreen();
     tap('Lock Cash');
     expect(slider().getAttribute('aria-disabled')).toBe('true');
@@ -60,11 +60,49 @@ describe('pay3 split lock', () => {
     act(() => { fireEvent.keyDown(slider(), { key: 'ArrowRight' }); });
     expect(box('Cash')).toBe(cash);
     tap(/^UPI ₹/);
-    expect(screen.getByRole('status').textContent).toMatch(/UPI is the rest while Cash is locked/);
+    const dlg = screen.getByRole('dialog', { name: 'Number pad' });
+    expect(within(dlg).getByText('UPI')).toBeTruthy();
+    expect(within(dlg).getByLabelText(/UPI amount/)).toBeTruthy();
+    tap('Done');
     tap('Lock UPI');
     expect(screen.getByRole('button', { name: 'Lock Cash' }).getAttribute('aria-pressed')).toBe('false');
     tap('Unlock UPI');
     expect(slider().getAttribute('aria-disabled')).toBeNull();
+  });
+  it('when Cash is locked, changing UPI adjusts tip or waive and numpad shows active side with input box', async () => {
+    await payScreen();
+    // Slide to split 40 cash + 40 upi (bill is 80)
+    for (let i = 0; i < 4; i++) act(() => { fireEvent.keyDown(slider(), { key: 'ArrowRight' }); });
+    const cash = box('Cash');
+    expect(cash).toBeLessThan(80);
+    tap('Lock Cash');
+    const d0 = due();
+
+    // Type UPI higher than balance -> difference becomes Tip
+    tap(/^UPI ₹/);
+    const dlg = screen.getByRole('dialog', { name: 'Number pad' });
+    expect(within(dlg).getByText('UPI')).toBeTruthy();
+    expect(within(dlg).getByLabelText(/UPI amount/)).toBeTruthy();
+    for (const k of ['6', '0']) tap(k);
+    tap('Done');
+    expect(box('Cash')).toBe(cash);
+    expect(box('UPI')).toBe(60);
+    expect(due()).toBe(cash + 60);
+    expect(screen.getByText('To collect').parentElement?.textContent).toMatch(new RegExp(`tip \\+₹${String(cash + 60 - d0)}`));
+    expect(screen.getByRole('button', { name: 'Confirm payment' }).hasAttribute('disabled')).toBe(false);
+
+    // Now type UPI lower than balance -> difference becomes Waived
+    tap(/^UPI ₹/);
+    for (const k of ['1', '0']) tap(k);
+    tap('Done');
+    expect(box('Cash')).toBe(cash);
+    expect(box('UPI')).toBe(10);
+    expect(screen.getByText('To collect').parentElement?.textContent).toMatch(new RegExp(`waived −₹${String(d0 - cash - 10)}`));
+    expect(screen.getByRole('button', { name: 'Confirm payment' }).hasAttribute('disabled')).toBe(false);
+  });
+  it('shows Print bill button on Payment screen', async () => {
+    await payScreen();
+    expect(screen.getByRole('button', { name: 'Print bill' })).toBeTruthy();
   });
 });
 

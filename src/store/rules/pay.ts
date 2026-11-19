@@ -66,6 +66,44 @@ export function putInto(split: Split, side: Side, value: Paise, toCollect: Paise
   return setBox({ ...split, locked: side }, side, value, toCollect);
 }
 
+/**
+ * When Cash or UPI is locked, the other is freely changeable;
+ * difference becomes Tip (if over bill) or Waive (if under bill).
+ */
+export function changeUnlocked(
+  split: Split,
+  side: Side,
+  value: Paise,
+  owed: Paise,
+): { split: Split; tip: Paise; waived: Paise } {
+  const v = whole(value);
+  const baseOwed = whole(owed);
+  const lk = split.locked;
+  if (!lk || lk === side) {
+    const tip = Math.max(0, v - baseOwed);
+    const s: Split = {
+      cash: side === 'cash' ? v : Math.max(0, baseOwed - v),
+      upi: side === 'upi' ? v : Math.max(0, baseOwed - v),
+      pinned: side,
+      locked: lk ?? null,
+      waived: 0,
+    };
+    return { split: s, tip, waived: 0 };
+  }
+  const lockedVal = split[lk];
+  const total = lockedVal + v;
+  const tip = Math.max(0, total - baseOwed);
+  const waived = Math.max(0, baseOwed - total);
+  const s: Split = {
+    cash: side === 'cash' ? v : lockedVal,
+    upi: side === 'upi' ? v : lockedVal,
+    pinned: side,
+    locked: lk,
+    waived,
+  };
+  return { split: s, tip, waived };
+}
+
 export const otherSide = other;
 
 export interface PayCheck { ok: boolean; gap: Paise; over: Paise; reason: string }

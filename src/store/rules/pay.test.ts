@@ -120,4 +120,27 @@ describe('pay3 split lock', () => {
     const u = pay.putInto(base(), 'upi', 10000, 24000);
     expect(u).toMatchObject({ upi: 10000, cash: 14000, locked: 'upi' });
   });
+  it('when locked, the other side is freely changeable; difference becomes Tip or Waive', () => {
+    const cashLocked = pay.toggleLock(base(), 'cash'); // cash locked at 15000, total bill 24000
+    // UPI changed to 12000 (total 27000 > 24000) -> Tip 3000
+    const over = pay.changeUnlocked(cashLocked, 'upi', 12000, 24000);
+    expect(over.tip).toBe(3000);
+    expect(over.waived).toBe(0);
+    expect(over.split).toMatchObject({ cash: 15000, upi: 12000, locked: 'cash', waived: 0 });
+    expect(checkPayment(over.split.cash, over.split.upi, 24000 + over.tip, over.tip, over.waived)).toMatchObject({ ok: true, gap: 0 });
+
+    // UPI changed to 6000 (total 21000 < 24000) -> Waived 3000
+    const under = pay.changeUnlocked(cashLocked, 'upi', 6000, 24000);
+    expect(under.tip).toBe(0);
+    expect(under.waived).toBe(3000);
+    expect(under.split).toMatchObject({ cash: 15000, upi: 6000, locked: 'cash', waived: 3000 });
+    expect(checkPayment(under.split.cash, under.split.upi, 24000, 0, under.waived)).toMatchObject({ ok: true, gap: 3000 });
+
+    // UPI locked at 9000, Cash changed to 18000 -> Tip 3000
+    const upiLocked = pay.toggleLock(base(), 'upi'); // upi locked at 9000
+    const overCash = pay.changeUnlocked(upiLocked, 'cash', 18000, 24000);
+    expect(overCash.tip).toBe(3000);
+    expect(overCash.waived).toBe(0);
+    expect(overCash.split).toMatchObject({ cash: 18000, upi: 9000, locked: 'upi', waived: 0 });
+  });
 });

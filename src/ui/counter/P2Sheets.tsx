@@ -2,7 +2,7 @@
 // note") and the token slip as a sheet so the phone's Back closes it (W-24).
 import { useState } from 'react';
 import { CONFIG } from '../../config';
-import { parseRupees, type Order, type PaySource } from '../../contract';
+import { parseRupees, type Order, type Paise, type PaySource } from '../../contract';
 import { ago, bill, draftOrders, formatToken, liveOrders, useApp, type RefundAsk } from '../../store';
 import { Money } from '../kit/Money';
 import { Sheet } from '../kit/Sheet';
@@ -143,8 +143,8 @@ export function RefundLinesSheet({ orderId }: { orderId: string }) {
   return o && !o.deleted ? <RefundForm o={o} /> : null;
 }
 
-export function SlipSheet({ orderId }: { orderId: string }) {
+export function SlipSheet({ orderId, tip, waived }: { orderId: string; tip?: Paise | undefined; waived?: Paise | undefined }) {
   const o = useApp((x) => x.folded.orders[orderId]);
   const close = useClose();
-  return o ? <TokenSlipPrint o={o} onDone={close} /> : null;
+  return o ? <TokenSlipPrint o={o} tip={tip} waived={waived} onDone={close} /> : null;
 }

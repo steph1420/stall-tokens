@@ -50,14 +50,25 @@ function Slider({ split, covered, onSlide, locked }: { split: pay.Split; covered
 function Settled({ o }: { o: Order }) {
   const c = useApp((st) => st.counter);
   const openSheet = useApp((st) => st.openSheet);
+  const t = bill.tips(o);
+  const w = bill.waived(o);
   return (
     <>
       <main className={s.stage}>
         <div className={s.due}>
           <div className={s.dueLab}>{formatToken(o.token, CONFIG.tokens.pad)} · {bill.due(o) < 0 ? 'Refund owed' : 'Paid'}</div>
-          <Money p={bill.due(o) < 0 ? -bill.due(o) : bill.paid(o) + bill.tips(o)} className={s.dueAmt} />
-          {bill.tips(o) > 0 ? <div className={s.tipNote}>incl. <Money p={bill.tips(o)} /> tip</div> : null}
-          <button type="button" className={s.printBtn} onClick={() => { openSheet({ kind: 'slip', orderId: o.id }); }}>Print token</button>
+          <Money p={bill.due(o) < 0 ? -bill.due(o) : bill.paid(o) + t} className={s.dueAmt} />
+          {t > 0 || w > 0 ? (
+            <div className={s.tipNote}>
+              {t > 0 ? <span>incl. <Money p={t} /> tip</span> : null}
+              {t > 0 && w > 0 ? <span> · </span> : null}
+              {w > 0 ? <span>incl. <Money p={w} /> waived</span> : null}
+            </div>
+          ) : null}
+          <div className={s.settledBtns}>
+            <button type="button" className={s.printBtn} onClick={() => { openSheet({ kind: 'slip', orderId: o.id }); }}>Print token</button>
+            <button type="button" className={s.printBtn} onClick={() => { openSheet({ kind: 'slip', orderId: o.id }); }}>Print bill</button>
+          </div>
         </div>
       </main>
       <footer className={s.bar}>
@@ -107,7 +118,11 @@ function useDraft(o: Order | undefined) {
   const typed = (box: Box, rupees: number) => {
     if (box === 'tip') setTipTo(rupees * R);
     else if (box === 'waive') setSplit(pay.setWaived(cur, rupees * R, toCollect, tip));
-    else setSplit(pay.setBox(cur, box, rupees * R, toCollect));
+    else if (cur.locked && cur.locked !== box) {
+      const res = pay.changeUnlocked(cur, box, rupees * R, owed);
+      setTip(res.tip);
+      setSplit(res.split);
+    } else setSplit(pay.setBox(cur, box, rupees * R, toCollect));
   };
   const waived = cur.waived ?? 0;
   /** + Tip / − Waive: the unlocked side absorbs the change; returns true when the locked side had to come down. */
@@ -133,18 +148,18 @@ function useUndo(orderId: string | undefined, setBoth: (t: Paise, w: Paise) => b
 }
 type Draft = ReturnType<typeof useDraft>;
 
-/** pay3: each side has a padlock. A locked side never changes by itself; the other is always the difference. */
+/** pay3: each side has a padlock. A locked side never changes by itself; the other is freely changeable. */
 function SideBox({ d, side, on, onPad }: { d: Draft; side: pay.Side; on: boolean; onPad: () => void }) {
-  const c = useApp((st) => st.counter);
   const lk = d.cur.locked ?? null;
   const label = side === 'cash' ? 'Cash' : 'UPI';
   const follows = lk !== null && lk !== side;
-  const tap = () => { if (follows) c.toast(`${label} is the rest while ${lk === 'cash' ? 'Cash' : 'UPI'} is locked`); else onPad(); };
+  const tap = () => { onPad(); };
   const cls = side === 'cash' ? (on ? s.boxCashOn : s.boxCash) : (on ? s.boxUpiOn : s.boxUpi);
+  const showRest = follows && d.tip === 0 && d.waived === 0;
   return (
     <div className={lk === side ? [cls, s.boxLocked].join(' ') : cls}>
-      <button type="button" className={s.boxTap} aria-label={`${label} ₹${String(d.cur[side] / R)}${follows ? ', the rest' : ''}`} onClick={tap}>
-        <span className={side === 'cash' ? s.labCash : s.labUpi}>{label}{follows ? <em className={s.rest}> · the rest</em> : null}</span>
+      <button type="button" className={s.boxTap} aria-label={`${label} ₹${String(d.cur[side] / R)}${showRest ? ', the rest' : ''}`} onClick={tap}>
+        <span className={side === 'cash' ? s.labCash : s.labUpi}>{label}{showRest ? <em className={s.rest}> · the rest</em> : null}</span>
         <Money p={d.cur[side]} className={on ? s.valOn : s.val} />
       </button>
       <button type="button" className={lk === side ? s.lockOn : s.lock} aria-pressed={lk === side} aria-label={lk === side ? `Unlock ${label}` : `Lock ${label}`}
@@ -243,9 +258,14 @@ function Adjust({ d, onOther }: { d: Draft; onOther: (k: 'tip' | 'waive') => voi
   );
 }
 
-function DueHead({ method, dueNow, tip, waived, owed, onCalc }: { method: PayMethod | null; dueNow: Paise; tip: Paise; waived: Paise; owed: Paise; onCalc: () => void }) {
+function DueHead({ method, dueNow, tip, waived, owed, onCalc, onPrint }: {
+  method: PayMethod | null; dueNow: Paise; tip: Paise; waived: Paise; owed: Paise; onCalc: () => void; onPrint: () => void;
+}) {
   return (
     <div className={s.due}>
+      <button type="button" className={s.printBillBtn} aria-label="Print bill" title="Print bill" onClick={onPrint}>
+        <Icon name="printer" /><span className={s.printBillText}>Print bill</span>
+      </button>
       {method === 'split' ? <button type="button" className={s.calcBtn} aria-label="Calculator" onClick={onCalc}><Icon name="calc" /></button> : null}
       <div className={s.dueLab}>To collect</div>
       <Money p={dueNow} className={s.dueAmt} />
@@ -271,6 +291,7 @@ function MethodTools({ method, adjOn, d, pad, setPad, setShowAdj }: { method: Pa
 
 function PayOpen({ o, d }: { o: Order; d: Draft }) {
   const c = useApp((st) => st.counter);
+  const openSheet = useApp((st) => st.openSheet);
   const notesOpen = useApp((st) => st.prefs.countNotesOpen);
   const setPrefs = useApp((st) => st.setPrefs);
   const confirm = useConfirm(d);
@@ -283,12 +304,13 @@ function PayOpen({ o, d }: { o: Order; d: Draft }) {
     if (m === 'cash' || m === 'upi') d.setSplit({ ...pay.setBox({ ...d.cur, locked: null }, m, d.toCollect, d.toCollect), locked: null, pinned: m });
     setMethod(m);
   };
+  const printBill = () => { openSheet({ kind: 'slip', orderId: o.id, tip: d.tip, waived: d.waived }); };
   const adjOn = method === 'split' || showAdj || d.tip > 0 || d.waived > 0;
   return (
     <>
       <main className={s.stage}>
         <div className={s.body}>
-          <DueHead method={method} dueNow={dueNow} tip={d.tip} waived={d.waived} owed={d.owed} onCalc={() => { setCalc(true); }} />
+          <DueHead method={method} dueNow={dueNow} tip={d.tip} waived={d.waived} owed={d.owed} onCalc={() => { setCalc(true); }} onPrint={printBill} />
           <MethodSeg method={method} due={dueNow} onPick={pickMethod} />
           <MethodTools method={method} adjOn={adjOn} d={d} pad={pad} setPad={setPad} setShowAdj={setShowAdj} />
           <QrBlock d={d} o={o} />
@@ -300,7 +322,7 @@ function PayOpen({ o, d }: { o: Order; d: Draft }) {
         {method ? <span className={s.paid}>{d.check.ok && d.check.gap === 0 ? 'Adds up ✓' : ''}</span> : <span className={s.paid} />}
         {method ? <button type="button" className={s.confirm} disabled={!d.check.ok} onClick={confirm}>Confirm payment</button> : null}
       </footer>
-      {pad ? <Numpad key={pad} rupees={padRupees(pad, d)} onChange={(r) => { d.typed(pad, r); }} onDone={() => { setPad(null); }} /> : null}
+      {pad ? <Numpad key={pad} side={pad} rupees={padRupees(pad, d)} onChange={(r) => { d.typed(pad, r); }} onDone={() => { setPad(null); }} /> : null}
       {calc ? <CalcSheet due={dueNow} onClose={() => { setCalc(false); }} onUse={(side, p) => { d.setSplit(pay.putInto(d.cur, side, p, d.toCollect)); setCalc(false); }} /> : null}
       <WaivedSheetHost by={d.waiver.by} note={d.waiver.note} onSave={(by, note) => { d.setWaiver({ by, note }); }} />
     </>

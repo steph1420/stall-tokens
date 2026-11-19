@@ -312,6 +312,6 @@ export function CounterSheets() {
     case 'drafts': return <DraftsSheet />;
     case 'newDay': return <NewDaySheet />;
     case 'refundSheet': return <RefundLinesSheet key={sheet.orderId} orderId={sheet.orderId} />;
-    case 'slip': return <SlipSheet orderId={sheet.orderId} />;
+    case 'slip': return <SlipSheet orderId={sheet.orderId} tip={sheet.tip} waived={sheet.waived} />;
   }
 }

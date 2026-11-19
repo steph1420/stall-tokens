@@ -1,6 +1,6 @@
 // UI place for this device (ARCHITECTURE §3): screen, current order, each order's last page, open sheet.
 import type { Page } from './rules/status';
-import type { LineStatus } from '../contract';
+import type { LineStatus, Paise } from '../contract';
 
 export type Screen = 'launch' | 'counter' | 'kitchen' | 'station' | StallScreen;
 /** D-NAV: the quiet Stall section (launch + Counter ⋯). */
@@ -27,7 +27,7 @@ export type Sheet =
   | { kind: 'drafts' }
   | { kind: 'newDay' }
   | { kind: 'refundSheet'; orderId: string }
-  | { kind: 'slip'; orderId: string };
+  | { kind: 'slip'; orderId: string; tip?: Paise | undefined; waived?: Paise | undefined };
 /** A toast's one button (s127 "Open", s122 "Undo"). */
 export type ToastAction = { readonly label: string; readonly run: 'open'; readonly orderId: string } | { readonly label: string; readonly run: 'undoRefund'; readonly orderId: string; readonly refundId: string }
   | { readonly label: string; readonly run: 'undoStep'; readonly orderId: string; readonly lineId: string; readonly status: LineStatus; readonly from: LineStatus }

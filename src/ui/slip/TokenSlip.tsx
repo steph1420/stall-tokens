@@ -4,26 +4,28 @@
 // otherwise, or if the printer fails, window.print at 58 mm.
 import { useEffect, useState } from 'react';
 import { CONFIG } from '../../config';
-import { formatInr, type Order } from '../../contract';
+import { formatInr, type Order, type Paise } from '../../contract';
 import { bill, bluetoothPrint, canBluetoothPrint, escposSlip, formatToken, istClock, useApp, type SlipText } from '../../store';
 import s from './TokenSlip.module.css';
 
-function useSlipText(o: Order): SlipText {
+function useSlipText(o: Order, draftTip?: Paise, draftWaived?: Paise): SlipText {
   const stall = useApp((x) => x.folded.settings.stallName ?? 'Fair stall');
   const cash = o.payments.reduce((t, p) => t + p.cash, 0); const upi = o.payments.reduce((t, p) => t + p.upi, 0);
+  const effTip = draftTip !== undefined ? draftTip : bill.tips(o);
+  const effWaived = draftWaived !== undefined ? draftWaived : bill.waived(o);
   return {
     stall, token: formatToken(o.token, CONFIG.tokens.pad),
     meta: `${istClock(o.payments[0]?.at ?? o.createdAt)}${o.client ? ` · ${o.client}` : ''}`,
     // pay2: tip and waive are on the slip, and the total is what was asked for.
     lines: [...o.lines.filter((l) => l.qty > 0).map((l) => [`${l.name}${l.qty > 1 ? ` ×${String(l.qty)}` : ''}`, formatInr(l.price * l.qty)] as const),
-      ...(bill.tips(o) > 0 ? [['Tip', `+${formatInr(bill.tips(o))}`] as const] : []), ...(bill.waived(o) > 0 ? [['Waived', `−${formatInr(bill.waived(o))}`] as const] : [])],
-    total: formatInr(bill.total(o) + bill.tips(o) - bill.waived(o)),
+      ...(effTip > 0 ? [['Tip', `+${formatInr(effTip)}`] as const] : []), ...(effWaived > 0 ? [['Waived', `−${formatInr(effWaived)}`] as const] : [])],
+    total: formatInr(bill.total(o) + effTip - effWaived),
     paid: cash && upi ? 'Paid · cash + UPI' : upi ? 'Paid · UPI' : cash ? 'Paid · cash' : 'Not paid yet',
   };
 }
 
-export function SlipBody({ o }: { o: Order }) {
-  const t = useSlipText(o);
+export function SlipBody({ o, tip, waived }: { o: Order; tip?: Paise | undefined; waived?: Paise | undefined }) {
+  const t = useSlipText(o, tip, waived);
   return (
     <div className={s.slip} aria-label="Token slip">
       <div className={s.stall}>{t.stall}</div>
@@ -50,11 +52,11 @@ function useAutoPrint(on: boolean, onDone: () => void) {
 }
 
 /** Full-screen preview. With Web Bluetooth: Bluetooth printer or Print (58 mm); without: browser print straight away. */
-export function TokenSlipPrint({ o, onDone }: { o: Order; onDone: () => void }) {
+export function TokenSlipPrint({ o, tip, waived, onDone }: { o: Order; tip?: Paise | undefined; waived?: Paise | undefined; onDone: () => void }) {
   const bt = canBluetoothPrint();
   const [paper] = useState(!bt);
   const [msg, setMsg] = useState('');
-  const t = useSlipText(o);
+  const t = useSlipText(o, tip, waived);
   useAutoPrint(paper, onDone);
   const viaBt = () => {
     setMsg('Sending to the printer…');
@@ -62,7 +64,7 @@ export function TokenSlipPrint({ o, onDone }: { o: Order; onDone: () => void }) 
   };
   return (
     <div className={s.preview} role="dialog" aria-label="Print token">
-      <SlipBody o={o} />
+      <SlipBody o={o} tip={tip} waived={waived} />
       {msg ? <p className={s.msg} role="status">{msg}</p> : null}
       <div className={s.btns}>
         {bt ? <button type="button" className={s.close} onClick={viaBt}>Bluetooth printer</button> : null}
