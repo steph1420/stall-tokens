@@ -8,7 +8,7 @@ import { checkPayment } from './rules/pay';
 import { isOpen, type Page } from './rules/status';
 import { istDate, rollover } from './rules/day';
 import { nextToken } from './rules/tokens';
-import type { UiState } from './ui';
+import type { PayDraft, UiState } from './ui';
 import { holding } from './rules/handling';
 
 /** Q-DRAFT-SYNC device label: serving name + short device id, e.g. "Ravi · 3f9a". */
@@ -226,6 +226,10 @@ function adjustActions({ core, st, ui }: Ctx) {
       core.set((s) => ({ ui: { ...s.ui, toast: { text, id: (s.ui.toast?.id ?? 0) + 1, ms: CONFIG.payment.adjustUndoMs, action: { label: 'Undo', run: 'undoPay', orderId, tip: prev.tip, waived: prev.waived } } } }));
     },
     undoAdjust(orderId: string, tip: Paise, waived: Paise) { ui({ payUndo: { seq: (st().ui.payUndo?.seq ?? 0) + 1, orderId, tip, waived } }); },
+    setPayDraft(orderId: string, draft: PayDraft) {
+      const cur = st().ui.payDrafts ?? {};
+      ui({ payDrafts: { ...cur, [orderId]: draft } });
+    },
   };
 }
 

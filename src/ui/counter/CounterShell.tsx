@@ -1,7 +1,7 @@
 // F-05 / F-43 Counter shell: top tabs New Orders | Open Orders (Q-ORDERS-1), then for New Orders the page tabs
 // (Menu / Billing / Payment) and a single current-order line (Q-ORDERS-2 A: no chips row). Interaction owner for the header (§5).
 import { CONFIG } from '../../config';
-import { bill, draftOrders, formatToken, kitchen, liveOrders, orderStatus, unpaidOrders, useApp, type Page } from '../../store';
+import { bill, draftOrders, formatToken, isOpen, kitchen, liveOrders, orderStatus, unpaidOrders, useApp, type Page } from '../../store';
 import { Icon } from '../kit/Icon';
 import { useWide } from '../kit/useWide';
 import { BillingScreen } from './billing/BillingScreen';
@@ -36,13 +36,30 @@ function TopTabs() {
 
 /** Q-ORDERS-2 A: one quiet line for the order being built, instead of the chips row. */
 function CurrentLine() {
+  const c = useApp((st) => st.counter);
   const o = useApp((st) => (st.ui.orderId ? st.folded.orders[st.ui.orderId] : undefined));
   const page = useApp((st) => (st.ui.orderId ? st.ui.pages[st.ui.orderId] : undefined));
+  const allOpen = useApp((st) => liveOrders(st.folded).filter(isOpen).sort((a, b) => a.token - b.token));
   if (!o || o.deleted || o.cancel) return <div className={s.cur}>Tap an item to start an order</div>;
   const n = o.lines.filter((l) => l.qty > 0).reduce((t, l) => t + l.qty, 0);
   const status = orderStatus(o, page);
+  const idx = allOpen.findIndex((x) => x.id === o.id);
+  const hasMultiple = allOpen.length > 1 && idx !== -1;
+  const prev = hasMultiple ? allOpen[(idx - 1 + allOpen.length) % allOpen.length] : null;
+  const next = hasMultiple ? allOpen[(idx + 1) % allOpen.length] : null;
   return (
-    <div className={s.cur}><b>{formatToken(o.token, CONFIG.tokens.pad)}</b>{` · ${status === 'New' || status === 'Editing' ? 'new order' : status.toLowerCase()} · ${String(n)} ${n === 1 ? 'item' : 'items'}`}</div>
+    <div className={s.cur}>
+      {hasMultiple && prev && next ? (
+        <span className={s.orderCycle} role="group" aria-label="Order cycling">
+          <button type="button" className={s.cycleBtn} aria-label={`Previous order ${formatToken(prev.token, CONFIG.tokens.pad)}`} onClick={() => { c.selectOrder(prev.id); }}>‹</button>
+          <b className={s.curToken}>{formatToken(o.token, CONFIG.tokens.pad)}</b>
+          <span className={s.cycleDot}>·</span>
+          <button type="button" className={s.cycleTokenBtn} aria-label={`Switch to order ${formatToken(next.token, CONFIG.tokens.pad)}`} onClick={() => { c.selectOrder(next.id); }}>{formatToken(next.token, CONFIG.tokens.pad)}</button>
+          <button type="button" className={s.cycleBtn} aria-label={`Next order ${formatToken(next.token, CONFIG.tokens.pad)}`} onClick={() => { c.selectOrder(next.id); }}>›</button>
+        </span>
+      ) : <b>{formatToken(o.token, CONFIG.tokens.pad)}</b>}
+      <span className={s.curMeta}>{` · ${status === 'New' || status === 'Editing' ? 'new order' : status.toLowerCase()} · ${String(n)} ${n === 1 ? 'item' : 'items'}`}</span>
+    </div>
   );
 }
 

@@ -51,8 +51,26 @@ function Row({ line, n, sel, onSel }: { line: Line; n: number; sel: boolean; onS
 }
 const formatRate = (p: number) => `₹${(p / 100).toLocaleString('en-IN', { maximumFractionDigits: 2 })}`;
 
+function TipWaiveRows({ tip, waived, onAdjust }: { tip: number; waived: number; onAdjust: () => void }) {
+  return (
+    <>
+      {tip > 0 ? <tr className={s.disc} onClick={onAdjust}><td colSpan={4} className={s.lab}>Tip</td><td className={s.amt}><Money p={tip} sign="+" /></td></tr> : null}
+      {waived > 0 ? <tr className={s.disc} onClick={onAdjust}><td colSpan={4} className={s.lab}>Waived</td><td className={s.discAmt}><Money p={-waived} /></td></tr> : null}
+      <tr className={s.adjRow}>
+        <td colSpan={5} className={s.adjCell}>
+          <button type="button" className={s.tipWaiveBtn} onClick={onAdjust}>
+            <Icon name="pencil" className={s.adjIcon} />
+            {tip > 0 || waived > 0 ? 'Edit tip / waive' : 'Tip or waive'}
+          </button>
+        </td>
+      </tr>
+    </>
+  );
+}
+
 function Totals() {
   const o = useApp((st) => (st.ui.orderId ? st.folded.orders[st.ui.orderId] : undefined));
+  const draft = useApp((st) => (st.ui.orderId ? st.ui.payDrafts?.[st.ui.orderId] : undefined));
   const openSheet = useApp((st) => st.openSheet);
   if (!o) return null;
   const sub = bill.subtotal(o);
@@ -60,9 +78,10 @@ function Totals() {
   const ro = bill.roundOffAmount(o);
   const owed = bill.due(o);
   const paid = bill.paid(o);
-  const tip = bill.tips(o);
-  const waived = bill.waived(o);
+  const tip = draft ? draft.tip : bill.tips(o);
+  const waived = draft ? draft.waived : bill.waived(o);
   const adjust = () => { openSheet({ kind: 'adjust' }); };
+  const netTotal = Math.max(0, bill.total(o) + tip - waived);
   return (
     <tfoot>
       <tr className={s.sub}><td colSpan={4} className={s.lab}>Subtotal</td><td className={s.amt}><Money p={sub} /></td></tr>
@@ -77,10 +96,9 @@ function Totals() {
         <td colSpan={4} className={s.lab}>
           <button type="button" className={s.adjBtn} onClick={adjust} aria-label="Discount or round-off"><Icon name="pencil" className={s.adjIcon} /></button>Total
         </td>
-        <td className={s.totAmt}><Money p={bill.total(o)} /></td>
+        <td className={s.totAmt}><Money p={netTotal} /></td>
       </tr>
-      {tip > 0 ? <tr className={s.disc}><td colSpan={4} className={s.lab}>Tip</td><td className={s.amt}><Money p={tip} sign="+" /></td></tr> : null}
-      {waived > 0 ? <tr className={s.disc}><td colSpan={4} className={s.lab}>Waived</td><td className={s.discAmt}><Money p={-waived} /></td></tr> : null}
+      <TipWaiveRows tip={tip} waived={waived} onAdjust={adjust} />
       {paid !== 0 ? <tr className={s.paidRow}><td colSpan={4} className={s.lab}>{owed < 0 ? 'Refund' : owed > 0 ? 'Paid so far' : 'Paid'}</td><td className={s.amt}><Money p={owed < 0 ? -owed : paid} /></td></tr> : null}
     </tfoot>
   );

@@ -35,6 +35,8 @@ export type ToastAction = { readonly label: string; readonly run: 'open'; readon
   | { readonly label: string; readonly run: 'undoPay'; readonly orderId: string; readonly tip: number; readonly waived: number };
 /** pay2: Undo for + Tip / − Waive. The payment draft lives on the screen, so the toast hands the old amounts back here. */
 export interface PayUndo { readonly seq: number; readonly orderId: string; readonly tip: number; readonly waived: number }
+/** Draft tip and waive amounts associated with an order before payment. */
+export interface PayDraft { readonly tip: Paise; readonly waived: Paise; readonly waivedBy?: string | undefined; readonly waivedNote?: string | undefined }
 /** `ms` = how long it stays (P3 kitchen Undo: CONFIG.kitchen.undoToastMs); default by kind. */
 export interface ToastState { readonly text: string; readonly id: number; readonly action?: ToastAction; readonly ms?: number }
 
@@ -45,6 +47,7 @@ export interface UiState {
   readonly sheet: Sheet | null;
   readonly toast: ToastState | null;
   readonly payUndo: PayUndo | null;
+  readonly payDrafts?: Readonly<Record<string, PayDraft>> | undefined;
   /** Kitchen station pill; null = All (Q-OPEN-1 A). */
   readonly kitchenFilter: string | null;
   readonly station: StationPlace | null;

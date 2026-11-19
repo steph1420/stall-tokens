@@ -169,17 +169,14 @@ function RoundOff({ o }: { o: Order }) {
   );
 }
 
-function AdjustSheet() {
-  const close = useClose();
-  const o = useApp((st) => (st.ui.orderId ? st.folded.orders[st.ui.orderId] : undefined));
+function DiscountForm({ o, close }: { o: Order; close: () => void }) {
   const serving = useApp((st) => st.prefs.servingName);
   const c = useApp((st) => st.counter);
-  const [kind, setKind] = useState<'amount' | 'pct'>(o?.discount?.kind ?? 'amount');
-  const [value, setValue] = useState(o?.discount ? String(o.discount.kind === 'pct' ? o.discount.value : o.discount.value / R) : '');
-  const [by, setBy] = useState(o?.discount?.allowedBy ?? serving);
-  const [note, setNote] = useState(o?.discount?.note ?? '');
+  const [kind, setKind] = useState<'amount' | 'pct'>(o.discount?.kind ?? 'amount');
+  const [value, setValue] = useState(o.discount ? String(o.discount.kind === 'pct' ? o.discount.value : o.discount.value / R) : '');
+  const [by, setBy] = useState(o.discount?.allowedBy ?? serving);
+  const [note, setNote] = useState(o.discount?.note ?? '');
   const [err, setErr] = useState('');
-  if (!o) return null;
   const sub = bill.subtotal(o);
   const parsed = kind === 'pct' ? Number(value || '0') : parseRupees(value || '0');
   const d = parsed !== null && Number.isFinite(parsed) && parsed > 0 ? { kind, value: parsed, allowedBy: by.trim(), note: note.trim() } : null;
@@ -190,7 +187,7 @@ function AdjustSheet() {
     close();
   };
   return (
-    <Sheet title="Discount and round-off" onClose={close}>
+    <>
       <div className={k.choiceRow} role="radiogroup" aria-label="Discount type">
         <button type="button" role="radio" aria-checked={kind === 'amount'} className={kind === 'amount' ? k.choiceOn : k.choice} onClick={() => { setKind('amount'); }}>₹ off</button>
         <button type="button" role="radio" aria-checked={kind === 'pct'} className={kind === 'pct' ? k.choiceOn : k.choice} onClick={() => { setKind('pct'); }}>% off</button>
@@ -205,8 +202,63 @@ function AdjustSheet() {
         <span className={k.grow} />
         <button type="button" className={k.cta} onClick={save}>Save discount</button>
       </div>
+    </>
+  );
+}
+
+function AdjustSheet() {
+  const close = useClose();
+  const o = useApp((st) => (st.ui.orderId ? st.folded.orders[st.ui.orderId] : undefined));
+  if (!o) return null;
+  return (
+    <Sheet title="Discount and round-off" onClose={close}>
+      <DiscountForm o={o} close={close} />
       <RoundOff o={o} />
+      <TipWaiveAdjust o={o} />
     </Sheet>
+  );
+}
+
+function WaiveDetails({ by, note, onBy, onNote }: { by: string; note: string; onBy: (v: string) => void; onNote: (v: string) => void }) {
+  return (
+    <>
+      <Field id="wby" label="Allowed by"><input id="wby" className={k.input} value={by} maxLength={CONFIG.limits.nameMaxChars} onChange={(e) => { onBy(e.target.value); }} /></Field>
+      <Field id="wnote" label="Note"><input id="wnote" className={k.input} value={note} maxLength={CONFIG.limits.noteMaxChars} onChange={(e) => { onNote(e.target.value); }} /></Field>
+    </>
+  );
+}
+
+function TipWaiveAdjust({ o }: { o: Order }) {
+  const c = useApp((st) => st.counter);
+  const draft = useApp((st) => st.ui.payDrafts?.[o.id]);
+  const [tip, setTip] = useState(draft ? String(draft.tip / R) : (bill.tips(o) > 0 ? String(bill.tips(o) / R) : ''));
+  const [waive, setWaive] = useState(draft ? String(draft.waived / R) : (bill.waived(o) > 0 ? String(bill.waived(o) / R) : ''));
+  const [by, setBy] = useState(draft?.waivedBy ?? '');
+  const [note, setNote] = useState(draft?.waivedNote ?? '');
+  const tRupees = parseRupees(tip) ?? 0;
+  const wRupees = parseRupees(waive) ?? 0;
+  const apply = () => {
+    c.setPayDraft(o.id, { tip: tRupees, waived: wRupees, waivedBy: by.trim(), waivedNote: note.trim() });
+    c.toast(tRupees > 0 || wRupees > 0 ? 'Tip / waive updated' : 'Tip / waive cleared');
+  };
+  return (
+    <>
+      <div className={k.fieldLab}>Tip and waive</div>
+      <div className={k.choiceRow} role="group" aria-label="Quick tip">
+        {[0, 10, 20, 50].map((amt) => (
+          <button type="button" key={amt} className={tRupees === amt * R ? k.choiceOn : k.choice} onClick={() => { setTip(amt > 0 ? String(amt) : ''); }}>{amt === 0 ? 'No tip' : `+₹${String(amt)}`}</button>
+        ))}
+      </div>
+      <Field id="btip" label="Tip amount (₹)"><input id="btip" className={k.input} inputMode="numeric" placeholder="0" value={tip} onChange={(e) => { setTip(e.target.value); }} /></Field>
+      <div className={k.choiceRow} role="group" aria-label="Quick waive">
+        {[0, 10, 20, 50].map((amt) => (
+          <button type="button" key={amt} className={wRupees === amt * R ? k.choiceOn : k.choice} onClick={() => { setWaive(amt > 0 ? String(amt) : ''); }}>{amt === 0 ? 'No waive' : `−₹${String(amt)}`}</button>
+        ))}
+      </div>
+      <Field id="bwaive" label="Waive amount (₹)"><input id="bwaive" className={k.input} inputMode="numeric" placeholder="0" value={waive} onChange={(e) => { setWaive(e.target.value); }} /></Field>
+      {wRupees > 0 ? <WaiveDetails by={by} note={note} onBy={setBy} onNote={setNote} /> : null}
+      <div className={k.row}><span className={k.grow} /><button type="button" className={k.cta} onClick={apply}>Apply tip / waive</button></div>
+    </>
   );
 }
 

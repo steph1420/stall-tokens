@@ -103,37 +103,41 @@ function NothingDue({ o }: { o: Order }) {
   );
 }
 
+const initSplit = (due0: Paise, t: Paise, w: Paise): pay.Split =>
+  ({ cash: Math.max(0, Math.max(0, due0) + t - w), upi: 0, pinned: null, waived: w, locked: null });
+
+function handleTyped(cur: pay.Split, box: Box, rupees: number, toCollect: Paise, owed: Paise, tip: Paise, setTipTo: (t: Paise) => void) {
+  if (box === 'tip') { setTipTo(rupees * R); return null; }
+  if (box === 'waive') { const next = pay.setWaived(cur, rupees * R, toCollect, tip); return { split: next, tip, waived: next.waived ?? 0 }; }
+  if (cur.locked && cur.locked !== box) { const res = pay.changeUnlocked(cur, box, rupees * R, owed); return { split: res.split, tip: res.tip, waived: res.waived }; }
+  return { split: pay.setBox(cur, box, rupees * R, toCollect), tip, waived: cur.waived ?? 0 };
+}
+
 /** The payment draft is local to this screen (never in the log until Confirm). */
 function useDraft(o: Order | undefined) {
-  const due0 = o ? bill.due(o) : 0;
-  const [tip, setTip] = useState<Paise>(0);
-  const [split, setSplit] = useState<pay.Split>({ cash: Math.max(0, due0), upi: 0, pinned: null, waived: 0, locked: null });
+  const c = useApp((st) => st.counter);
+  const draftInit = useApp((st) => (o ? st.ui.payDrafts?.[o.id] : undefined));
+  const initTip = draftInit?.tip ?? 0; const initWaived = draftInit?.waived ?? 0; const due0 = o ? bill.due(o) : 0;
+  const [tip, setTip] = useState<Paise>(initTip);
+  const [split, setSplit] = useState<pay.Split>(() => initSplit(due0, initTip, initWaived));
   const [notes, setNotes] = useState<Record<string, number>>({});
-  const [waiver, setWaiver] = useState({ by: '', note: '' });
+  const [waiver, setWaiver] = useState({ by: draftInit?.waivedBy ?? '', note: draftInit?.waivedNote ?? '' });
   const [payeeId, setPayeeId] = useState<string | null>(null);
-  const owed = o ? bill.due(o) : 0;
-  const toCollect = Math.max(0, owed) + tip;
-  const cur = pay.refit(split, toCollect);
-  const setTipTo = (t: Paise) => { setTip(t); setSplit(pay.addTip(cur, t - tip, Math.max(0, owed) + t)); };
+  const owed = o ? bill.due(o) : 0; const toCollect = Math.max(0, owed) + tip; const cur = pay.refit(split, toCollect);
+  const syncDraft = (t: Paise, w: Paise) => { if (o) c.setPayDraft(o.id, { tip: t, waived: w, waivedBy: waiver.by, waivedNote: waiver.note }); };
+  const setTipTo = (t: Paise) => { setTip(t); setSplit(pay.addTip(cur, t - tip, Math.max(0, owed) + t)); syncDraft(t, cur.waived ?? 0); };
   const typed = (box: Box, rupees: number) => {
-    if (box === 'tip') setTipTo(rupees * R);
-    else if (box === 'waive') setSplit(pay.setWaived(cur, rupees * R, toCollect, tip));
-    else if (cur.locked && cur.locked !== box) {
-      const res = pay.changeUnlocked(cur, box, rupees * R, owed);
-      setTip(res.tip);
-      setSplit(res.split);
-    } else setSplit(pay.setBox(cur, box, rupees * R, toCollect));
+    const res = handleTyped(cur, box, rupees, toCollect, owed, tip, setTipTo);
+    if (res) { setTip(res.tip); setSplit(res.split); syncDraft(res.tip, res.waived); }
   };
-  const waived = cur.waived ?? 0;
-  /** + Tip / − Waive: the unlocked side absorbs the change; returns true when the locked side had to come down. */
   const setBoth = (t: Paise, w: Paise): boolean => {
     const next = pay.setWaived(pay.addTip(cur, t - tip, Math.max(0, owed) + t), w, Math.max(0, owed) + t, t);
-    setTip(t); setSplit(next);
+    setTip(t); setSplit(next); syncDraft(t, w);
     return pay.lockClamped(cur, next);
   };
   useUndo(o?.id, setBoth);
   return { tip, setTipTo, setBoth, cur, setSplit, notes, setNotes, waiver, setWaiver, payeeId, setPayeeId,
-    owed, toCollect, typed, waived, check: pay.checkPayment(cur.cash, cur.upi, toCollect, tip, waived) };
+    owed, toCollect, typed, waived: cur.waived ?? 0, check: pay.checkPayment(cur.cash, cur.upi, toCollect, tip, cur.waived ?? 0) };
 }
 
 /** pay2: the toast's Undo (+ Tip / − Waive) puts the old amounts back. */
@@ -324,7 +328,7 @@ function PayOpen({ o, d }: { o: Order; d: Draft }) {
       </footer>
       {pad ? <Numpad key={pad} side={pad} rupees={padRupees(pad, d)} onChange={(r) => { d.typed(pad, r); }} onDone={() => { setPad(null); }} /> : null}
       {calc ? <CalcSheet due={dueNow} onClose={() => { setCalc(false); }} onUse={(side, p) => { d.setSplit(pay.putInto(d.cur, side, p, d.toCollect)); setCalc(false); }} /> : null}
-      <WaivedSheetHost by={d.waiver.by} note={d.waiver.note} onSave={(by, note) => { d.setWaiver({ by, note }); }} />
+      <WaivedSheetHost by={d.waiver.by} note={d.waiver.note} onSave={(by, note) => { d.setWaiver({ by, note }); c.setPayDraft(o.id, { tip: d.tip, waived: d.waived, waivedBy: by, waivedNote: note }); }} />
     </>
   );
 }
