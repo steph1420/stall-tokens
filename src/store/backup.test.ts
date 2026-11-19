@@ -134,6 +134,7 @@ describe('backupActions in AppStore', () => {
       quiet: false,
       countNotesOpen: false,
       alertTone: 'chime' as const,
+      nextOrderDelaySec: 2,
     };
 
     const ds = {
@@ -217,6 +218,7 @@ describe('backupActions in AppStore', () => {
           quiet: false,
           countNotesOpen: false,
           alertTone: 'chime' as const,
+          nextOrderDelaySec: 2,
         }),
         write: () => {},
       },

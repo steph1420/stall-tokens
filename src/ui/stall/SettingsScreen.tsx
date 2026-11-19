@@ -83,9 +83,16 @@ function Extras() {
 function KitchenSettingsGroup() {
   const a = useApp((x) => x);
   const p = a.prefs;
+  const d = p.nextOrderDelaySec;
   return (
     <Group label="Kitchen">
       <Opt t="Auto-prep next order" sub="Station starts the next order's items" sw={p.autoPrep} onClick={() => { a.setPrefs({ autoPrep: !p.autoPrep }); }} />
+      <Opt
+        t="Next order switch delay"
+        sub={d === 0 ? 'Immediate auto-prep (0s)' : `${String(d)}s gap after pressing Ready`}
+        value={`${String(d)}s`}
+        onClick={() => { a.setPrefs({ nextOrderDelaySec: (d + 1) % 11 }); }}
+      />
       <Opt t="Station look" value={LOOKS[p.stationLook]} onClick={() => { a.setPrefs({ stationLook: nextOpt(['full', 'items', 'ticket'] as const, p.stationLook) }); }} />
     </Group>
   );

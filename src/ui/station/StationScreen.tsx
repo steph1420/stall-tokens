@@ -40,21 +40,37 @@ function useSwipe(onStep: (dir: 1 | -1) => void) {
   };
 }
 
+function OrderTabBtn({ x, station, on, onClick }: { x: Order; station: string; on: boolean; onClick: () => void }) {
+  const m = tabMark(x, station);
+  return (
+    <button type="button" role="tab" aria-selected={on} className={[s.otab, on ? s.otabOn : '', m === 'paused' ? s.otabPaused : ''].join(' ')}
+      data-mark={m} onClick={onClick}>
+      <span className={s.tok}><span className={k.hash}>#</span>{formatToken(x.token, CONFIG.tokens.pad).slice(1)}</span>
+      <StatusMark mark={m} label={false} small />
+    </button>
+  );
+}
+
 function OrderTabs({ list, station, current }: { list: readonly Order[]; station: string; current: string | undefined }) {
   const a = useApp((st) => st.kitchen);
+  const curIdx = list.findIndex((x) => x.id === current);
   return (
-    <div className={s.otabs} role="tablist" aria-label="Orders">
-      {list.map((x) => {
-        const m = tabMark(x, station);
-        const on = x.id === current;
-        return (
-          <button type="button" role="tab" aria-selected={on} key={x.id} className={[s.otab, on ? s.otabOn : '', m === 'paused' ? s.otabPaused : ''].join(' ')}
-            data-mark={m} onClick={() => { a.showStationOrder(x.id); }}>
-            <span className={s.tok}><span className={k.hash}>#</span>{formatToken(x.token, CONFIG.tokens.pad).slice(1)}</span>
-            <StatusMark mark={m} label={false} small />
-          </button>
-        );
-      })}
+    <div className={s.tabWrap}>
+      {list.length > 1 ? (
+        <button type="button" className={s.cycleBtn} aria-label="Previous order" disabled={curIdx <= 0} onClick={() => { a.stepStationOrder(-1); }}>
+          <Icon name="chevLeft" />
+        </button>
+      ) : null}
+      <div className={s.otabs} role="tablist" aria-label="Orders">
+        {list.map((x) => (
+          <OrderTabBtn key={x.id} x={x} station={station} on={x.id === current} onClick={() => { a.showStationOrder(x.id); }} />
+        ))}
+      </div>
+      {list.length > 1 ? (
+        <button type="button" className={s.cycleBtnR} aria-label="Next order" disabled={curIdx >= list.length - 1} onClick={() => { a.stepStationOrder(1); }}>
+          <Icon name="chevLeft" />
+        </button>
+      ) : null}
     </div>
   );
 }

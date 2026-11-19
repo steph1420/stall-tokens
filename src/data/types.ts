@@ -67,6 +67,8 @@ export interface DevicePrefs {
   countNotesOpen: boolean;
   /** Q-KITCHEN-ALERT: Chime + flash with selectable tone (Steve locked). */
   alertTone: 'chime' | 'bell' | 'pluck' | 'harp';
+  /** Switch delay in seconds (0..10) before station starts cooking next order. Default: 2. */
+  nextOrderDelaySec: number;
 }
 
 export interface BackupMeta {

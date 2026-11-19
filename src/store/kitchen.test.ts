@@ -7,10 +7,11 @@ import { makeTestStore, stepClock } from './testkit';
 /** Test-only: fail loudly instead of a non-null assertion. */
 const must = <T,>(x: T | null | undefined): T => { if (x === null || x === undefined) throw new Error('missing'); return x; };
 
-async function ready() {
+async function ready(delaySec = 0) {
   const t = makeTestStore({ now: stepClock() });
   await t.store.getState().start();
   const s = () => t.store.getState();
+  if (delaySec === 0) s().setPrefs({ nextOrderDelaySec: 0 });
   for (const m of DEMO_MENU) s().catalog.saveItem(null, { name: m.name, price: m.price, swatch: m.swatch, category: m.category, stationId: m.stationId, count: null });
   const idOf = (name: string) => Object.values(s().folded.items).find((i) => i.name === name)?.id ?? '';
   /** One sent order with the named items; returns its id. */

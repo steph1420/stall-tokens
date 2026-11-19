@@ -155,7 +155,7 @@ export function overviewAll(orders: readonly Order[]): Overview {
 
 /** Plain words for a line status (toasts, PK-4 Undo). */
 export const STATUS_WORD: Readonly<Record<LineStatus, string>> = {
-  draft: 'Draft', waiting: 'Waiting', preparing: 'Preparing', 'done?': 'Done?', ready: 'Ready', held: 'On hold', handed: 'Handed over', paused: 'Paused',
+  draft: 'Draft', waiting: 'Waiting', preparing: 'Preparing', 'done?': 'Ready', ready: 'Ready', held: 'On hold', handed: 'Handed over', paused: 'Paused',
 };
 
 /** W-38 ticket age in whole minutes ("just in" under one minute). */

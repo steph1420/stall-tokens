@@ -116,12 +116,26 @@ function BigCard({ o, index, count }: { o: Order; index: number; count: number }
   const look = useApp((st) => st.prefs.openLook);
   const setPrefs = useApp((st) => st.setPrefs);
   const openSheet = useApp((st) => st.openSheet);
+  const kit = useApp((st) => st.kitchen);
+  const tok = String(o.token).padStart(CONFIG.tokens.pad, '0');
   return (
     <article className={s.big} aria-label={`Order ${String(o.token)}`}>
       <Head o={o} index={index} count={count} />
       <div className={s.div} />
       <div className={s.lookRow}>
-        <button type="button" className={s.ov} onClick={() => { openSheet({ kind: 'openOverview' }); }}>Overview</button>
+        <div className={s.lookLeft}>
+          <button type="button" className={s.ov} onClick={() => { openSheet({ kind: 'openOverview' }); }}>Overview</button>
+          <button
+            type="button"
+            className={o.priority ? s.prioBtnOn : s.prioBtn}
+            onClick={() => { kit.togglePriority(o.id); }}
+            aria-pressed={o.priority}
+            aria-label={o.priority ? `Remove priority for #${tok}` : `Set priority for #${tok}`}
+          >
+            <StatusMark mark="priority" label={false} small />
+            <span>{o.priority ? 'Priority on' : 'Priority'}</span>
+          </button>
+        </div>
         <div className={s.looks} role="radiogroup" aria-label="Look">
           {(['lines', 'cards'] as const).map((x) => (
             <button type="button" role="radio" key={x} aria-checked={look === x} className={look === x ? s.lookOn : s.look} onClick={() => { setPrefs({ openLook: x }); }}>{x === 'lines' ? 'Lines' : 'Cards'}</button>

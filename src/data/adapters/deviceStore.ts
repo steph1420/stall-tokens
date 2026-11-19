@@ -16,7 +16,7 @@ function readTabRole(tab: Storage | null): string | null {
 
 export const defaultPrefs = (makeId: () => string): DevicePrefs => ({
   deviceId: makeId(), theme: 'night', servingName: '', rangeIndex: 0, haptics: 'normal', autoPrep: true, stationLook: 'full', openLook: 'lines', passcode: '', passcodeOff: true, syncUrl: CONFIG.sync.bakedUrl, syncKey: CONFIG.sync.bakedKey, role: '',
-  orderId: '', page: 'menu', lastRole: '', kitchenText: 'normal', quiet: false, countNotesOpen: false, alertTone: 'chime',
+  orderId: '', page: 'menu', lastRole: '', kitchenText: 'normal', quiet: false, countNotesOpen: false, alertTone: 'chime', nextOrderDelaySec: 2,
 });
 
 function merge(base: DevicePrefs, raw: unknown): DevicePrefs {
@@ -44,6 +44,7 @@ function merge(base: DevicePrefs, raw: unknown): DevicePrefs {
     quiet: pick('quiet', (v) => typeof v === 'boolean'),
     countNotesOpen: pick('countNotesOpen', (v) => typeof v === 'boolean'),
     alertTone: pick('alertTone', (v) => v === 'chime' || v === 'bell' || v === 'pluck' || v === 'harp'),
+    nextOrderDelaySec: pick('nextOrderDelaySec', (v) => typeof v === 'number' && v >= 0 && v <= 10),
   };
 }
 

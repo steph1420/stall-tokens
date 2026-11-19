@@ -8,7 +8,7 @@ export type Mark = Exclude<LineStatus, 'draft'> | 'priority';
 const MARKS: Record<Mark, { icon: IconName; label: string; cls: string | undefined }> = {
   waiting: { icon: 'stWaiting', label: 'Waiting', cls: s.stWaiting },
   preparing: { icon: 'stPreparing', label: 'Preparing', cls: s.stPreparing },
-  'done?': { icon: 'stDone', label: 'Done?', cls: s.stDone },
+  'done?': { icon: 'stDone', label: 'Ready', cls: s.stDone },
   ready: { icon: 'stReady', label: 'Ready', cls: s.stReady },
   held: { icon: 'stHeld', label: 'On hold', cls: s.stHeld },
   handed: { icon: 'stHanded', label: 'Handed over', cls: s.stHanded },
