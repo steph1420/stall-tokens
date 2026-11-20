@@ -111,6 +111,20 @@ describe('counter flow (F-06..F-18)', () => {
     expect(lineId).not.toBe('');
   });
 
+  it('deleting an order releases its token for the next new order', async () => {
+    const { s } = await ready();
+    const id = seedMenu(s);
+    s().counter.addItem(id.tea ?? '');
+    expect(cur(s).token).toBe(1);
+    const id2 = s().counter.newOrder();
+    s().counter.addItem(id.samosa ?? '');
+    expect(s().folded.orders[id2]?.token).toBe(2);
+    expect(s().counter.deleteOrder()).toBe(true);
+    expect(s().folded.orders[id2]?.deleted).toBe(true);
+    const id3 = s().counter.newOrder();
+    expect(s().folded.orders[id3]?.token).toBe(2);
+  });
+
   it('round-off at billing, both ways, refuses below ₹0', async () => {
     const { s } = await ready();
     const id = seedMenu(s);

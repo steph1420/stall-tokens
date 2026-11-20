@@ -16,5 +16,11 @@ describe('tokens (F-13, D-TOKEN)', () => {
     expect(nextToken([o(46), o(501)], 'd1', r1)).toBe(47);
   });
   it('wraps when a range is used up', () => { expect(nextToken([o(500)], 'd1', r1)).toBe(1); });
+  it('releases token number when an order is deleted', () => {
+    const oDel = (token: number, dayId = 'd1') => ({ token, dayId, deleted: true }) as Order;
+    expect(nextToken([o(1), oDel(2)], 'd1', r1)).toBe(2);
+    expect(nextToken([oDel(1)], 'd1', r1)).toBe(1);
+    expect(nextToken([o(1), o(2), oDel(3)], 'd1', r1)).toBe(3);
+  });
   it('pads for display', () => { expect(formatToken(47, 3)).toBe('#047'); expect(formatToken(1234, 3)).toBe('#1234'); });
 });
