@@ -132,4 +132,30 @@ describe('Bundle D: Billing Tip and Waive', () => {
     // Payment screen initializes with the ₹10 tip already set from billing
     expect(screen.getByText('To collect').parentElement?.textContent).toMatch(/tip \+₹10/);
   });
+
+  it('allocates proportionate column spans in billing totals table footer', async () => {
+    const { store, s, teaId } = await setupCounter();
+    act(() => {
+      s().counter.addItem(teaId);
+      s().counter.setPage('billing');
+    });
+
+    render(
+      <StoreProvider store={store}>
+        <CounterShell />
+      </StoreProvider>,
+    );
+
+    const subtotalRow = screen.getByText('Subtotal').closest('tr');
+    expect(subtotalRow).toBeTruthy();
+    const subCells = Array.from(subtotalRow?.querySelectorAll('td') ?? []);
+    expect(subCells[0]?.colSpan).toBe(3);
+    expect(subCells[1]?.colSpan).toBe(2);
+
+    const totalRow = screen.getByText('Total').closest('tr');
+    expect(totalRow).toBeTruthy();
+    const totCells = Array.from(totalRow?.querySelectorAll('td') ?? []);
+    expect(totCells[0]?.colSpan).toBe(3);
+    expect(totCells[1]?.colSpan).toBe(2);
+  });
 });

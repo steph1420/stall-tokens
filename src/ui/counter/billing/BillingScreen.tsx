@@ -54,8 +54,8 @@ const formatRate = (p: number) => `₹${(p / 100).toLocaleString('en-IN', { maxi
 function TipWaiveRows({ tip, waived, onAdjust }: { tip: number; waived: number; onAdjust: () => void }) {
   return (
     <>
-      {tip > 0 ? <tr className={s.disc} onClick={onAdjust}><td colSpan={4} className={s.lab}>Tip</td><td className={s.amt}><Money p={tip} sign="+" /></td></tr> : null}
-      {waived > 0 ? <tr className={s.disc} onClick={onAdjust}><td colSpan={4} className={s.lab}>Waived</td><td className={s.discAmt}><Money p={-waived} /></td></tr> : null}
+      {tip > 0 ? <tr className={s.disc} onClick={onAdjust}><td colSpan={3} className={s.lab}>Tip</td><td colSpan={2} className={s.amt}><Money p={tip} sign="+" /></td></tr> : null}
+      {waived > 0 ? <tr className={s.disc} onClick={onAdjust}><td colSpan={3} className={s.lab}>Waived</td><td colSpan={2} className={s.discAmt}><Money p={-waived} /></td></tr> : null}
       <tr className={s.adjRow}>
         <td colSpan={5} className={s.adjCell}>
           <button type="button" className={s.tipWaiveBtn} onClick={onAdjust}>
@@ -84,22 +84,22 @@ function Totals() {
   const netTotal = Math.max(0, bill.total(o) + tip - waived);
   return (
     <tfoot>
-      <tr className={s.sub}><td colSpan={4} className={s.lab}>Subtotal</td><td className={s.amt}><Money p={sub} /></td></tr>
+      <tr className={s.sub}><td colSpan={3} className={s.lab}>Subtotal</td><td colSpan={2} className={s.amt}><Money p={sub} /></td></tr>
       {disc > 0 ? (
-        <tr className={s.disc} onClick={adjust}><td colSpan={4} className={s.lab}>Discount{o.discount?.allowedBy ? <span className={s.who}>Allowed by {o.discount.allowedBy}</span> : null}</td>
-          <td className={s.discAmt}><Money p={-disc} /></td></tr>
+        <tr className={s.disc} onClick={adjust}><td colSpan={3} className={s.lab}>Discount{o.discount?.allowedBy ? <span className={s.who}>Allowed by {o.discount.allowedBy}</span> : null}</td>
+          <td colSpan={2} className={s.discAmt}><Money p={-disc} /></td></tr>
       ) : null}
       {ro !== 0 ? (
-        <tr className={s.disc} onClick={adjust}><td colSpan={4} className={s.lab}>Round-off</td><td className={s.amt}><Money p={ro} sign={ro > 0 ? '+' : '−'} /></td></tr>
+        <tr className={s.disc} onClick={adjust}><td colSpan={3} className={s.lab}>Round-off</td><td colSpan={2} className={s.amt}><Money p={ro} sign={ro > 0 ? '+' : '−'} /></td></tr>
       ) : null}
       <tr className={s.tot}>
-        <td colSpan={4} className={s.lab}>
+        <td colSpan={3} className={s.lab}>
           <button type="button" className={s.adjBtn} onClick={adjust} aria-label="Discount or round-off"><Icon name="pencil" className={s.adjIcon} /></button>Total
         </td>
-        <td className={s.totAmt}><Money p={netTotal} /></td>
+        <td colSpan={2} className={s.totAmt}><Money p={netTotal} /></td>
       </tr>
       <TipWaiveRows tip={tip} waived={waived} onAdjust={adjust} />
-      {paid !== 0 ? <tr className={s.paidRow}><td colSpan={4} className={s.lab}>{owed < 0 ? 'Refund' : owed > 0 ? 'Paid so far' : 'Paid'}</td><td className={s.amt}><Money p={owed < 0 ? -owed : paid} /></td></tr> : null}
+      {paid !== 0 ? <tr className={s.paidRow}><td colSpan={3} className={s.lab}>{owed < 0 ? 'Refund' : owed > 0 ? 'Paid so far' : 'Paid'}</td><td colSpan={2} className={s.amt}><Money p={owed < 0 ? -owed : paid} /></td></tr> : null}
     </tfoot>
   );
 }
