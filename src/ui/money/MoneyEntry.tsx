@@ -20,7 +20,7 @@ function ForSheet({ dir, label, personId, onPick, onClose }: { dir: Dir; label: 
   const [v, setV] = useState(personId ? '' : label);
   return (
     <Sheet title={dir === 'spent' ? 'For' : 'From'} onClose={onClose}>
-      <input className={kit.input} aria-label={dir === 'spent' ? 'What it was for' : 'Who or what it came from'} autoFocus value={v} maxLength={CONFIG.limits.nameMaxChars}
+      <input className={kit.input} aria-label={dir === 'spent' ? 'What it was for' : 'Who or what it came from'} value={v} maxLength={CONFIG.limits.nameMaxChars}
         placeholder={dir === 'spent' ? 'Ice, cups, gas…' : 'Fair organiser, sponsor…'} onChange={(e) => { setV(e.target.value); }} onKeyDown={(e) => { if (e.key === 'Enter') { onPick(v, null); onClose(); } }} />
       {recent.length ? <div className={s.chips}>{recent.map((r) => <button type="button" key={r} className={s.chip} onClick={() => { onPick(r, null); onClose(); }}>{r}</button>)}</div> : null}
       {dir === 'received' ? <><div className={kit.fieldLab}>Or a person (counts in their balance)</div>

@@ -134,7 +134,7 @@ function NoteSheet({ lineId }: { lineId: string | null }) {
   const save = () => { if (lineId) c.setLineNote(lineId, v); else c.setOrderNote(v); close(); };
   return (
     <Sheet title={line ? `Note for ${line.name}` : 'Order note'} onClose={close}>
-      <textarea className={k.textarea} aria-label="Note" value={v} maxLength={CONFIG.limits.noteMaxChars} rows={3} autoFocus onChange={(e) => { setV(e.target.value); }} placeholder={line ? 'Less sugar, no onion…' : 'For the whole order'} />
+      <textarea className={k.textarea} aria-label="Note" value={v} maxLength={CONFIG.limits.noteMaxChars} rows={3} onChange={(e) => { setV(e.target.value); }} placeholder={line ? 'Less sugar, no onion…' : 'For the whole order'} />
       <div className={k.hint}>{`${String(v.length)} / ${String(CONFIG.limits.noteMaxChars)}`}</div>
       <div className={k.row}>
         {v ? <button type="button" className={k.quiet} onClick={() => { setV(''); }}>Clear</button> : null}
@@ -312,7 +312,7 @@ function ServingSheet() {
   const [v, setV] = useState(name);
   return (
     <Sheet title="Who is serving" onClose={close}>
-      <input className={k.input} aria-label="Name" value={v} autoFocus maxLength={CONFIG.limits.nameMaxChars} onChange={(e) => { setV(e.target.value); }} />
+      <input className={k.input} aria-label="Name" value={v} maxLength={CONFIG.limits.nameMaxChars} onChange={(e) => { setV(e.target.value); }} />
       <div className={k.hint}>Shown on new orders from this phone.</div>
       <div className={k.row}><span className={k.grow} /><button type="button" className={k.cta} onClick={() => { setPrefs({ servingName: v.trim().replace(/\s+/g, ' ') }); close(); }}>Done</button></div>
     </Sheet>

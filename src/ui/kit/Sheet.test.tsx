@@ -53,4 +53,18 @@ describe('Sheet component (FIND-UI-04)', () => {
     fireEvent.keyDown(window, { key: 'Tab', shiftKey: true });
     expect(document.activeElement).toBe(btn2);
   });
+
+  it('does not auto-focus text inputs or textareas on open to prevent mobile keyboard auto-open', () => {
+    const onClose = vi.fn();
+    render(
+      <Sheet title="Note" onClose={onClose}>
+        <input data-testid="input-box" />
+        <button type="button" data-testid="done-btn">Done</button>
+      </Sheet>
+    );
+    const input = screen.getByTestId('input-box');
+    const doneBtn = screen.getByTestId('done-btn');
+    expect(document.activeElement).not.toBe(input);
+    expect(document.activeElement).toBe(doneBtn);
+  });
 });

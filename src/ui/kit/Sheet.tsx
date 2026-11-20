@@ -27,8 +27,14 @@ export function Sheet({ title, onClose, children, label }: { title?: string; lab
   useEffect(() => {
     const el = ref.current;
     if (el) {
-      const initial = el.querySelectorAll<HTMLElement>(FOCUSABLE_SEL)[0];
-      initial?.focus();
+      // Prefer focusing the first non-text-input element (e.g. button) to prevent mobile virtual keyboard auto-open.
+      // If no button exists, focus the dialog container itself.
+      const nonInput = el.querySelector<HTMLElement>('button:not([disabled]), [href], [tabindex]:not([tabindex="-1"])');
+      if (nonInput) {
+        nonInput.focus();
+      } else {
+        el.focus();
+      }
     }
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') onClose();
@@ -41,7 +47,7 @@ export function Sheet({ title, onClose, children, label }: { title?: string; lab
   return (
     <div className={s.sheetWrap}>
       <button type="button" className={s.scrim} aria-label="Close" onClick={onClose} />
-      <div ref={ref} className={s.sheet} role="dialog" aria-modal="true" aria-label={label ?? title} style={{ transform: `translateY(${String(y)}px)` }}>
+      <div ref={ref} tabIndex={-1} className={s.sheet} role="dialog" aria-modal="true" aria-label={label ?? title} style={{ transform: `translateY(${String(y)}px)` }}>
         <div className={s.grab} aria-hidden="true" {...handle} />
         {title ? <div className={s.sheetTitle}>{title}</div> : null}
         {children}
