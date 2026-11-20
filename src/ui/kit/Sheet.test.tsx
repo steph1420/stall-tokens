@@ -58,7 +58,7 @@ describe('Sheet component (FIND-UI-04)', () => {
     const onClose = vi.fn();
     render(
       <Sheet title="Note" onClose={onClose}>
-        <input data-testid="input-box" />
+        <input data-testid="input-box" tabIndex={0} />
         <button type="button" data-testid="done-btn">Done</button>
       </Sheet>
     );
