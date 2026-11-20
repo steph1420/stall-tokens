@@ -29,7 +29,7 @@ export function Sheet({ title, onClose, children, label }: { title?: string; lab
     if (el) {
       // Prefer focusing the first non-text-input element (e.g. button) to prevent mobile virtual keyboard auto-open.
       // If no button exists, focus the dialog container itself.
-      const nonInput = el.querySelector<HTMLElement>('button:not([disabled]), [href], [tabindex]:not([tabindex="-1"])');
+      const nonInput = el.querySelector<HTMLElement>('button:not([disabled]), a[href], [role="button"][tabindex]:not([tabindex="-1"])');
       if (nonInput) {
         nonInput.focus();
       } else {
