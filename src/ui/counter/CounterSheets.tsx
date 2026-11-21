@@ -63,18 +63,21 @@ function CategoryPick({ value, cats, onPick }: { value: string; cats: readonly s
 function saveItemForm(
   saveItem: (itemId: string | null, draft: ItemDraft) => string | null,
   itemId: string | null,
-  fields: Omit<ItemDraft, 'price' | 'count' | 'discountPct' | 'variants' | 'addons'> & { priceText: string; countText: string; discountPctText: string; variants: readonly DraftOption[]; addons: readonly DraftOption[] },
+  fields: Omit<ItemDraft, 'price' | 'count' | 'discountPct' | 'variants' | 'addons' | 'secondaryUnit' | 'secondaryMultiplier'> & { priceText: string; countText: string; discountPctText: string; secondaryUnitText: string; secondaryMultiplierText: string; variants: readonly DraftOption[]; addons: readonly DraftOption[] },
 ): string | null {
   const price = parseRupees(fields.priceText);
   if (price === null) return 'Check the price';
   const count = fields.countText.trim() === '' ? null : Number(fields.countText);
-  if (count !== null && !Number.isSafeInteger(count)) return 'Stock must be a whole number';
+  if (count !== null && (!Number.isFinite(count) || count < 0 || !/^\d+(\.\d{1,6})?$/.test(fields.countText.trim()))) return 'Stock must be 0 or more (up to 6 decimal places)';
   const discountPct = fields.discountPctText.trim() === '' ? 0 : Number(fields.discountPctText);
+  const secondaryUnit = fields.secondaryUnitText.trim();
+  const secondaryMultiplier = secondaryUnit ? Number(fields.secondaryMultiplierText) : 1;
+  if (secondaryUnit && (!Number.isFinite(secondaryMultiplier) || secondaryMultiplier <= 0)) return 'Enter a multiplier greater than 0';
   const variantError = validateDraftOptions(fields.variants, 'variant');
   if (variantError) return variantError;
   const addonError = validateDraftOptions(fields.addons, 'add-on');
   if (addonError) return addonError;
-  return saveItem(itemId, { name: fields.name, price, swatch: fields.swatch, category: fields.category, stationId: fields.stationId, count, discountPct, variants: serializeOptions(fields.variants), addons: serializeOptions(fields.addons) });
+  return saveItem(itemId, { name: fields.name, price, swatch: fields.swatch, category: fields.category, stationId: fields.stationId, count, unit: fields.unit, secondaryUnit, secondaryMultiplier, discountPct, variants: serializeOptions(fields.variants), addons: serializeOptions(fields.addons) });
 }
 
 function ItemDiscountField({ value, onChange }: { value: string; onChange: (value: string) => void }) {
@@ -96,24 +99,30 @@ function ItemSheet({ itemId }: { itemId: string | null }) {
   const [swatch, setSwatch] = useState(it?.swatch ?? 0);
   const [category, setCategory] = useState(it?.category ?? cats[0] ?? '');
   const [station, setStation] = useState(it?.stationId ?? CONFIG.stations[0]);
+  const [unit, setUnit] = useState(it?.unit ?? '');
+  const [secondaryUnit, setSecondaryUnit] = useState(it?.secondaryUnit ?? '');
+  const [secondaryMultiplier, setSecondaryMultiplier] = useState(String(it?.secondaryMultiplier ?? 1));
   const [count, setCount] = useState(it?.count == null ? '' : String(it.count));
   const [discountPct, setDiscountPct] = useState(String(it?.discountPct ?? 0));
   const [err, setErr] = useState('');
   const save = () => {
-    const e = saveItemForm((id, draft) => cat.saveItem(id, draft), itemId, { name, priceText: price, swatch, category, stationId: station, countText: count, discountPctText: discountPct, variants: options.variants, addons: options.addons });
+    const e = saveItemForm((id, draft) => cat.saveItem(id, draft), itemId, { name, priceText: price, swatch, category, stationId: station, unit, countText: count, discountPctText: discountPct, secondaryUnitText: secondaryUnit, secondaryMultiplierText: secondaryMultiplier, variants: options.variants, addons: options.addons });
     if (e) setErr(e); else close();
   };
   return (
     <Sheet title={it ? 'Edit item' : 'Add item'} onClose={close}>
       <Field id="iname" label="Name"><input id="iname" className={k.input} value={name} maxLength={CONFIG.limits.nameMaxChars} onChange={(e) => { setName(e.target.value); }} autoComplete="off" /></Field>
-      <Field id="iprice" label="Price (₹)"><input id="iprice" className={k.input} value={price} inputMode="decimal" onChange={(e) => { setPrice(e.target.value); }} /></Field>
+      <Field id="iprice" label={'Price (₹ per ' + (unit.trim() || 'item') + ')'}><input id="iprice" className={k.input} value={price} inputMode="decimal" onChange={(e) => { setPrice(e.target.value); }} /></Field>
+      <Field id="iunit" label="Primary unit (e.g. kg, litre, dozen)"><input id="iunit" className={k.input} value={unit} maxLength={20} onChange={(e) => { setUnit(e.target.value); }} /></Field>
+      <Field id="isecondary" label="Secondary sale unit (optional)"><input id="isecondary" className={k.input} value={secondaryUnit} maxLength={20} placeholder="e.g. g, ml, piece" onChange={(e) => { setSecondaryUnit(e.target.value); }} /></Field>
+      {secondaryUnit.trim() ? <Field id="imultiplier" label={'Primary units per 1 ' + secondaryUnit.trim()}><input id="imultiplier" className={k.input} value={secondaryMultiplier} inputMode="decimal" onChange={(e) => { setSecondaryMultiplier(e.target.value); }} /><div className={k.hint}>Example: 1 g = 0.001 kg, so enter 0.001.</div></Field> : null}
       <ItemDiscountField value={discountPct} onChange={setDiscountPct} />
       <ItemOptionsEditor variants={options.variants} onVariants={options.setVariants} addons={options.addons} onAddons={options.setAddons} />
       <Swatches value={swatch} onPick={setSwatch} />
       <CategoryPick value={category} cats={cats} onPick={(c) => { setCategory(c); if (!it) setStation(stationFor(c) ?? station); }} />
       <Field id="istation" label="Station"><select id="istation" className={k.input} value={station} onChange={(e) => { setStation(e.target.value); }}>
         {CONFIG.stations.map((x) => <option key={x} value={x}>{x}</option>)}</select></Field>
-      <Field id="icount" label="Stock (leave empty for no count)"><input id="icount" className={k.input} value={count} inputMode="numeric" onChange={(e) => { setCount(e.target.value.replace(/[^\d]/g, '')); }} /></Field>
+      <Field id="icount" label={'Stock in ' + (unit.trim() || 'primary units') + ' (leave empty for no count)'}><input id="icount" className={k.input} value={count} inputMode="decimal" onChange={(e) => { setCount(e.target.value); }} /></Field>
       {err ? <div className={k.err} role="alert">{err}</div> : null}
       <div className={k.row}>
         {it ? <button type="button" className={k.danger} onClick={() => { cat.removeItem(it.id); close(); }}>Remove</button> : null}
