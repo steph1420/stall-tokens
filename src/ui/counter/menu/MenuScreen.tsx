@@ -29,9 +29,8 @@ function Card({ it }: { it: Item }) {
   const hasCustom = parseVariants(it).length > 0 || parseAddons(it).length > 0 || Boolean(it.secondaryUnit);
   const press = usePress(() => { if (hasCustom) openSheet({ kind: 'customizeItem', itemId: it.id }); else c.addItem(it.id); }, () => { openSheet({ kind: 'stock', itemId: it.id }); });
   const noteLine = [...mine].reverse().find((l) => l.status === 'draft') ?? mine[mine.length - 1];
-  const cls = [s.card, qty > 0 ? s.isIn : '', out ? s.isOut : ''].join(' ');
   return (
-    <article className={cls} style={{ '--item-accent': `var(--dl-stall-swatch-${String(it.swatch)})` } as React.CSSProperties}>
+    <article className={[s.card, qty > 0 ? s.isIn : '', out ? s.isOut : ''].join(' ')} style={{ '--item-accent': `var(--dl-stall-swatch-${String(it.swatch)})` } as React.CSSProperties}>
       <div role="button" tabIndex={0} className={s.hit} aria-label={`${it.name}, add one${hasCustom ? ', choose options' : ''}${badge ? `, ${badge.text}` : ''}`} {...press} />
       <span className={s.accent} />
       <div className={s.name}>{it.name}</div>
