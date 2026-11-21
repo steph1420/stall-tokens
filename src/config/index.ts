@@ -40,6 +40,7 @@ export const CONFIG = Object.freeze({
     nameMaxChars: 60,
     noteMaxChars: 140,
     qtyMax: 99,
+    measuredQtyMax: 1_000_000, // Maximum integer units for measured sales (e.g. grams or millilitres).
     linesMax: 80,
     itemsMax: 300,
     moneyMaxPaise: 99_99_99_999_00, // ₹9,99,99,999
