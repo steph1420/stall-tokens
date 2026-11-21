@@ -20,7 +20,8 @@ describe('secondary-unit conversion math', () => {
     expect(primaryQuantity(250, 0.001)).toBe(0.25);
     expect(primaryQuantity(100, 0.001)).toBe(0.1);
     expect(primaryQuantity(25, 0.01)).toBe(0.25);
-    expect(primaryQuantity(1, 1 / 12)).toBe(0.083333);
+    expect(primaryQuantity(1, 1 / 12)).toBeCloseTo(1 / 12, 12);
+    expect(primaryQuantity(12, 1 / 12)).toBe(1);
   });
 
   it('calculates converted line totals before rounding to paise', () => {
