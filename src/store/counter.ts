@@ -46,7 +46,8 @@ function makeCtx(core: Core, log: Log) {
     if (it.count === null) return Number.POSITIVE_INFINITY;
     const drafts = liveOrders(st().folded).filter((o) => !o.cancel)
       .reduce((n, o) => n + o.lines.filter((l) => l.itemId === itemId).reduce((m, l) => m + primaryQuantity(Math.max(0, l.qty - l.committed), l.stockMultiplier ?? 1), 0), 0);
-    return it.count - drafts;
+    const left = it.count - drafts;
+    return left <= 1e-10 ? 0 : left;
   };
   const editable = (l: Line) => l.status === 'draft' || l.status === 'waiting';
   /** s127: true (with a calm toast) when another phone has the current order; nothing changes here until Take over. */
@@ -179,6 +180,7 @@ function lineActions(x: Ctx, nav: Nav) {
       const o = current();
       const line = o?.lines.find((l) => l.lineId === lineId);
       if (!o || !line) return;
+      if (!Number.isFinite(qty)) return;
       const maxQty = line.unit && line.priceUnit && line.unit !== line.priceUnit ? CONFIG.limits.measuredQtyMax : CONFIG.limits.qtyMax;
       const q = Math.max(0, Math.min(maxQty, Math.trunc(qty)));
       if (q === line.qty) return;
