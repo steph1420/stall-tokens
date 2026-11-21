@@ -133,7 +133,9 @@ function addCustomLine(x: Ctx, nav: Nav, itemId: string, customName: string, cus
   if (x.locked()) return;
   const it = st().folded.items[itemId];
   if (!it || it.removed || it.supply) return;
-  if (!Number.isSafeInteger(qty) || qty < 1 || !Number.isFinite(stockMultiplier) || stockMultiplier <= 0) { toast('Check the quantity and unit'); return; }
+  const measured = Boolean(unit && priceUnit && unit !== priceUnit);
+  const maxQty = measured ? CONFIG.limits.measuredQtyMax : CONFIG.limits.qtyMax;
+  if (!Number.isSafeInteger(qty) || qty < 1 || qty > maxQty || !Number.isFinite(stockMultiplier) || stockMultiplier <= 0) { toast('Check the quantity and unit'); return; }
   const requiredStock = primaryQuantity(qty, stockMultiplier);
   if (it.soldOut || available(itemId) + 1e-10 < requiredStock) { toast(`${it.name} is sold out or there is not enough stock`); return; }
   const name = customName.trim().slice(0, CONFIG.limits.nameMaxChars) || it.name;
@@ -177,7 +179,8 @@ function lineActions(x: Ctx, nav: Nav) {
       const o = current();
       const line = o?.lines.find((l) => l.lineId === lineId);
       if (!o || !line) return;
-      const q = Math.max(0, Math.min(CONFIG.limits.qtyMax, Math.trunc(qty)));
+      const maxQty = line.unit && line.priceUnit && line.unit !== line.priceUnit ? CONFIG.limits.measuredQtyMax : CONFIG.limits.qtyMax;
+      const q = Math.max(0, Math.min(maxQty, Math.trunc(qty)));
       if (q === line.qty) return;
       if (!editable(line) && q < line.qty) { toast('Already being made; change it from the kitchen'); return; }
       const left = available(line.itemId);
