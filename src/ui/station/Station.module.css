@@ -1,5 +1,7 @@
 /* Station page (21-polish2/station.html) and looks B / C (Q-STN-LOOK D). `--c` is the station colour. */
 .title { grid-column: 2; grid-row: 2; margin: 0; display: flex; align-items: center; gap: 0.625rem; min-width: 0; }
+.navBtns { grid-column: 1; grid-row: 2; display: flex; align-items: center; gap: 0.25rem; min-width: 0; }
+
 .title span { font-family: var(--dl-stall-font-display); font-size: 1.375rem; font-weight: 500; letter-spacing: -0.02em; line-height: 1; color: var(--dl-color-text-display); }
 .titleIc svg { width: 1.75rem; height: 1.75rem; display: block; stroke: var(--c); }
 
