@@ -29,6 +29,21 @@ describe('Stall screens (F-32 F-34)', () => {
     expect(screen.getByText('Auto-prep next order')).toBeTruthy();
   });
 
+  it('retains long stall and device labels in the responsive Settings rows', async () => {
+    const { store } = makeTestStore();
+    await store.getState().start();
+    const stallName = 'Community Food Festival Stall Number Twenty Seven';
+    const servingName = 'Front Counter Near The Main Entrance';
+    store.getState().catalog.setSetting('stallName', stallName);
+    store.getState().setPrefs({ servingName });
+    render(<StoreProvider store={store}><StallScreens screen="settings" /></StoreProvider>);
+    expect(screen.getByText(stallName)).toBeTruthy();
+    expect(screen.getByText(servingName)).toBeTruthy();
+    expect(screen.getByText('General')).toBeTruthy();
+    expect(screen.getByText('Display')).toBeTruthy();
+    expect(screen.getByText('Data')).toBeTruthy();
+  });
+
   it('Open the stall starts today and saves the float', async () => {
     const { store } = makeTestStore();
     await store.getState().start();
