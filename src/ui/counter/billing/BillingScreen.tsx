@@ -11,8 +11,9 @@ import s from './Billing.module.css';
 
 function QtyStrip({ line, onClose }: { line: Line; onClose: () => void }) {
   const c = useApp((st) => st.counter);
+  const maxQty = line.unit && line.priceUnit && line.unit !== line.priceUnit ? CONFIG.limits.measuredQtyMax : CONFIG.limits.qtyMax;
   const start = Math.max(1, line.qty - 2);
-  const values = Array.from({ length: 5 }, (_, i) => start + i).filter((v) => v <= CONFIG.limits.qtyMax);
+  const values = Array.from({ length: 5 }, (_, i) => start + i).filter((v) => v <= maxQty);
   return (
     <div className={s.strip} role="listbox" aria-label={`Quantity of ${line.name}`}>
       {values.map((v) => (
