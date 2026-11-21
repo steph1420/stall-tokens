@@ -49,7 +49,7 @@ Recovery branch: `backup/main-2026-11-21`
 
 | ID | Task | Status |
 |---|---|---|
-| P2-01 | Android keyboard regression test | In progress | Found focus-stealing bug: Sheet's focus-on-open effect reran whenever an unstable onClose callback changed during controlled input updates. Stabilised the sheet close handler and counter sheet callback; added regression tests for callback changes and focus retention while typing. CI #258 pending; physical Android keyboard test still required. |
+| P2-01 | Android keyboard regression test | In progress | Found focus-stealing bug: Sheet's focus-on-open effect reran whenever an unstable onClose callback changed during controlled input updates. Stabilised the sheet close handler and counter sheet callback; added regression tests for callback changes and focus retention while typing. CI #258 passed: 57 files / 291 tests, typecheck, lint and production build. Physical Android keyboard test still required. |
 | P2-02 | iPad keyboard regression test | Pending |
 | P2-03 | Fix Settings clipping and overlap | Pending |
 | P2-04 | Verify Home navigation on every main screen | Pending |
@@ -329,3 +329,11 @@ This roadmap governs the remaining work. Each stage is a set of reviewable code 
 - Memoized the counter sheet's `useClose` callback.
 - Added regression tests in `Sheet.test.tsx` and `ItemDiscount.test.tsx` to ensure changing the close callback and typing into Name, Price and Discount fields do not steal focus.
 - CI run #258 is pending. This verifies DOM focus behaviour; it does not replace testing the native Android/iPad virtual keyboard on physical devices.
+
+
+### Keyboard focus regression — CI run #258 (21 November 2026)
+- Workflow: [GitHub Actions run #258](https://github.com/steph1420/stall-tokens/actions/runs/44890596261)
+- Result: **success**.
+- Tests: **57 test files, 291 tests passed**; TypeScript, ESLint, Stylelint, dependency checks, contrast checks and production build passed.
+- New tests prove that a changing sheet close callback does not move focus away from an active input, Escape still calls the latest callback, and typing into Name, Price and Discount fields retains focus.
+- P2-01 remains In progress until the native keyboard is verified on the actual Android phone. P2-02 remains separate for iPad.
