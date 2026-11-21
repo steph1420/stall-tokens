@@ -22,7 +22,7 @@ export function useLinePress(o: Order, l: Line) {
   const k = useApp((st) => st.kitchen);
   return usePress(() => { k.advance(o.id, l.lineId); }, () => { k.toggleHold(o.id, l.lineId); });
 }
-export const lineLabel = (l: Line): string => `${kitchen.lineQuantityLabel(l)} ${l.name}: tap for the next step, hold for On hold`;
+export const lineLabel = (l: Line): string => `${l.unit ? kitchen.lineQuantityLabel(l) + ' ' : ''}${l.name}: tap for the next step, hold for On hold`;
 
 const AGE = { calm: s.age, amber: [s.age, s.ageAmber].join(' '), red: [s.age, s.ageRed].join(' ') } as const;
 
