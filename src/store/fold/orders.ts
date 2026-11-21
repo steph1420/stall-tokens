@@ -1,7 +1,7 @@
 // F-09..F-18 Order ops in the fold. Stock moves when lines are committed (sent or paid) and moves back
 // when committed qty drops or the order is deleted. Sales may push stock below 0 (offline oversell):
 // the count clamps at 0 and the item is flagged `oversold` (plan §8).
-import type { Item, Line, Op, Order, Refund, RefundLine } from '../../contract';
+import { primaryQuantity, type Item, type Line, type Op, type Order, type Refund, type RefundLine } from '../../contract';
 import { due, held } from '../rules/bill';
 import type { Folded } from './state';
 import { lww } from './lww';
@@ -31,7 +31,7 @@ function moveStock(items: Folded['items'], itemId: string, sold: number): Folded
 function commit(s: Folded, o: Order): { state: Folded; order: Order } {
   let items = s.items;
   const lines = o.lines.map((l) => {
-    items = moveStock(items, l.itemId, l.qty - l.committed);
+    items = moveStock(items, l.itemId, primaryQuantity(l.qty - l.committed, l.stockMultiplier ?? 1));
     return { ...l, committed: l.qty, status: l.status === 'draft' ? 'waiting' as const : l.status };
   });
   return { state: { ...s, items }, order: { ...o, lines, sent: true } };
@@ -57,7 +57,7 @@ function setQty(s: Folded, o: Order, lineId: string, rawQty: number): Folded {
   const qty = Math.max(0, Math.trunc(rawQty));
   let items = s.items;
   const committed = line.status === 'draft' ? 0 : qty;
-  if (committed !== line.committed) items = moveStock(items, line.itemId, committed - line.committed);
+  if (committed !== line.committed) items = moveStock(items, line.itemId, primaryQuantity(committed - line.committed, line.stockMultiplier ?? 1));
   const lines = qty === 0 ? o.lines.filter((l) => l.lineId !== lineId) : o.lines.map((l) => (l.lineId === lineId ? { ...l, qty, committed } : l));
   const revision = o.sent ? o.revision + 1 : o.revision;
   return withOrder({ ...s, items }, { ...o, lines, revision });
@@ -65,8 +65,13 @@ function setQty(s: Folded, o: Order, lineId: string, rawQty: number): Folded {
 
 function addLine(s: Folded, o: Order, b: Op<'line.add'>['body']): Folded {
   if (o.lines.some((l) => l.lineId === b.lineId)) return s;
+  const item = s.items[b.itemId];
+  const stockMultiplier = b.stockMultiplier ?? 1;
+  if (!Number.isFinite(stockMultiplier) || stockMultiplier <= 0) return s;
+  const primaryUnit = item?.unit ?? '';
   const line: Line = { lineId: b.lineId, itemId: b.itemId, name: b.name, price: Math.trunc(b.price), category: b.category,
-    stationId: b.stationId, qty: 0, note: '', status: 'draft', committed: 0, byCounter: false, restocked: 0 };
+    stationId: b.stationId, unit: b.unit ?? primaryUnit, priceUnit: b.priceUnit ?? primaryUnit, stockMultiplier,
+    qty: 0, note: '', status: 'draft', committed: 0, byCounter: false, restocked: 0 };
   const next = { ...o, lines: [...o.lines, line] };
   return setQty(withOrder(s, next), next, b.lineId, b.qty);
 }
@@ -79,7 +84,7 @@ function mapLine(s: Folded, o: Order, lineId: string, f: (l: Line) => Line): Fol
 const NOT_STARTED: ReadonlySet<string> = new Set(['draft', 'waiting', 'held', 'paused']);
 function cancel(s: Folded, o: Order, op: Op<'order.cancel'>): Folded {
   let items = s.items;
-  for (const l of o.lines) if (NOT_STARTED.has(l.status)) items = moveStock(items, l.itemId, -l.committed);
+  for (const l of o.lines) if (NOT_STARTED.has(l.status)) items = moveStock(items, l.itemId, -primaryQuantity(l.committed, l.stockMultiplier ?? 1));
   const lines = o.lines.map((l) => (NOT_STARTED.has(l.status) ? { ...l, committed: 0 } : l));
   const refundDue = held(o);
   return withOrder({ ...s, items }, { ...o, lines, cancel: { reason: op.body.reason.trim(), at: op.wallAt, by: op.writer, refundDue: Math.max(0, refundDue) } });
@@ -87,7 +92,7 @@ function cancel(s: Folded, o: Order, op: Op<'order.cancel'>): Folded {
 
 function remove(s: Folded, o: Order): Folded {
   let items = s.items;
-  for (const l of o.lines) items = moveStock(items, l.itemId, -l.committed);
+  for (const l of o.lines) items = moveStock(items, l.itemId, -primaryQuantity(l.committed, l.stockMultiplier ?? 1));
   return withOrder({ ...s, items }, { ...o, deleted: true, lines: o.lines.map((l) => ({ ...l, committed: 0 })) });
 }
 
@@ -107,7 +112,7 @@ function restock(s: Folded, o: Order, want: readonly RefundLine[]): { state: Fol
     const ask = want.filter((w) => w.lineId === l.lineId).reduce((t, w) => t + Math.max(0, Math.trunc(w.qty)), 0);
     const qty = Math.min(ask, Math.max(0, l.committed - l.restocked));
     if (qty <= 0) return l;
-    items = moveStock(items, l.itemId, -qty);
+    items = moveStock(items, l.itemId, -primaryQuantity(qty, l.stockMultiplier ?? 1));
     done.push({ lineId: l.lineId, qty });
     return { ...l, restocked: l.restocked + qty };
   });
@@ -133,7 +138,7 @@ function voidRefund(s: Folded, o: Order, op: Op<'refund.void'>): Folded {
   const lines = o.lines.map((l) => {
     const qty = ref.restocked.filter((x) => x.lineId === l.lineId).reduce((t, x) => t + x.qty, 0);
     if (qty <= 0) return l;
-    items = moveStock(items, l.itemId, qty);
+    items = moveStock(items, l.itemId, primaryQuantity(qty, l.stockMultiplier ?? 1));
     return { ...l, restocked: Math.max(0, l.restocked - qty) };
   });
   const refunds = o.refunds.map((x) => (x.refundId === ref.refundId ? { ...x, voided: op.body.reason.trim() || 'Undo' } : x));
