@@ -40,6 +40,17 @@ describe('Kitchen and Station screens', () => {
     act(() => { fireEvent.pointerDown(tea, { clientX: 5, clientY: 5 }); fireEvent.pointerUp(tea); });
     expect(screen.getAllByText('Preparing').length).toBeGreaterThan(0);
   });
+  it('provides a direct Home button from a Station screen', async () => {
+    const store = await seeded();
+    const order = Object.values(store.getState().folded.orders)[0];
+    const station = order?.lines[0]?.stationId;
+    if (!station) throw new Error('Station fixture missing');
+    store.getState().kitchen.openStation(station, 'kitchen');
+    render(<StoreProvider store={store}><StationScreen /></StoreProvider>);
+    fireEvent.click(screen.getByRole('button', { name: 'Home' }));
+    expect(store.getState().ui.screen).toBe('launch');
+  });
+
   it('provides a direct Home button from the Kitchen screen', async () => {
     const store = await seeded();
     render(<StoreProvider store={store}><KitchenScreen /></StoreProvider>);
