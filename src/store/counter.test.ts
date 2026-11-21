@@ -216,7 +216,7 @@ describe('counter flow (F-06..F-18)', () => {
     const state = reloaded.store.getState();
     const restored = state.folded.orders[orderId];
     expect(state.folded.items[ids.samosa ?? '']).toMatchObject({ name: 'Samosa', price: DEMO_MENU.find((m) => m.itemId === 'samosa')?.price });
-    expect(restored).toMatchObject({ token: 1, note: 'Please serve together.' });
+    expect(restored).toMatchObject({ token: 501, note: 'Please serve together.' });
     expect(restored?.lines[0]).toMatchObject({ itemId: ids.samosa, qty: 1, note: 'No onion.' });
     expect(state.prefs.servingName).toBe('Counter A');
     expect(state.prefs.rangeIndex).toBe(1);
