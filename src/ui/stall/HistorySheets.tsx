@@ -2,7 +2,7 @@
 // Print token, Hold to cancel; a cancelled order that still holds money offers Cash back / UPI back (W-21). Entry: Hold to void.
 import { CONFIG } from '../../config';
 import { formatInr, type Entry, type Order } from '../../contract';
-import { bill, formatToken, history, istClock, unpaid, useApp, type Sheet as CounterSheet } from '../../store';
+import { bill, formatToken, history, istClock, kitchen, unpaid, useApp, type Sheet as CounterSheet } from '../../store';
 import { HoldButton } from '../kit/HoldButton';
 import { Sheet } from '../kit/Sheet';
 import s from './Stall.module.css';
@@ -19,7 +19,7 @@ export function OrderHistorySheet({ o, onClose }: { o: Order; onClose: () => voi
     <Sheet label={`Order ${token}`} onClose={onClose}>
       <p className={s.hsT}>{`Order ${token} · ${formatInr(bill.total(o))}`}</p>
       <p className={[s.hsTag, TONE[tag.tone]].join(' ')}>{tag.text}</p>
-      <p className={s.hsS}>{o.lines.filter((l) => l.qty > 0).map((l) => (l.qty > 1 ? `${l.name} ×${String(l.qty)}` : l.name)).join(', ') || 'No items'}</p>
+      <p className={s.hsS}>{o.lines.filter((l) => l.qty > 0).map((l) => kitchen.lineQuantityLabel(l) + ' ' + l.name).join(', ') || 'No items'}</p>
       {o.cancel ? (
         hold > 0 ? (
           <div className={s.hsRow}>
