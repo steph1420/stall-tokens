@@ -9,7 +9,7 @@ export type StallScreen = 'money' | 'settle' | 'stock' | 'history' | 'settings' 
 export type CounterTab = 'new' | 'open' | 'unpaid';
 /** Station page place (Q-BACK-1 A: Back returns to where it was opened from). */
 export interface StationPlace { readonly id: string; readonly from: 'kitchen' | 'launch'; readonly orderId: string | null }
-export interface PendingCustomItem { readonly itemId: string; readonly name: string; readonly price: Paise }
+export interface PendingCustomItem { readonly itemId: string; readonly name: string; readonly price: Paise; readonly unit: string; readonly priceUnit: string; readonly stockMultiplier: number; readonly qty: number }
 export type Sheet =
   | { kind: 'item'; itemId: string | null }
   | { kind: 'customizeItem'; itemId: string }
