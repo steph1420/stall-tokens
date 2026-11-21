@@ -36,4 +36,50 @@ describe('CustomizeItemSheet', () => {
     expect(order?.lines[0]?.qty).toBe(2);
     expect(order ? bill.subtotal(order) : 0).toBe(18000);
   });
+  it('sells a measured quantity in the secondary unit and converts the bill and stock', async () => {
+    const { store } = makeTestStore();
+    await store.getState().start();
+    const s = () => store.getState();
+    expect(s().catalog.saveItem(null, {
+      name: 'Rice', price: 20000, swatch: 0, category: 'Food', stationId: 'kitchen', count: 1,
+      unit: 'kg', secondaryUnit: 'g', secondaryMultiplier: 0.001,
+    })).toBeNull();
+    const rice = Object.values(s().folded.items).find((item) => item.name === 'Rice');
+    expect(rice).toBeDefined();
+    if (!rice) throw new Error('Rice missing');
+    act(() => { s().counter.newOrder(); });
+
+    const onClose = vi.fn();
+    render(<StoreProvider store={store}><CustomizeItemSheet itemId={rice.id} onClose={onClose} /></StoreProvider>);
+    fireEvent.click(screen.getByRole('radio', { name: 'g' }));
+    fireEvent.change(screen.getByRole('spinbutton', { name: 'Quantity' }), { target: { value: '250' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Add to order' }));
+
+    const order = s().folded.orders[s().ui.orderId ?? ''];
+    expect(onClose).toHaveBeenCalledOnce();
+    expect(order?.lines[0]).toMatchObject({ qty: 250, unit: 'g', priceUnit: 'kg', stockMultiplier: 0.001, price: 20000 });
+    expect(order ? bill.subtotal(order) : 0).toBe(5000);
+    expect(s().counter.sendToKitchen()).toBe(true);
+    expect(s().folded.items[rice.id]?.count).toBeCloseTo(0.75, 10);
+  });
+
+  it('caps secondary-unit quantities against fractional primary stock', async () => {
+    const { store } = makeTestStore();
+    await store.getState().start();
+    const s = () => store.getState();
+    s().catalog.saveItem(null, {
+      name: 'Spice', price: 10000, swatch: 0, category: 'Food', stationId: 'kitchen', count: 0.25,
+      unit: 'kg', secondaryUnit: 'g', secondaryMultiplier: 0.001,
+    });
+    const spice = Object.values(s().folded.items).find((item) => item.name === 'Spice');
+    if (!spice) throw new Error('Spice missing');
+    act(() => { s().counter.newOrder(); });
+    render(<StoreProvider store={store}><CustomizeItemSheet itemId={spice.id} onClose={vi.fn()} /></StoreProvider>);
+    fireEvent.click(screen.getByRole('radio', { name: 'g' }));
+    const quantity = screen.getByRole('spinbutton', { name: 'Quantity' }) as HTMLInputElement;
+    expect(quantity.max).toBe('250');
+    fireEvent.change(quantity, { target: { value: '251' } });
+    expect(quantity.value).toBe('1');
+  });
+
 });
