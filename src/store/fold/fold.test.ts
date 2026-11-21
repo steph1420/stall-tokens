@@ -111,4 +111,30 @@ describe('fold (F-02)', () => {
     expect(s.orders.o1?.lines[0]).toMatchObject({ unit: '', priceUnit: '', stockMultiplier: 1 });
   });
 
+  it('converts quantity edits, refund restock and refund undo without losing fractional stock', () => {
+    const mk = opMaker('unit.refund', 300);
+    const log = [
+      mk('item.set', { itemId: 'flour', fields: { name: 'Flour', price: 20000, count: 1, unit: 'kg', secondaryUnit: 'g', secondaryMultiplier: 0.001 } }),
+      mk('day.start', { dayId: 'd-unit-refund', label: '2026-11-21' }),
+      mk('order.create', { orderId: 'o-unit-refund', dayId: 'd-unit-refund', token: 1, servedBy: '' }),
+      mk('line.add', { orderId: 'o-unit-refund', lineId: 'l-unit-refund', itemId: 'flour', name: 'Flour', price: 20000, category: '', stationId: '', qty: 250, unit: 'g', priceUnit: 'kg', stockMultiplier: 0.001 }),
+      mk('order.send', { orderId: 'o-unit-refund' }),
+    ];
+    let s = fold(log);
+    expect(s.items.flour?.count).toBeCloseTo(0.75, 10);
+    s = fold([...log, mk('line.qty', { orderId: 'o-unit-refund', lineId: 'l-unit-refund', qty: 100 })]);
+    expect(s.items.flour?.count).toBeCloseTo(0.9, 10);
+    s = fold([...log,
+      mk('line.status', { orderId: 'o-unit-refund', lineId: 'l-unit-refund', status: 'preparing' }),
+      mk('refund.add', { refundId: 'r-unit-refund', orderId: 'o-unit-refund', amount: 0, source: 'cash', lines: [{ lineId: 'l-unit-refund', qty: 100 }], restock: true }),
+    ]);
+    expect(s.items.flour?.count).toBe(1);
+    s = fold([...log,
+      mk('line.status', { orderId: 'o-unit-refund', lineId: 'l-unit-refund', status: 'preparing' }),
+      mk('refund.add', { refundId: 'r-unit-refund', orderId: 'o-unit-refund', amount: 0, source: 'cash', lines: [{ lineId: 'l-unit-refund', qty: 100 }], restock: true }),
+      mk('refund.void', { refundId: 'r-unit-refund', orderId: 'o-unit-refund', reason: 'Undo' }),
+    ]);
+    expect(s.items.flour?.count).toBeCloseTo(0.9, 10);
+  });
+
 });
