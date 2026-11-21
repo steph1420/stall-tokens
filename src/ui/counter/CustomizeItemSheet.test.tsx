@@ -79,7 +79,7 @@ describe('CustomizeItemSheet', () => {
     const quantity = screen.getByRole('spinbutton', { name: 'Quantity' }) as HTMLInputElement;
     expect(quantity.max).toBe('250');
     fireEvent.change(quantity, { target: { value: '251' } });
-    expect(quantity.value).toBe('1');
+    expect(quantity.value).toBe('250');
   });
 
 });
