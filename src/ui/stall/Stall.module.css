@@ -33,6 +33,7 @@
 .acts { width: 100%; display: flex; justify-content: flex-end; gap: 0.5rem; }
 /* F-32 Open the stall */
 .floatTop { display: flex; justify-content: space-between; align-items: center; padding: calc(0.75rem + env(safe-area-inset-top)) 1rem 0; }
+.floatActions { display: flex; align-items: center; gap: 0.25rem; }
 .pillDot { width: 0.5rem; height: 0.5rem; border-radius: 50%; background: var(--dl-color-warning); }
 .floatH { margin: 0.75rem 0 0; font-size: 2rem; font-weight: 800; letter-spacing: -0.02em; color: var(--dl-color-text-display); }
 .floatSub { margin: 0; font-size: 1rem; color: var(--dl-color-text-muted); }
