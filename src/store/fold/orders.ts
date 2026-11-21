@@ -1,6 +1,7 @@
 // F-09..F-18 Order ops in the fold. Stock moves when lines are committed (sent or paid) and moves back
 // when committed qty drops or the order is deleted. Sales may push stock below 0 (offline oversell):
 // the count clamps at 0 and the item is flagged `oversold` (plan §8).
+import { CONFIG } from '../../config';
 import { primaryQuantity, type Item, type Line, type Op, type Order, type Refund, type RefundLine } from '../../contract';
 import { due, held } from '../rules/bill';
 import type { Folded } from './state';
@@ -55,7 +56,8 @@ function create(s: Folded, op: Op<'order.create'>): Folded {
 function setQty(s: Folded, o: Order, lineId: string, rawQty: number): Folded {
   const line = o.lines.find((l) => l.lineId === lineId);
   if (!line) return s;
-  const qty = Math.max(0, Math.trunc(rawQty));
+  const maxQty = line.unit && line.priceUnit && line.unit !== line.priceUnit ? CONFIG.limits.measuredQtyMax : CONFIG.limits.qtyMax;
+  const qty = Math.max(0, Math.min(maxQty, Math.trunc(rawQty)));
   let items = s.items;
   const committed = line.status === 'draft' ? 0 : qty;
   if (committed !== line.committed) items = moveStock(items, line.itemId, primaryQuantity(committed - line.committed, line.stockMultiplier ?? 1));
@@ -68,7 +70,9 @@ function addLine(s: Folded, o: Order, b: Op<'line.add'>['body']): Folded {
   if (o.lines.some((l) => l.lineId === b.lineId)) return s;
   const item = s.items[b.itemId];
   const stockMultiplier = b.stockMultiplier ?? 1;
-  if (!Number.isFinite(stockMultiplier) || stockMultiplier <= 0) return s;
+  if (!Number.isFinite(stockMultiplier) || stockMultiplier < 1e-9 || stockMultiplier > 1e9) return s;
+  if (!Number.isSafeInteger(b.price) || b.price < 0 || b.price > CONFIG.limits.moneyMaxPaise) return s;
+  if (!Number.isSafeInteger(b.qty) || b.qty < 0) return s;
   const primaryUnit = item?.unit ?? '';
   const line: Line = { lineId: b.lineId, itemId: b.itemId, name: b.name, price: Math.trunc(b.price), category: b.category,
     stationId: b.stationId, unit: b.unit ?? primaryUnit, priceUnit: b.priceUnit ?? primaryUnit, stockMultiplier,
