@@ -39,17 +39,17 @@ function Row({ line, n, sel, onSel }: { line: Line; n: number; sel: boolean; onS
       <td className={[s.c, s.qtyCell].join(' ')}>
         <div className={s.qty}>
           <button type="button" className={s.qb} aria-label={`One less ${line.name}`} onClick={() => { c.setQty(line.lineId, line.qty - 1); }}>−</button>
-          <button type="button" className={s.qn} aria-label={`Quantity ${String(line.qty)}, change`} onClick={() => { onSel(!sel); }}>{line.qty}</button>
+          <button type="button" className={s.qn} aria-label={'Quantity ' + String(line.qty) + ' ' + (line.unit ?? '') + ', change'} onClick={() => { onSel(!sel); }}>{line.qty}{line.unit ? ' ' + line.unit : ''}</button>
           <button type="button" className={s.qb} aria-label={`One more ${line.name}`} onClick={() => { c.setQty(line.lineId, line.qty + 1); }}>+</button>
           {sel ? <QtyStrip line={line} onClose={() => { onSel(false); }} /> : null}
         </div>
       </td>
-      <td className={s.rate}>{formatRate(line.price)}</td>
+      <td className={s.rate}>{formatRate(line.price, line.priceUnit)}</td>
       <td className={s.amt}><Money p={bill.lineAmount(line)} /></td>
     </tr>
   );
 }
-const formatRate = (p: number) => `₹${(p / 100).toLocaleString('en-IN', { maximumFractionDigits: 2 })}`;
+const formatRate = (p: number, unit?: string) => '₹' + (p / 100).toLocaleString('en-IN', { maximumFractionDigits: 2 }) + (unit ? '/' + unit : '');
 
 function TipWaiveRows({ tip, waived, onAdjust }: { tip: number; waived: number; onAdjust: () => void }) {
   return (
