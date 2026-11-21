@@ -5,6 +5,7 @@ import { CONFIG } from '../../config';
 import { formatInr } from '../../contract';
 import { liveOrders, money, useApp } from '../../store';
 import { Icon } from '../kit/Icon';
+import { HomeButton } from '../kit/HomeButton';
 import { nextAmount } from '../kit/keypad';
 import { Keys } from '../money/MoneyEntry';
 import s from './Stall.module.css';
@@ -30,7 +31,10 @@ export function FloatScreen() {
   return (
     <div className={s.page}>
       <header className={s.floatTop}>
-        <button type="button" className={s.back} aria-label="Close" onClick={close}><Icon name="cross" /></button>
+        <div className={s.floatActions}>
+          <button type="button" className={s.back} aria-label="Close" onClick={close}><Icon name="cross" /></button>
+          <HomeButton className={s.back} />
+        </div>
         {sync.pending > 0 || !sync.online ? <span className={s.syncPill}><span className={s.pillDot} />{`${sync.online ? 'Online' : 'Offline'}${sync.pending ? ` · ${String(sync.pending)} waiting to sync` : ''}`}</span> : null}
       </header>
       <main className={s.body}>
