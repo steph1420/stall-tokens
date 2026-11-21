@@ -253,7 +253,7 @@ This roadmap governs the remaining work. Each stage is a set of reviewable code 
 
 
 ### Stage 1 execution log — integrated measured-sale path (21 November 2026)
-- Item editor now stores a primary unit, optional secondary unit and multiplier. Multiplier range is bounded; stock accepts up to six decimal places.
+- Item editor now stores a primary unit, optional secondary unit and multiplier. Multiplier range is bounded; stock accepts up to twelve decimal places to preserve repeating conversions such as 1/12.
 - Menu routes measured items through the customizer. Staff can choose the primary or secondary sale unit and type the quantity (e.g. 250 g); quantity is capped by available primary stock and a separate measured-quantity safety limit.
 - Counter draft holds and quantity changes now compare converted primary-stock quantities. The new-day pending-item flow preserves the selected unit, multiplier and quantity.
 - Each line snapshots its sale unit, rate unit and conversion multiplier. Later item edits do not rewrite existing lines.
