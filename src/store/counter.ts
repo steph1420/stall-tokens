@@ -128,31 +128,36 @@ function dayActions(x: Ctx) {
   return self;
 }
 
+function addCustomLine(x: Ctx, nav: Nav, itemId: string, customName: string, customPrice: Paise, setQty: (lineId: string, qty: number) => void): void {
+  const { core, log, st, toast, current, available } = x;
+  if (x.locked()) return;
+  const it = st().folded.items[itemId];
+  if (!it || it.removed || it.supply) return;
+  if (it.soldOut || available(itemId) < 1) { toast(`${it.name} is sold out`); return; }
+  const name = customName.trim().slice(0, CONFIG.limits.nameMaxChars) || it.name;
+  if (!Number.isSafeInteger(customPrice) || customPrice < 0 || customPrice > CONFIG.limits.moneyMaxPaise) { toast('Check the selected price'); return; }
+  const order = current() ?? ensureOrder(x, nav);
+  if (!order) {
+    if (st().ui.sheet?.kind === 'newDay') x.ui({ pendingItem: { itemId, name, price: customPrice } });
+    return;
+  }
+  const draft = [...order.lines].reverse().find((line) => line.itemId === itemId && line.name === name && line.price === customPrice && line.status === 'draft');
+  if (draft) { setQty(draft.lineId, draft.qty + 1); return; }
+  if (order.lines.length >= CONFIG.limits.linesMax) { toast('This order is full; start another one'); return; }
+  log.dispatch('line.add', { orderId: order.id, lineId: core.env.makeId(), itemId, name, price: customPrice, category: it.category, stationId: it.stationId, qty: 1 });
+}
+
 function lineActions(x: Ctx, nav: Nav) {
-  const { core, log, st, toast, current, available, editable } = x;
+  const { st, toast, current, available, editable } = x;
   const self = {
     /** Tap a plain menu card: +1 at its current discounted base price. */
     addItem(itemId: string) {
       const it = st().folded.items[itemId];
-      if (it) self.addItemCustom(itemId, it.name, itemUnitPrice(it.price, it.discountPct));
+      if (it) addCustomLine(x, nav, itemId, it.name, itemUnitPrice(it.price, it.discountPct), (lineId, qty) => self.setQty(lineId, qty));
     },
     /** Add a chosen variant/add-on combination; capture its selected unit price on the order line. */
     addItemCustom(itemId: string, customName: string, customPrice: Paise) {
-      if (x.locked()) return;
-      const it = st().folded.items[itemId];
-      if (!it || it.removed || it.supply) return;
-      if (it.soldOut || available(itemId) < 1) { toast(`${it.name} is sold out`); return; }
-      const name = customName.trim().slice(0, CONFIG.limits.nameMaxChars) || it.name;
-      if (!Number.isSafeInteger(customPrice) || customPrice < 0 || customPrice > CONFIG.limits.moneyMaxPaise) { toast('Check the selected price'); return; }
-      const o = current() ?? ensureOrder(x, nav);
-      if (!o) {
-        if (st().ui.sheet?.kind === 'newDay') x.ui({ pendingItem: { itemId, name, price: customPrice } });
-        return;
-      }
-      const draft = [...o.lines].reverse().find((l) => l.itemId === itemId && l.name === name && l.price === customPrice && l.status === 'draft');
-      if (draft) { self.setQty(draft.lineId, draft.qty + 1); return; }
-      if (o.lines.length >= CONFIG.limits.linesMax) { toast('This order is full; start another one'); return; }
-      log.dispatch('line.add', { orderId: o.id, lineId: core.env.makeId(), itemId, name, price: customPrice, category: it.category, stationId: it.stationId, qty: 1 });
+      addCustomLine(x, nav, itemId, customName, customPrice, (lineId, qty) => self.setQty(lineId, qty));
     },
     /** Menu −: take one off the newest line of this item that is not being made yet. */
     removeItem(itemId: string) {

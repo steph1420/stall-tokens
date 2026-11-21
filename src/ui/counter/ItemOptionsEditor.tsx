@@ -13,10 +13,10 @@ const R = CONFIG.money.paisePerRupee;
 
 export function useItemOptions(item: Item | undefined) {
   const [variants, setVariants] = useState<readonly DraftOption[]>(() => item
-    ? parseVariants(item).map((v, i) => ({ id: v.id ?? `variant-${i}`, name: v.name, price: String(v.price / R) }))
+    ? parseVariants(item).map((v, i) => ({ id: v.id ?? `variant-${String(i)}`, name: v.name, price: String(v.price / R) }))
     : []);
   const [addons, setAddons] = useState<readonly DraftOption[]>(() => item
-    ? parseAddons(item).map((a, i) => ({ id: a.id ?? `addon-${i}`, name: a.name, price: String(a.price / R) }))
+    ? parseAddons(item).map((a, i) => ({ id: a.id ?? `addon-${String(i)}`, name: a.name, price: String(a.price / R) }))
     : []);
   return { variants, setVariants, addons, setAddons };
 }
@@ -49,7 +49,7 @@ function OptionRows({ label, options, onChange }: {
     onChange(options.map((option, i) => i === index ? { ...option, ...patch } : option));
   };
   const remove = (index: number) => { onChange(options.filter((_, i) => i !== index)); };
-  const add = () => { onChange([...options, { id: `${label}-${Date.now()}-${options.length}`, name: '', price: '' }]); };
+  const add = () => { onChange([...options, { id: `${label}-${String(Date.now())}-${String(options.length)}`, name: '', price: '' }]); };
 
   return (
     <div className={k.field} role="group" aria-label={title}>
