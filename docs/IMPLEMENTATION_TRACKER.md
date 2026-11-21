@@ -33,9 +33,9 @@ Recovery branch: `backup/main-2026-11-21`
 | ID | Task | Status | Evidence / note |
 |---|---|---|---|
 | P1-01 | Implement item discounts; correct price on ordinary item taps | Done | Item editor + menu price + line-price snapshot; [CI #100](https://github.com/steph1420/stall-tokens/actions/runs/44869565766), 263 tests |
-| P1-02 | Verify variant pricing | Pending | Variants not yet integrated into authoritative branch |
-| P1-03 | Verify add-on pricing | Pending | Add-ons not yet integrated into authoritative branch |
-| P1-04 | Implement secondary units and multiplier effects | Pending | Must affect quantity, unit display, billing and stock consistently |
+| P1-02 | Verify variant pricing | Done | Variant replaces base price; UI and order-line tests pass; [CI run](https://github.com/steph1420/stall-tokens/actions/runs/44871032905) |
+| P1-03 | Verify add-on pricing | Done | Add-ons sum with selected variant/base price; UI and order-line tests pass; [CI run](https://github.com/steph1420/stall-tokens/actions/runs/44871032905) |
+| P1-04 | Implement secondary units and multiplier effects | Blocked | Need confirmation of multiplier direction/meaning before changing price and stock conversions |
 | P1-05 | Verify primary units | Pending | Display, billing and stock must agree |
 | P1-06 | Verify whole-order notes | Pending | Save, reload and display |
 | P1-07 | Verify individual item notes | Pending | Save, reload and display |

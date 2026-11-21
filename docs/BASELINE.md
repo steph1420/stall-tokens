@@ -24,7 +24,7 @@ The baseline setup commits change documentation only. No application source, dep
 3. **Printer controls are not yet in the active v2.1.0 Settings screen.** The inspected Settings screen imports General, Display, Menu, Kitchen, Money, Sync, Data, Account and About groups, but not the separate mobile repository's PrinterSettings component.
 4. **General settings still expose Token range.** The active branch's `GeneralSettings.tsx` still cycles token ranges; the mobile repository removed that control and added event name.
 5. **Receipt formatting is still a fixed token-slip implementation.** The active renderer is not a receipt-template studio and uses a fixed 32-column ESC/POS layout. No template-block editor or image/logo rendering path was found in the inspected slip modules.
-6. **Variants, add-ons and secondary units are not yet present in the active base's order model/path.** Item-level percentage discounts have since been implemented on the active working branch; see the completion record below.
+6. **Secondary units and their multiplier are not yet operational in the active base.** Item-level discounts, variants and add-ons have since been implemented on the active working branch; see the completion records below.
 
 ## Defects / incomplete behavior to fix before importing mobile-repository work
 The following findings apply to the separate mobile repository snapshot at commit `e7179bc82726268b7d0571f4952af74e2f1e54ee`; they must not be described as defects already present in the v2.1.0 base unless reproduced there.
@@ -46,6 +46,16 @@ The following findings apply to the separate mobile repository snapshot at commi
 - Implementation commits: `c29d90d3492177660ecc3f260a081892118c3b09`, `1d8c5592033a45ade3dc43abeb7a5bae7ed27362`, `37ba99ce63fe0fa55f53a62fd10927b65cb3d3fe`, `bb29c630dbdde7d30144f3c0573bfa2a96fd5182`, `bf05c55175eeeed1ce9702ca018f433c1c78b857`.
 - GitHub Actions run #100 [44869565766](https://github.com/steph1420/stall-tokens/actions/runs/44869565766) passed all 16 CI steps: 52 test files, 263 tests, TypeScript, ESLint, Stylelint, dependency/contrast checks and production build.
 - This is automated verification. The discount input and order flow have a UI-level test; it is not a claim of physical-device acceptance.
+
+### P1-02 / P1-03 — Variant and add-on pricing
+- Added JSON-backed variant and add-on fields to the item model, with validation and safe parsing.
+- Added editor rows for variant names/prices and add-on names/prices.
+- Added a menu customizer: the selected variant replaces the base price; selected add-ons are added; the item discount is applied after those choices.
+- Added custom order-line names and captured unit prices. Different option combinations remain separate lines; identical combinations can merge.
+- Preserved custom selections through the first-day/new-day flow.
+- Capped customizer quantity at available stock.
+- Added tests for option parsing, price calculation, item-editor persistence, menu-card routing, selected options, quantity, discount, order totals and stock caps.
+- GitHub Actions run [44871032905](https://github.com/steph1420/stall-tokens/actions/runs/44871032905) passed all 16 CI steps: 57 test files, 271 tests, TypeScript, ESLint, Stylelint, dependency/contrast checks and production build.
 
 ## Verification state
 - GitHub branch comparison confirmed `backup/main-2026-11-21` is identical to production `main` at `e383374bd22516ca676fea775b1252858d6e3648`.
