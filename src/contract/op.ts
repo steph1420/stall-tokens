@@ -22,6 +22,8 @@ export interface ItemAddon { readonly id?: string; readonly name: string; readon
 export interface ItemFields {
   name: string; price: Paise; swatch: number; category: string; stationId: string;
   count: number | null; unit: string; lowAt: number; soldOut: boolean; order: number; removed: boolean;
+  /** Optional secondary sale unit; multiplier = primary units represented by one secondary unit. */
+  secondaryUnit?: string; secondaryMultiplier?: number;
   /** D-STOCK-SUPPLY: stock-only things (straws, cups) from Paste stock; never on the Menu. Additive, default false. */
   supply: boolean;
   /** P-3 A (2.1.0): category record id (`name:<text>` for a virtual one). '' = use the legacy `category` text. Additive. */
@@ -47,7 +49,7 @@ export interface Bodies {
   'day.start': { dayId: string; label: string };
   /** `device` (2.1.0, optional, Q-DRAFT-SYNC): the device label, so every Counter sees whose draft it is. */
   'order.create': { orderId: string; dayId: string; token: number; servedBy: string; device?: string };
-  'line.add': { orderId: string; lineId: string; itemId: string; name: string; price: Paise; category: string; stationId: string; qty: number };
+  'line.add': { orderId: string; lineId: string; itemId: string; name: string; price: Paise; category: string; stationId: string; qty: number; unit?: string; priceUnit?: string; stockMultiplier?: number };
   'line.qty': { orderId: string; lineId: string; qty: number };
   'line.note': { orderId: string; lineId: string; note: string };
   'line.status': { orderId: string; lineId: string; status: LineStatus };
@@ -189,6 +191,7 @@ const S: Record<OpKind, Record<string, FieldType>> = {
 /** Optional fields (additive, 2.1.0): absent is fine; present must have the right type. */
 const OPTIONAL: Partial<Record<OpKind, Record<string, FieldType>>> = {
   'order.create': { device: 's' },
+  'line.add': { unit: 's', priceUnit: 's', stockMultiplier: 'n' },
   'refund.add': { reason: 's', lines: 'a', restock: 'b' },
 };
 const isRefundLines = (x: unknown): boolean =>
