@@ -19,7 +19,7 @@ describe('item discount editor', () => {
     );
 
     fireEvent.change(screen.getByLabelText('Name'), { target: { value: 'Discounted tea' } });
-    fireEvent.change(screen.getByLabelText('Price (₹)'), { target: { value: '100' } });
+    fireEvent.change(screen.getByLabelText('Price (₹ per item)'), { target: { value: '100' } });
     fireEvent.change(screen.getByLabelText('Item discount (%)'), { target: { value: '15' } });
     fireEvent.click(screen.getByRole('button', { name: 'Save' }));
 
