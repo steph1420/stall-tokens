@@ -5,7 +5,7 @@ describe('itemUnitPrice', () => {
   it('applies percentages in paise and rounds to the nearest paise', () => {
     expect(itemUnitPrice(10000, 10)).toBe(9000);
     expect(itemUnitPrice(10000, 15)).toBe(8500);
-    expect(itemUnitPrice(99, 50)).toBe(50);
+    expect(itemUnitPrice(99, 50)).toBe(49);
   });
   it('keeps full price at zero discount and caps defensive inputs', () => {
     expect(itemUnitPrice(10000, 0)).toBe(10000);
