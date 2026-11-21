@@ -49,7 +49,7 @@ Recovery branch: `backup/main-2026-11-21`
 
 | ID | Task | Status |
 |---|---|---|
-| P2-01 | Android keyboard regression test | Pending |
+| P2-01 | Android keyboard regression test | In progress | Found focus-stealing bug: Sheet's focus-on-open effect reran whenever an unstable onClose callback changed during controlled input updates. Stabilised the sheet close handler and counter sheet callback; added regression tests for callback changes and focus retention while typing. CI #258 pending; physical Android keyboard test still required. |
 | P2-02 | iPad keyboard regression test | Pending |
 | P2-03 | Fix Settings clipping and overlap | Pending |
 | P2-04 | Verify Home navigation on every main screen | Pending |
@@ -321,3 +321,11 @@ This roadmap governs the remaining work. Each stage is a set of reviewable code 
 - Lifecycle coverage: paid order → cancellation → stock restoration for an unstarted line → recorded refund → refund undo. Existing kitchen UI tests cover Ready, handover and Completed.
 - Reload coverage: menu item, order/token/line, whole-order note, individual line note, serving name and token range all survive reconstruction with shared operation and device storage.
 - P1-09 and P1-10 accepted at the automated/code level. Real Android/iPad and printer acceptance remains a separate release gate.
+
+
+### Phase 2 keyboard focus investigation — 21 November 2026
+- Root cause identified in `src/ui/kit/Sheet.tsx`: the modal's initial-focus effect depended on `onClose`. Counter sheet components recreated that callback on each render, so typing into controlled inputs reran the effect and moved focus to the first button, dismissing the mobile keyboard.
+- Fixed the shared sheet to keep its Escape/drag close handler stable while always calling the latest close callback. Initial focus now runs only when the sheet mounts, not on every parent callback change.
+- Memoized the counter sheet's `useClose` callback.
+- Added regression tests in `Sheet.test.tsx` and `ItemDiscount.test.tsx` to ensure changing the close callback and typing into Name, Price and Discount fields do not steal focus.
+- CI run #258 is pending. This verifies DOM focus behaviour; it does not replace testing the native Android/iPad virtual keyboard on physical devices.
