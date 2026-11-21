@@ -39,7 +39,7 @@ Recovery branch: `backup/main-2026-11-21`
 | P1-05 | Verify primary units | Done | Primary-unit UI/store regression passed: default kg selection, captured kg rate and multiplier 1, ₹200 bill total, and one-for-one stock deduction. Included in CI #229 (57 files / 287 tests, production build passed). |
 | P1-06 | Verify whole-order notes | Done | Added a store-reload persistence test and a kitchen-ticket display test for the order note. CI #229 passed (57 files / 287 tests). |
 | P1-07 | Verify individual item notes | Done | Added a store-reload persistence test and a kitchen-ticket display test for line notes. CI #229 passed (57 files / 287 tests). |
-| P1-08 | Verify cart calculations | Pending | Discounts, quantities, rounding and totals |
+| P1-08 | Verify cart calculations | In progress | Added an end-to-end customizer/cart regression combining variant price, add-on price, item discount, 250 g conversion, order-level percentage discount, round-off, final total and stock deduction. CI #235 pending. |
 | P1-09 | Verify order lifecycle | Pending | Create, send, ready, complete, cancel and refund |
 | P1-10 | Verify persistence after reload | Pending | Orders, settings and menu survive reload |
 
@@ -289,3 +289,11 @@ This roadmap governs the remaining work. Each stage is a set of reviewable code 
 - Tests: **57 test files, 287 tests passed**.
 - The run includes the explicit primary-unit pricing/stock regression and the whole-order/line-note persistence and kitchen-display regressions.
 - P1-05, P1-06 and P1-07 are now accepted as automated/code-path tasks. P1-04 remains open for live Apps Script deployment and physical Android/iPad/printer acceptance.
+
+
+### Cart calculation regression — 21 November 2026
+- Added an end-to-end UI/store test for a measured item with a selected variant and add-on.
+- Example: ₹240/kg variant + ₹20/kg add-on, 10% item discount = ₹234/kg; 250 g bills ₹58.50.
+- Then a 10% order discount rounds to ₹6 off under the existing nearest-rupee rule; a ₹0.50 round-off produces a ₹53.00 final total.
+- Sending the order deducts 0.25 kg from stock.
+- This test is intended to exercise the full chain from option selection to final cart total and stock. CI run #235 is pending; P1-08 remains In progress until it passes and the broader regression review is complete.
