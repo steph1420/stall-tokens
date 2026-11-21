@@ -36,9 +36,9 @@ Recovery branch: `backup/main-2026-11-21`
 | P1-02 | Verify variant pricing | Done | Variant replaces base price; UI and order-line tests pass; [CI run](https://github.com/steph1420/stall-tokens/actions/runs/44871032905) |
 | P1-03 | Verify add-on pricing | Done | Add-ons sum with selected variant/base price; UI and order-line tests pass; [CI run](https://github.com/steph1420/stall-tokens/actions/runs/44871032905) |
 | P1-04 | Implement secondary units and multiplier effects | In progress | Core path now wired: item editor, primary/secondary sale-unit selection, measured quantity entry (up to configured cap), unit-aware draft availability, immutable order-line snapshots, converted billing, fractional stock and stock lifecycle, kitchen/history/refund/receipt quantity labels. Automated tests have been added for measured sale, stock cap, billing, send/delete, quantity edits, refund restock/undo, legacy replay, repeating ratios and snapshot immutability. Commits are recorded in the Stage 1 execution logs below. GitHub Actions CI run #217 passed on commit `f7d7520`: TypeScript, ESLint, Stylelint, dependency checks, contrast checks, all 57 test files / 284 tests, and production build. Still not accepted: Apps Script has not been deployed to the live Sheet, and Android/iPad plus physical printer checks remain. |
-| P1-05 | Verify primary units | In progress | Added an explicit regression test for the primary-unit path on an item that also offers a secondary unit: primary rate, line snapshot, bill total and one-for-one stock deduction. Awaiting CI for the new test; full device acceptance remains part of P1-04/P6. |
-| P1-06 | Verify whole-order notes | Pending | Save, reload and display |
-| P1-07 | Verify individual item notes | Pending | Save, reload and display |
+| P1-05 | Verify primary units | Done | Primary-unit UI/store regression passed: default kg selection, captured kg rate and multiplier 1, ₹200 bill total, and one-for-one stock deduction. Included in CI #229 (57 files / 287 tests, production build passed). |
+| P1-06 | Verify whole-order notes | Done | Added a store-reload persistence test and a kitchen-ticket display test for the order note. CI #229 passed (57 files / 287 tests). |
+| P1-07 | Verify individual item notes | Done | Added a store-reload persistence test and a kitchen-ticket display test for line notes. CI #229 passed (57 files / 287 tests). |
 | P1-08 | Verify cart calculations | Pending | Discounts, quantities, rounding and totals |
 | P1-09 | Verify order lifecycle | Pending | Create, send, ready, complete, cancel and refund |
 | P1-10 | Verify persistence after reload | Pending | Orders, settings and menu survive reload |
@@ -280,3 +280,12 @@ This roadmap governs the remaining work. Each stage is a set of reviewable code 
 - Added a dedicated UI/store regression for an item configured as `kg` with a `g` secondary unit.
 - The test asserts that the default primary selection records `kg`, uses multiplier 1, charges the primary rate, bills ₹200 for 1 kg and deducts exactly 1 kg from stock.
 - This explicitly checks the no-conversion path beside the measured secondary-unit path. CI is pending for this latest test commit; P1-05 remains In progress until that run passes.
+
+
+### Verification update — CI run #229 (21 November 2026)
+- Workflow: [GitHub Actions run #229](https://github.com/steph1420/stall-tokens/actions/runs/44889688697)
+- Result: **success** on commit `08c69adafff259197f64c1034284c4a88a7ce625`.
+- Passed all CI steps: TypeScript, ESLint, Stylelint, dependency checks, contrast checks, tests and production build.
+- Tests: **57 test files, 287 tests passed**.
+- The run includes the explicit primary-unit pricing/stock regression and the whole-order/line-note persistence and kitchen-display regressions.
+- P1-05, P1-06 and P1-07 are now accepted as automated/code-path tasks. P1-04 remains open for live Apps Script deployment and physical Android/iPad/printer acceptance.
