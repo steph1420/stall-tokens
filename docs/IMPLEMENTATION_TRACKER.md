@@ -36,7 +36,7 @@ Recovery branch: `backup/main-2026-11-21`
 | P1-02 | Verify variant pricing | Done | Variant replaces base price; UI and order-line tests pass; [CI run](https://github.com/steph1420/stall-tokens/actions/runs/44871032905) |
 | P1-03 | Verify add-on pricing | Done | Add-ons sum with selected variant/base price; UI and order-line tests pass; [CI run](https://github.com/steph1420/stall-tokens/actions/runs/44871032905) |
 | P1-04 | Implement secondary units and multiplier effects | In progress | Core path now wired: item editor, primary/secondary sale-unit selection, measured quantity entry (up to configured cap), unit-aware draft availability, immutable order-line snapshots, converted billing, fractional stock and stock lifecycle, kitchen/history/refund/receipt quantity labels. Automated tests have been added for measured sale, stock cap, billing, send/delete, quantity edits, refund restock/undo, legacy replay, repeating ratios and snapshot immutability. Commits are recorded in the Stage 1 execution logs below. GitHub Actions CI run #217 passed on commit `f7d7520`: TypeScript, ESLint, Stylelint, dependency checks, contrast checks, all 57 test files / 284 tests, and production build. Still not accepted: Apps Script has not been deployed to the live Sheet, and Android/iPad plus physical printer checks remain. |
-| P1-05 | Verify primary units | Pending | Display, billing and stock must agree |
+| P1-05 | Verify primary units | In progress | Added an explicit regression test for the primary-unit path on an item that also offers a secondary unit: primary rate, line snapshot, bill total and one-for-one stock deduction. Awaiting CI for the new test; full device acceptance remains part of P1-04/P6. |
 | P1-06 | Verify whole-order notes | Pending | Save, reload and display |
 | P1-07 | Verify individual item notes | Pending | Save, reload and display |
 | P1-08 | Verify cart calculations | Pending | Discounts, quantities, rounding and totals |
@@ -156,7 +156,7 @@ This roadmap governs the remaining work. Each stage is a set of reviewable code 
 - Existing evidence: P1-01 through P1-03 are accepted; the last recorded full gate passed 57 test files / 271 tests. This does not cover later code changes or physical device behaviour.
 
 ### Stage 1 — Finish the core data, unit, stock and pricing model
-**Next implementation stage. P1-04 is the first coding task.**
+**Implementation batch complete; automated CI passed. External acceptance remains open.**
 1. Extend the item contract with primary-unit and optional secondary-unit configuration. Define the multiplier as primary units represented by one secondary unit.
 2. Make old item records and old operations fold safely with primary-unit defaults. Do not invalidate historical orders.
 3. Snapshot the selected sale unit and conversion factor on each new order line. Historical lines must not change when an item is edited later.
@@ -274,3 +274,9 @@ This roadmap governs the remaining work. Each stage is a set of reviewable code 
 - Build: Vite production build completed successfully (601 modules transformed).
 - No merge or deployment was performed.
 - Remaining acceptance gates for P1-04: deploy the matching Apps Script schema v4 to the live Sheet and verify sync; exercise measured sales, stock, refunds and history on Android and iPad; verify the actual 58mm Cysno receipt output. Until those are completed, P1-04 stays In progress.
+
+
+### Primary-unit regression follow-up — 21 November 2026
+- Added a dedicated UI/store regression for an item configured as `kg` with a `g` secondary unit.
+- The test asserts that the default primary selection records `kg`, uses multiplier 1, charges the primary rate, bills ₹200 for 1 kg and deducts exactly 1 kg from stock.
+- This explicitly checks the no-conversion path beside the measured secondary-unit path. CI is pending for this latest test commit; P1-05 remains In progress until that run passes.
