@@ -257,7 +257,7 @@ describe('counter flow (F-06..F-18)', () => {
     if (!line) throw new Error('Measured line missing');
     expect(bill.subtotal(order)).toBe(5000);
     expect(s().counter.sendToKitchen()).toBe(true);
-    expect(s().counter.pay({ cash: 5000, upi: 0, upiPayeeId: null, tip: 0, waived: 0, waivedBy: '', waivedNote: '', cashGiven: 5000, notes: { 5000: 1 } })).toBeNull();
+    expect(s().counter.pay({ cash: 5000, upi: 0, upiPayeeId: null, tip: 0, waived: 0, waivedBy: '', waivedNote: '', cashGiven: 5000, notes: { 50: 1 } })).toBeNull();
     const refund = s().refund.offer({ orderId: order.id, ask: { kind: 'lines', lines: [{ lineId: line.lineId, qty: 250 }] }, source: 'cash', reason: 'Measured item', restock: true });
     if (!refund.ok) throw new Error(refund.reason);
     expect(refund.amount).toBe(5000);
