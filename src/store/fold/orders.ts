@@ -21,9 +21,10 @@ export const isOrderOp = (op: Op): op is Op<OrderKind> => ORDER_KINDS.has(op.kin
 function moveStock(items: Folded['items'], itemId: string, sold: number): Folded['items'] {
   const it = items[itemId];
   if (!it || sold === 0) return items;
-  const next: Item = it.count === null
+  const remaining = it.count === null ? null : it.count - sold;
+  const next: Item = remaining === null
     ? { ...it, sold: it.sold + sold }
-    : { ...it, sold: it.sold + sold, count: Math.max(0, it.count - sold), oversold: it.count - sold < 0 ? true : sold < 0 ? false : it.oversold };
+    : { ...it, sold: it.sold + sold, count: remaining <= 1e-10 ? 0 : Math.max(0, remaining), oversold: remaining < -1e-10 ? true : sold < 0 ? false : it.oversold };
   return { ...items, [itemId]: next };
 }
 
