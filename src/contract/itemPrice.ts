@@ -13,7 +13,7 @@ export function itemUnitPrice(price: Paise, discountPct: number): Paise {
  * each sale separately would accumulate inventory loss over repeated sales.
  */
 export function primaryQuantity(quantity: number, multiplier: number): number {
-  if (!Number.isSafeInteger(quantity) || quantity < 0) throw new RangeError('Quantity must be a non-negative safe integer');
+  if (!Number.isSafeInteger(quantity)) throw new RangeError('Quantity must be a safe integer');
   if (!Number.isFinite(multiplier) || multiplier <= 0) throw new RangeError('Unit multiplier must be a positive finite number');
   const converted = quantity * multiplier;
   if (!Number.isFinite(converted)) throw new RangeError('Converted quantity is not finite');
@@ -27,6 +27,7 @@ export function primaryQuantity(quantity: number, multiplier: number): number {
  */
 export function convertedLineTotal(price: Paise, discountPct: number, quantity: number, multiplier: number): Paise {
   if (!Number.isSafeInteger(price) || price < 0) throw new RangeError('Price must be non-negative whole paise');
+  if (!Number.isSafeInteger(quantity) || quantity < 0) throw new RangeError('Quantity must be a non-negative safe integer');
   const primaryQty = primaryQuantity(quantity, multiplier);
   const rate = itemUnitPrice(price, discountPct);
   const total = Math.round(rate * primaryQty);
