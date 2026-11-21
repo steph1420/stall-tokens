@@ -1,6 +1,6 @@
 // Counter actions (F-05..F-18). Every rule about what a tap may do lives here; screens only call these.
 import { CONFIG } from '../config';
-import { itemUnitPrice, primaryQuantity, type Discount, type Line, type Order, type Paise, type PaySource, type PaymentBody } from '../contract';
+import { convertedLineTotal, itemUnitPrice, primaryQuantity, type Discount, type Line, type Order, type Paise, type PaySource, type PaymentBody } from '../contract';
 import type { Core, Log } from './core';
 import { liveOrders } from './fold/fold';
 import { due, held, preRound, subtotal, total } from './rules/bill';
@@ -138,6 +138,7 @@ function addCustomLine(x: Ctx, nav: Nav, itemId: string, customName: string, cus
   const maxQty = measured ? CONFIG.limits.measuredQtyMax : CONFIG.limits.qtyMax;
   if (!Number.isSafeInteger(qty) || qty < 1 || qty > maxQty || !Number.isFinite(stockMultiplier) || stockMultiplier <= 0) { toast('Check the quantity and unit'); return; }
   const requiredStock = primaryQuantity(qty, stockMultiplier);
+  try { convertedLineTotal(customPrice, 0, qty, stockMultiplier); } catch { toast('The selected quantity is too large'); return; }
   if (it.soldOut || available(itemId) + 1e-10 < requiredStock) { toast(`${it.name} is sold out or there is not enough stock`); return; }
   const name = customName.trim().slice(0, CONFIG.limits.nameMaxChars) || it.name;
   if (!Number.isSafeInteger(customPrice) || customPrice < 0 || customPrice > CONFIG.limits.moneyMaxPaise) { toast('Check the selected price'); return; }
@@ -186,6 +187,7 @@ function lineActions(x: Ctx, nav: Nav) {
       if (q === line.qty) return;
       if (!editable(line) && q < line.qty) { toast('Already being made; change it from the kitchen'); return; }
       const left = available(line.itemId);
+      try { convertedLineTotal(line.price, 0, q, line.stockMultiplier ?? 1); } catch { toast('The selected quantity is too large'); return; }
       const requiredStock = primaryQuantity(q - line.qty, line.stockMultiplier ?? 1);
       if (q > line.qty && left + 1e-10 < requiredStock) {
         toast(left <= 0 ? `${line.name} is sold out` : `Not enough ${line.unit || 'stock'} for ${line.name}`);
