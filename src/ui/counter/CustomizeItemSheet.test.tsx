@@ -36,6 +36,28 @@ describe('CustomizeItemSheet', () => {
     expect(order?.lines[0]?.qty).toBe(2);
     expect(order ? bill.subtotal(order) : 0).toBe(18000);
   });
+  it('keeps primary-unit sales at the primary rate and deducts primary stock one-for-one', async () => {
+    const { store } = makeTestStore();
+    await store.getState().start();
+    const s = () => store.getState();
+    expect(s().catalog.saveItem(null, {
+      name: 'Rice', price: 20000, swatch: 0, category: 'Food', stationId: 'kitchen', count: 1,
+      unit: 'kg', secondaryUnit: 'g', secondaryMultiplier: 0.001,
+    })).toBeNull();
+    const rice = Object.values(s().folded.items).find((item) => item.name === 'Rice');
+    if (!rice) throw new Error('Rice missing');
+    act(() => { s().counter.newOrder(); });
+    render(<StoreProvider store={store}><CustomizeItemSheet itemId={rice.id} onClose={vi.fn()} /></StoreProvider>);
+    expect(screen.getByRole('radio', { name: 'kg' })).toHaveAttribute('aria-checked', 'true');
+    expect(screen.getByText('Rate per kg')).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Add to order' }));
+    const order = s().folded.orders[s().ui.orderId ?? ''];
+    expect(order?.lines[0]).toMatchObject({ qty: 1, unit: 'kg', priceUnit: 'kg', stockMultiplier: 1, price: 20000 });
+    expect(order ? bill.subtotal(order) : 0).toBe(20000);
+    expect(s().counter.sendToKitchen()).toBe(true);
+    expect(s().folded.items[rice.id]?.count).toBe(0);
+  });
+
   it('sells a measured quantity in the secondary unit and converts the bill and stock', async () => {
     const { store } = makeTestStore();
     await store.getState().start();
