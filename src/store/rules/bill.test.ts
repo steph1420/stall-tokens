@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import type { Order } from '../../contract';
 import { discountAmount, discountCapped, due, paid, roundOffAmount, roundOffChoices, subtotal, tips, total } from './bill';
 
-const line = (price: number, qty: number) => ({ lineId: String(price) + String(qty), itemId: 'i', name: 'x', price, category: '', stationId: '', qty, note: '', status: 'draft' as const, committed: 0, byCounter: false, restocked: 0 });
+const line = (price: number, qty: number) => ({ lineId: String(price) + String(qty), itemId: 'i', name: 'x', price, category: '', stationId: '', qty, unit: '', priceUnit: '', stockMultiplier: 1, note: '', status: 'draft' as const, committed: 0, byCounter: false, restocked: 0 });
 const order = (p: Partial<Order> = {}): Order => ({
   id: 'o', dayId: 'd', token: 47, servedBy: '', createdAt: 0, lines: [line(3000, 2), line(2500, 1), line(1500, 1)], note: '',
   discount: null, roundOff: null, sent: false, deleted: false, priority: false, client: '', cancel: null, payments: [], refunds: [], revision: 0, complete: null, device: '', handler: null, ...p,
@@ -61,4 +61,11 @@ describe('bill (F-10 F-11 F-18)', () => {
     expect(due({ ...edited, refunds: [r(5000, 3000)] })).toBe(0);
     expect(due({ ...edited, refunds: [r(2000, 2000)] })).toBe(-1000);
   });
+  it('bills secondary-unit quantities from the captured primary-unit rate', () => {
+    const weighted = order({ lines: [{ ...line(20000, 250), unit: 'g', priceUnit: 'kg', stockMultiplier: 0.001 }] });
+    expect(subtotal(weighted)).toBe(5000);
+    const smaller = order({ lines: [{ ...line(20000, 100), unit: 'g', priceUnit: 'kg', stockMultiplier: 0.001 }] });
+    expect(subtotal(smaller)).toBe(2000);
+  });
+
 });
