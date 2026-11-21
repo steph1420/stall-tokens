@@ -13,7 +13,7 @@ const ITEM_DEFAULTS: ItemFields = {
 
 function fieldOk(key: keyof ItemFields, value: unknown): boolean {
   if (key === 'count') return value === null || (typeof value === 'number' && Number.isFinite(value) && value >= 0);
-  if (key === 'secondaryMultiplier') return typeof value === 'number' && Number.isFinite(value) && value > 0;
+  if (key === 'secondaryMultiplier') return typeof value === 'number' && Number.isFinite(value) && value >= 1e-9 && value <= 1e9;
   if (key === 'secondaryUnit') return typeof value === 'string';
   if (key === 'discountPct') return typeof value === 'number' && Number.isFinite(value) && value >= 0 && value <= 100;
   return value !== undefined && typeof value === typeof ITEM_DEFAULTS[key] && (typeof value !== 'number' || Number.isFinite(value));
