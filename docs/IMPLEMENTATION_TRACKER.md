@@ -40,8 +40,8 @@ Recovery branch: `backup/main-2026-11-21`
 | P1-06 | Verify whole-order notes | Done | Added a store-reload persistence test and a kitchen-ticket display test for the order note. CI #229 passed (57 files / 287 tests). |
 | P1-07 | Verify individual item notes | Done | Added a store-reload persistence test and a kitchen-ticket display test for line notes. CI #229 passed (57 files / 287 tests). |
 | P1-08 | Verify cart calculations | Done | End-to-end regression passed for variant + add-on pricing, item discount, 250 g conversion, order-level percentage discount, nearest-rupee discount rounding, round-off, final ₹53 total and 0.25 kg stock deduction. CI #235 passed: 57 files / 288 tests and production build. |
-| P1-09 | Verify order lifecycle | Pending | Create, send, ready, complete, cancel and refund |
-| P1-10 | Verify persistence after reload | Pending | Orders, settings and menu survive reload |
+| P1-09 | Verify order lifecycle | In progress | Added a sent + paid cancellation/refund/undo regression; existing kitchen tests cover Ready and handover/Completed. CI pending for the latest lifecycle and persistence batch. |
+| P1-10 | Verify persistence after reload | In progress | Expanded reload regression to check menu item data, order/token/line, whole-order note, line note, and device settings (`servingName`, `rangeIndex`) using shared op storage and local storage. CI pending. |
 
 **Exit:** fundamental POS operations pass functional tests.
 
@@ -305,3 +305,10 @@ This roadmap governs the remaining work. Each stage is a set of reviewable code 
 - Tests: **57 test files, 288 tests passed**; TypeScript, ESLint, Stylelint, dependency checks, contrast checks and production build passed.
 - The new end-to-end measured-cart scenario passed: selected variant ₹240/kg + add-on ₹20/kg, 10% item discount → ₹234/kg; 250 g → ₹58.50; 10% order discount → ₹6 off; ₹0.50 round-off → ₹53.00 total; send-to-kitchen reduces 1 kg stock to 0.75 kg.
 - P1-08 accepted. P1-09 order lifecycle and P1-10 reload/persistence are next verification slices.
+
+
+### Order lifecycle and persistence regression batch — 21 November 2026
+- Added a cancellation/refund/undo scenario for a paid order after it has been sent to the kitchen. It checks stock return for an unstarted line, recorded refund due, refund amount and compensating undo.
+- Existing kitchen UI coverage exercises line progression through Ready and Handed over, with the order's Completed state.
+- Expanded the reload test to cover menu items, order token and line, whole-order and line notes, plus persisted device settings through shared op storage and a shared local-storage stand-in.
+- CI validation for this batch is pending. P1-09 and P1-10 remain In progress until the complete run passes and the remaining lifecycle/persistence edge cases are reviewed.
