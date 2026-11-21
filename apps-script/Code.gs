@@ -23,11 +23,11 @@
  * Money: integer paise in log tabs (*_paise); rupees (*_inr) on info tabs for hand editing. Times ISO-8601.
  */
 var CFG = {
-  VERSION: '2.1.0', // bridge script version (shown by GET and in _meta.bridge_version)
+  VERSION: '2.1.1', // bridge script version (shown by GET and in _meta.bridge_version)
   PULL_MAX: 500, PUSH_MAX: 500, LOCK_MS: 20000, TEXT_MAX: 500,
   SHEET_WRITER: 'sheet' // writer id of hand edits (Q-HARM-10)
 };
-var SCHEMA_VERSION = 3;
+var SCHEMA_VERSION = 4;
 var CONTRACT_VERSION = 2;
 var IST_MS = 330 * 60000;
 var RECORD_TABLES = ['business', 'event', 'event_day', 'source', 'source_item', 'station', 'person_info', 'item_info', 'category', 'day_note', 'day_summary'];
@@ -48,14 +48,14 @@ var TABS = {
   days: [['op_id', 'text', ''], ['ts_ist', 'iso8601', ''], ['day_id', 'text', 'Fair day id'], ['label', 'date', 'IST date YYYY-MM-DD']],
   orders: [['op_id', 'text', ''], ['ts_ist', 'iso8601', ''], ['order_id', 'text', ''], ['day_id', 'text', ''], ['token', 'int', 'Token number'], ['served_by', 'text', 'Serving name']],
   order_events: [['op_id', 'text', ''], ['ts_ist', 'iso8601', ''], ['order_id', 'text', ''], ['event', 'enum', 'send / delete / cancel / priority / client / note / discount / roundoff'], ['value', 'text', 'Main value (reason, name, note, on)'], ['amount_paise', 'int', 'Discount value / round-off amount'], ['detail_json', 'json', 'Op body']],
-  order_lines: [['op_id', 'text', ''], ['ts_ist', 'iso8601', ''], ['order_id', 'text', ''], ['line_id', 'text', ''], ['item_id', 'text', ''], ['name', 'text', ''], ['price_paise', 'int', ''], ['qty', 'int', ''], ['category', 'text', ''], ['station_id', 'text', '']],
+  order_lines: [['op_id', 'text', ''], ['ts_ist', 'iso8601', ''], ['order_id', 'text', ''], ['line_id', 'text', ''], ['item_id', 'text', ''], ['name', 'text', ''], ['price_paise', 'int', ''], ['qty', 'int', ''], ['category', 'text', ''], ['station_id', 'text', ''], ['unit', 'text', 'Sale unit snapshot'], ['price_unit', 'text', 'Rate unit snapshot'], ['stock_multiplier', 'num', 'Primary stock units per sale unit']],
   line_events: [['op_id', 'text', ''], ['ts_ist', 'iso8601', ''], ['order_id', 'text', ''], ['line_id', 'text', ''], ['event', 'enum', 'qty / note / status / finish'], ['value', 'text', 'New qty, note or status']],
   payments: [['op_id', 'text', ''], ['ts_ist', 'iso8601', ''], ['day', 'date', 'IST date'], ['payment_id', 'text', ''], ['order_id', 'text', ''], ['cash_paise', 'int', ''], ['upi_paise', 'int', ''], ['upi_payee_id', 'text', ''], ['tip_paise', 'int', ''], ['waived_paise', 'int', ''], ['waived_by', 'text', ''], ['cash_given_paise', 'int', '']],
   refunds: [['op_id', 'text', ''], ['ts_ist', 'iso8601', ''], ['day', 'date', ''], ['refund_id', 'text', ''], ['order_id', 'text', ''], ['amount_paise', 'int', ''], ['source', 'enum', 'cash / upi']],
   money: [['op_id', 'text', ''], ['ts_ist', 'iso8601', ''], ['event', 'enum', 'add / void'], ['entry_id', 'text', ''], ['day_id', 'text', ''], ['dir', 'enum', 'spent / received'], ['amount_paise', 'int', ''], ['label', 'text', 'For / From'], ['kind', 'enum', 'normal / donation'], ['person_id', 'text', ''], ['parts_json', 'json', 'Paid by / Received in parts'], ['note', 'text', '']],
   settlements: [['op_id', 'text', ''], ['ts_ist', 'iso8601', ''], ['event', 'enum', 'pay / clear / undo / lock'], ['settle_id', 'text', 'payId / clearId / target'], ['day_id', 'text', ''], ['person_id', 'text', ''], ['amount_paise', 'int', 'Signed: + stall pays the person'], ['via', 'text', ''], ['by_person_id', 'text', ''], ['reason', 'text', ''], ['note', 'text', ''], ['detail_json', 'json', '']],
-  menu_log: [['op_id', 'text', ''], ['ts_ist', 'iso8601', ''], ['item_id', 'text', ''], ['name', 'text', 'Blank = unchanged by this op'], ['price_paise', 'int', ''], ['category', 'text', ''], ['station_id', 'text', ''], ['count', 'int', ''], ['unit', 'text', ''], ['supply', 'bool', 'Stock only, never on the Menu'], ['sold_out', 'bool', ''], ['removed', 'bool', ''], ['fields_json', 'json', 'The partial update']],
-  stock_moves: [['op_id', 'text', ''], ['ts_ist', 'iso8601', ''], ['item_id', 'text', ''], ['delta', 'int', ''], ['reason', 'text', 'panel / stock / paste']],
+  menu_log: [['op_id', 'text', ''], ['ts_ist', 'iso8601', ''], ['item_id', 'text', ''], ['name', 'text', 'Blank = unchanged by this op'], ['price_paise', 'int', ''], ['category', 'text', ''], ['station_id', 'text', ''], ['count', 'num', ''], ['unit', 'text', ''], ['supply', 'bool', 'Stock only, never on the Menu'], ['sold_out', 'bool', ''], ['removed', 'bool', ''], ['fields_json', 'json', 'The partial update']],
+  stock_moves: [['op_id', 'text', ''], ['ts_ist', 'iso8601', ''], ['item_id', 'text', ''], ['delta', 'num', ''], ['reason', 'text', 'panel / stock / paste']],
   people_log: [['op_id', 'text', ''], ['ts_ist', 'iso8601', ''], ['person_id', 'text', ''], ['name', 'text', ''], ['is_partner', 'bool', ''], ['share_pct', 'int', ''], ['removed', 'bool', '']],
   payees_log: [['op_id', 'text', ''], ['ts_ist', 'iso8601', ''], ['payee_id', 'text', ''], ['name', 'text', ''], ['upi_id', 'text', ''], ['removed', 'bool', '']],
   settings_log: [['op_id', 'text', ''], ['ts_ist', 'iso8601', ''], ['key', 'text', ''], ['value', 'text', '']],
@@ -98,9 +98,11 @@ var INFO = {
     ['unit', 'text', ''], ['pack_size', 'text', ''], ['last_price_inr', 'inr', ''], ['notes', 'text', ''], ['active', 'bool', '']] },
   menu: { key: 'item_id', cols: [
     ['item_id', 'id', ''], ['name', 'text', ''], ['category', 'text', ''], ['price_inr', 'inr', ''], ['station', 'text', 'Kitchen station'],
+    ['unit', 'text', 'Primary sale and stock unit'], ['secondary_unit', 'text', 'Optional alternate sale unit'], ['secondary_multiplier', 'num', 'Primary units per secondary unit'],
     ['sold_out', 'bool', ''], ['active', 'bool', 'Off = removed'], ['stock_only', 'bool', 'Supply, never on the Menu'], ['sort_order', 'int', '']] },
   stock_current: { key: 'item_id', cols: [
-    ['item_id', 'id', ''], ['name', 'text', ''], ['on_hand', 'int', 'Blank = not counted'], ['unit', 'text', ''], ['low_at', 'int', 'Low-stock warning at'],
+    ['item_id', 'id', ''], ['name', 'text', ''], ['on_hand', 'num', 'Blank = not counted'], ['unit', 'text', ''], ['low_at', 'num', 'Low-stock warning at'],
+    ['secondary_unit', 'text', 'Optional alternate sale unit'], ['secondary_multiplier', 'num', 'Primary units per secondary unit'],
     ['sold', 'ro', 'Sold since counting began'], ['source_id', 'text', 'Usual source (sources)'], ['stock_only', 'bool', ''], ['notes', 'text', '']] },
   stations: { key: 'station_id', record: 'station', cols: [
     ['station_id', 'id', 'As used by menu.station'], ['name', 'text', ''], ['icon', 'text', 'Icon or emoji'], ['colour', 'text', 'Swatch/hex'], ['sort_order', 'int', ''], ['active', 'bool', ''], ['notes', 'text', '']] },
@@ -143,7 +145,7 @@ function project_(op) {
   function row(tab, o) { for (var key in o) base[key] = o[key]; return [tab, base]; }
   if (k === 'day.start') return row('days', { day_id: b.dayId, label: b.label });
   if (k === 'order.create') return row('orders', { order_id: b.orderId, day_id: b.dayId, token: b.token, served_by: b.servedBy });
-  if (k === 'line.add') return row('order_lines', { order_id: b.orderId, line_id: b.lineId, item_id: b.itemId, name: b.name, price_paise: b.price, qty: b.qty, category: b.category, station_id: b.stationId });
+  if (k === 'line.add') return row('order_lines', { order_id: b.orderId, line_id: b.lineId, item_id: b.itemId, name: b.name, price_paise: b.price, qty: b.qty, category: b.category, station_id: b.stationId, unit: b.unit, price_unit: b.priceUnit, stock_multiplier: b.stockMultiplier });
   if (k === 'line.qty' || k === 'line.note' || k === 'line.status' || k === 'line.finish')
     return row('line_events', { order_id: b.orderId, line_id: b.lineId, event: k.slice(5), value: v_(k === 'line.qty' ? b.qty : k === 'line.note' ? b.note : b.status) });
   if (k.indexOf('order.') === 0) {
@@ -196,7 +198,7 @@ function lww_(S, target, field, op) {
   return !sheetKeeps;
 }
 
-var ITEM_DEFAULTS = { name: '', price: 0, category: '', stationId: '', count: null, unit: '', lowAt: 0, soldOut: false, order: 0, removed: false, supply: false };
+var ITEM_DEFAULTS = { name: '', price: 0, category: '', stationId: '', count: null, unit: '', lowAt: 0, soldOut: false, order: 0, removed: false, supply: false, secondaryUnit: '', secondaryMultiplier: 1 };
 var NOT_STARTED = { draft: 1, waiting: 1, held: 1, paused: 1 };
 
 function touch_(S, tab, id, op) { S.meta[tab + '|' + id] = { at: op.recvAt || op.wallAt, by: op.writer, op: op.opId }; }
@@ -204,17 +206,21 @@ function moveStock_(S, itemId, sold) {
   var it = S.items[itemId];
   if (!it || !sold) return;
   it.sold += sold;
-  if (it.count !== null) it.count = Math.max(0, it.count - sold);
+  if (it.count !== null) {
+    var remaining = it.count - sold;
+    it.count = remaining <= 1e-10 ? 0 : Math.max(0, remaining);
+  }
 }
 function commit_(S, o) {
-  o.lines.forEach(function (l) { moveStock_(S, l.itemId, l.qty - l.committed); l.committed = l.qty; if (l.status === 'draft') l.status = 'waiting'; });
+  o.lines.forEach(function (l) { moveStock_(S, l.itemId, (l.qty - l.committed) * (l.stockMultiplier || 1)); l.committed = l.qty; if (l.status === 'draft') l.status = 'waiting'; });
   o.sent = true;
 }
 function setQty_(S, o, lineId, raw) {
   var l = null; o.lines.forEach(function (x) { if (x.lineId === lineId) l = x; });
   if (!l) return;
-  var qty = Math.max(0, Math.trunc(raw)); var committed = l.status === 'draft' ? 0 : qty;
-  if (committed !== l.committed) moveStock_(S, l.itemId, committed - l.committed);
+  var maxQty = l.unit && l.priceUnit && l.unit !== l.priceUnit ? 1000000 : 99;
+  var qty = Math.max(0, Math.min(maxQty, Math.trunc(raw))); var committed = l.status === 'draft' ? 0 : qty;
+  if (committed !== l.committed) moveStock_(S, l.itemId, (committed - l.committed) * (l.stockMultiplier || 1));
   l.qty = qty; l.committed = committed;
   if (qty === 0) o.lines = o.lines.filter(function (x) { return x.lineId !== lineId; });
 }
@@ -227,7 +233,14 @@ function foldOrder_(S, op) {
   if (!o.refunds) o.refunds = {};
   if (op.kind === 'line.add') {
     if (o.lines.some(function (l) { return l.lineId === b.lineId; })) return;
-    o.lines.push({ lineId: b.lineId, itemId: b.itemId, qty: 0, committed: 0, restocked: 0, status: 'draft' });
+    var item = S.items[b.itemId]; var primaryUnit = item ? item.unit : '';
+    var saleUnit = typeof b.unit === 'string' ? b.unit : primaryUnit;
+    var priceUnit = typeof b.priceUnit === 'string' ? b.priceUnit : primaryUnit;
+    var stockMultiplier = typeof b.stockMultiplier === 'number' ? b.stockMultiplier : 1;
+    if (!isFinite(stockMultiplier) || stockMultiplier < 1e-9 || stockMultiplier > 1e9) return;
+    if (saleUnit === priceUnit && stockMultiplier !== 1) return;
+    if (saleUnit !== priceUnit && (!saleUnit || !priceUnit)) return;
+    o.lines.push({ lineId: b.lineId, itemId: b.itemId, qty: 0, committed: 0, restocked: 0, status: 'draft', unit: saleUnit, priceUnit: priceUnit, stockMultiplier: stockMultiplier });
     setQty_(S, o, b.lineId, b.qty);
   } else if (op.kind === 'line.qty') setQty_(S, o, b.lineId, b.qty);
   else if (op.kind === 'line.status') o.lines.forEach(function (l) { if (l.lineId === b.lineId) l.status = b.status; });
@@ -245,7 +258,7 @@ function foldOrder_(S, op) {
             var ask = Math.max(0, Math.trunc(rl.qty));
             var qty = Math.min(ask, Math.max(0, l.committed - restocked));
             if (qty > 0) {
-              moveStock_(S, l.itemId, -qty);
+              moveStock_(S, l.itemId, -qty * (l.stockMultiplier || 1));
               l.restocked = restocked + qty;
               done.push({ lineId: l.lineId, qty: qty, itemId: l.itemId });
             }
@@ -261,13 +274,13 @@ function foldOrder_(S, op) {
     ref.done.forEach(function (d) {
       o.lines.forEach(function (l) {
         if (l.lineId === d.lineId) {
-          moveStock_(S, d.itemId, d.qty);
+          moveStock_(S, d.itemId, d.qty * (l.stockMultiplier || 1));
           l.restocked = Math.max(0, (l.restocked || 0) - d.qty);
         }
       });
     });
-  } else if (op.kind === 'order.delete') o.lines.forEach(function (l) { moveStock_(S, l.itemId, -(l.committed - (l.restocked || 0))); l.committed = 0; });
-  else if (op.kind === 'order.cancel') o.lines.forEach(function (l) { if (NOT_STARTED[l.status]) { moveStock_(S, l.itemId, -(l.committed - (l.restocked || 0))); l.committed = 0; } });
+  } else if (op.kind === 'order.delete') o.lines.forEach(function (l) { moveStock_(S, l.itemId, -(l.committed - (l.restocked || 0)) * (l.stockMultiplier || 1)); l.committed = 0; });
+  else if (op.kind === 'order.cancel') o.lines.forEach(function (l) { if (NOT_STARTED[l.status]) { moveStock_(S, l.itemId, -(l.committed - (l.restocked || 0)) * (l.stockMultiplier || 1)); l.committed = 0; } });
 }
 
 function foldItem_(S, op) {
@@ -276,7 +289,9 @@ function foldItem_(S, op) {
   for (var key in f) {
     if (!(key in ITEM_DEFAULTS)) continue;
     var v = f[key];
-    var ok = key === 'count' ? v === null || (typeof v === 'number' && isFinite(v)) : v !== undefined && typeof v === typeof ITEM_DEFAULTS[key] && (typeof v !== 'number' || isFinite(v));
+    var ok = key === 'count' ? v === null || (typeof v === 'number' && isFinite(v) && v >= 0)
+      : key === 'secondaryMultiplier' ? typeof v === 'number' && isFinite(v) && v >= 1e-9 && v <= 1e9
+      : v !== undefined && typeof v === typeof ITEM_DEFAULTS[key] && (typeof v !== 'number' || isFinite(v));
     if (!ok) continue;
     if (lww_(S, 'item:' + id, key, op)) it[key] = v;
   }
@@ -307,7 +322,7 @@ function foldState_(ops) {
     seen[op.opId] = true;
     var b = op.body || {}; var k = op.kind;
     if (k === 'item.set') foldItem_(S, op);
-    else if (k === 'stock.adjust') { var it = S.items[b.itemId]; if (it && it.count !== null) it.count = Math.max(0, it.count + Math.trunc(b.delta)); }
+    else if (k === 'stock.adjust') { var it = S.items[b.itemId]; if (it && it.count !== null) { var nextCount = it.count + b.delta; it.count = nextCount <= 1e-10 ? 0 : Math.max(0, nextCount); } }
     else if (k === 'person.set') { if (lww_(S, 'person:' + b.personId, 'all', op)) { S.people[b.personId] = { name: b.name, isPartner: b.isPartner, sharePct: Math.max(0, Math.min(100, b.sharePct)), removed: b.removed }; touch_(S, 'person', b.personId, op); } }
     else if (k === 'payee.set') { if (lww_(S, 'payee:' + b.payeeId, 'all', op)) { S.payees[b.payeeId] = { name: b.name, upiId: b.upiId, removed: b.removed }; touch_(S, 'payee', b.payeeId, op); } }
     else if (k === 'setting.set') { if (lww_(S, 'settings', b.key, op)) { S.settings[b.key] = b.value; touch_(S, 'setting', b.key, op); } }
@@ -348,9 +363,9 @@ function renderRows_(S) {
   var info = S.rec.item_info || {};
   for (id in S.items) {
     var it = S.items[id]; var m = S.meta['item|' + id];
-    out.menu.push(withMeta_({ item_id: id, name: it.name, category: it.category, price_inr: inr_(it.price), station: it.stationId, sold_out: it.soldOut, active: !it.removed, stock_only: it.supply, sort_order: it.order }, m));
+    out.menu.push(withMeta_({ item_id: id, name: it.name, category: it.category, price_inr: inr_(it.price), station: it.stationId, unit: it.unit, secondary_unit: it.secondaryUnit, secondary_multiplier: it.secondaryMultiplier, sold_out: it.soldOut, active: !it.removed, stock_only: it.supply, sort_order: it.order }, m));
     var x = (info[id] || { fields: {} }).fields;
-    out.stock_current.push(withMeta_({ item_id: id, name: it.name, on_hand: it.count === null ? '' : it.count, unit: it.unit, low_at: it.lowAt, sold: it.sold, source_id: v_(x.source_id), stock_only: it.supply, notes: v_(x.notes) }, m));
+    out.stock_current.push(withMeta_({ item_id: id, name: it.name, on_hand: it.count === null ? '' : it.count, unit: it.unit, low_at: it.lowAt, secondary_unit: it.secondaryUnit, secondary_multiplier: it.secondaryMultiplier, sold: it.sold, source_id: v_(x.source_id), stock_only: it.supply, notes: v_(x.notes) }, m));
   }
   var stations = {}; var st = S.rec.station || {};
   for (id in S.items) if (S.items[id].stationId) stations[S.items[id].stationId] = 1;
@@ -408,12 +423,12 @@ function rowToOps_(tab, row, edited) {
     return out;
   }
   if (tab === 'menu' || tab === 'stock_current') {
-    var map = { name: 'name', category: 'category', station: 'stationId', sold_out: 'soldOut', sort_order: 'order', stock_only: 'supply', unit: 'unit', low_at: 'lowAt' };
+    var map = { name: 'name', category: 'category', station: 'stationId', sold_out: 'soldOut', sort_order: 'order', stock_only: 'supply', unit: 'unit', low_at: 'lowAt', secondary_unit: 'secondaryUnit', secondary_multiplier: 'secondaryMultiplier' };
     var fields = {};
     for (var c in map) if (has(c)) fields[map[c]] = val(c);
     if (has('price_inr')) fields.price = paise_(row.price_inr) || 0;
     if (has('active')) fields.removed = val('active') === false;
-    if (has('on_hand')) fields.count = val('on_hand') === '' ? null : Math.max(0, Math.trunc(val('on_hand')));
+    if (has('on_hand')) fields.count = val('on_hand') === '' ? null : Math.max(0, val('on_hand'));
     if (typeof fields.order === 'string' || fields.order === '') fields.order = Number(fields.order) || 0;
     if (typeof fields.lowAt === 'string' || fields.lowAt === '') fields.lowAt = Number(fields.lowAt) || 0;
     if (nonEmpty(fields)) out.push({ kind: 'item.set', body: { itemId: id, fields: fields } });
