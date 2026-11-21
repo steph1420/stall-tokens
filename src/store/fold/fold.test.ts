@@ -102,6 +102,9 @@ describe('fold (F-02)', () => {
     const sent = fold(log);
     expect(sent.items['kg-item']?.count).toBeCloseTo(0.75, 10);
     expect(sent.orders['unit-order']?.lines[0]).toMatchObject({ qty: 250, unit: 'g', priceUnit: 'kg', stockMultiplier: 0.001, committed: 250 });
+    const editedItem = fold([...log, mk('item.set', { itemId: 'kg-item', fields: { unit: 'lb', secondaryUnit: 'oz', secondaryMultiplier: 0.0625, price: 30000 } })]);
+    expect(editedItem.items['kg-item']).toMatchObject({ unit: 'lb', secondaryUnit: 'oz', price: 30000 });
+    expect(editedItem.orders['unit-order']?.lines[0]).toMatchObject({ qty: 250, unit: 'g', priceUnit: 'kg', stockMultiplier: 0.001, price: 20000 });
     const deleted = fold([...log, mk('order.delete', { orderId: 'unit-order' })]);
     expect(deleted.items['kg-item']?.count).toBe(1);
   });
@@ -135,6 +138,18 @@ describe('fold (F-02)', () => {
       mk('refund.void', { refundId: 'r-unit-refund', orderId: 'o-unit-refund', reason: 'Undo' }),
     ]);
     expect(s.items.flour?.count).toBeCloseTo(0.9, 10);
+  });
+
+  it('preserves repeating dozen-to-piece conversion across a full dozen', () => {
+    const mk = opMaker('dozen.device', 400);
+    const s = fold([
+      mk('item.set', { itemId: 'eggs', fields: { name: 'Eggs', price: 6000, count: 1, unit: 'dozen', secondaryUnit: 'piece', secondaryMultiplier: 1 / 12 } }),
+      mk('day.start', { dayId: 'd-dozen', label: '2026-11-21' }),
+      mk('order.create', { orderId: 'o-dozen', dayId: 'd-dozen', token: 1, servedBy: '' }),
+      mk('line.add', { orderId: 'o-dozen', lineId: 'l-dozen', itemId: 'eggs', name: 'Eggs', price: 6000, category: '', stationId: '', qty: 12, unit: 'piece', priceUnit: 'dozen', stockMultiplier: 1 / 12 }),
+      mk('order.send', { orderId: 'o-dozen' }),
+    ]);
+    expect(s.items.eggs?.count).toBe(0);
   });
 
 });
