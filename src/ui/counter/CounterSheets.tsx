@@ -1,6 +1,7 @@
 // Every Counter sheet, one owner (ARCHITECTURE §5). F-07 item, F-08 stock, F-09 notes, F-10/F-11 adjust, F-15 payees, F-18 refund, F-37 more.
 import { useState } from 'react';
 import { CONFIG } from '../../config';
+import type { ItemDraft } from '../../store/catalog';
 import { formatInr, parseRupees, type Order, type Paise } from '../../contract';
 import { amounts, bill, useApp } from '../../store';
 import { AmountsEdit } from '../kit/AmountsEdit';
@@ -57,6 +58,26 @@ function CategoryPick({ value, cats, onPick }: { value: string; cats: readonly s
   );
 }
 
+function saveItemForm(
+  saveItem: (itemId: string | null, draft: ItemDraft) => string | null,
+  itemId: string | null,
+  fields: Omit<ItemDraft, 'price' | 'count' | 'discountPct'> & { priceText: string; countText: string; discountPctText: string },
+): string | null {
+  const price = parseRupees(fields.priceText);
+  if (price === null) return 'Check the price';
+  const count = fields.countText.trim() === '' ? null : Number(fields.countText);
+  if (count !== null && !Number.isSafeInteger(count)) return 'Stock must be a whole number';
+  const discountPct = fields.discountPctText.trim() === '' ? 0 : Number(fields.discountPctText);
+  return saveItem(itemId, { name: fields.name, price, swatch: fields.swatch, category: fields.category, stationId: fields.stationId, count, discountPct });
+}
+
+function ItemDiscountField({ value, onChange }: { value: string; onChange: (value: string) => void }) {
+  return <>
+    <Field id="idiscount" label="Item discount (%)"><input id="idiscount" className={k.input} value={value} inputMode="decimal" placeholder="0" onChange={(e) => { onChange(e.target.value); }} /></Field>
+    <div className={k.hint}>Applied automatically to each new order line.</div>
+  </>;
+}
+
 function ItemSheet({ itemId }: { itemId: string | null }) {
   const close = useClose();
   const it = useApp((st) => (itemId ? st.folded.items[itemId] : undefined));
@@ -72,20 +93,14 @@ function ItemSheet({ itemId }: { itemId: string | null }) {
   const [discountPct, setDiscountPct] = useState(String(it?.discountPct ?? 0));
   const [err, setErr] = useState('');
   const save = () => {
-    const p = parseRupees(price);
-    if (p === null) { setErr('Check the price'); return; }
-    const n = count.trim() === '' ? null : Number(count);
-    if (n !== null && !Number.isSafeInteger(n)) { setErr('Stock must be a whole number'); return; }
-    const discount = discountPct.trim() === '' ? 0 : Number(discountPct);
-    const e = cat.saveItem(itemId, { name, price: p, swatch, category, stationId: station, count: n, discountPct: discount });
+    const e = saveItemForm(cat.saveItem, itemId, { name, priceText: price, swatch, category, stationId: station, countText: count, discountPctText: discountPct });
     if (e) setErr(e); else close();
   };
   return (
     <Sheet title={it ? 'Edit item' : 'Add item'} onClose={close}>
       <Field id="iname" label="Name"><input id="iname" className={k.input} value={name} maxLength={CONFIG.limits.nameMaxChars} onChange={(e) => { setName(e.target.value); }} autoComplete="off" /></Field>
       <Field id="iprice" label="Price (₹)"><input id="iprice" className={k.input} value={price} inputMode="decimal" onChange={(e) => { setPrice(e.target.value); }} /></Field>
-      <Field id="idiscount" label="Item discount (%)"><input id="idiscount" className={k.input} value={discountPct} inputMode="decimal" placeholder="0" onChange={(e) => { setDiscountPct(e.target.value); }} /></Field>
-      <div className={k.hint}>Applied automatically to each new order line.</div>
+      <ItemDiscountField value={discountPct} onChange={setDiscountPct} />
       <Swatches value={swatch} onPick={setSwatch} />
       <CategoryPick value={category} cats={cats} onPick={(c) => { setCategory(c); if (!it) setStation(stationFor(c) ?? station); }} />
       <Field id="istation" label="Station"><select id="istation" className={k.input} value={station} onChange={(e) => { setStation(e.target.value); }}>
