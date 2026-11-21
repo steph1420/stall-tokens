@@ -5,7 +5,7 @@ import type { Core, Log } from './core';
 import { isUpiId } from './rules/upi';
 import * as amounts from './rules/amounts';
 
-export type ItemDraft = Pick<ItemFields, 'name' | 'price' | 'swatch' | 'category' | 'stationId'> & { count: number | null };
+export type ItemDraft = Pick<ItemFields, 'name' | 'price' | 'swatch' | 'category' | 'stationId'> & { count: number | null; discountPct?: number };
 
 function itemActions(core: Core, log: Log) {
   const st = () => core.get();
@@ -16,12 +16,14 @@ function itemActions(core: Core, log: Log) {
       if (!name) return 'Give the item a name';
       if (!Number.isSafeInteger(d.price) || d.price < 0 || d.price > CONFIG.limits.moneyMaxPaise) return 'Check the price';
       if (d.count !== null && (!Number.isSafeInteger(d.count) || d.count < 0)) return 'Stock must be 0 or more';
+      const discountPct = d.discountPct ?? 0;
+      if (!Number.isFinite(discountPct) || discountPct < 0 || discountPct > 100) return 'Discount must be between 0 and 100';
       const items = Object.values(st().folded.items).filter((i) => !i.removed);
       if (!itemId && items.length >= CONFIG.limits.itemsMax) return 'The menu is full';
       const order = itemId ? undefined : items.reduce((m, i) => Math.max(m, i.order), 0) + 1;
       const id = itemId ?? core.env.makeId();
       const swatch = Math.abs(Math.trunc(d.swatch)) % CONFIG.swatchCount;
-      log.dispatch('item.set', { itemId: id, fields: { name, price: d.price, swatch, category: d.category.trim(), stationId: d.stationId, count: d.count,
+      log.dispatch('item.set', { itemId: id, fields: { name, price: d.price, swatch, category: d.category.trim(), stationId: d.stationId, count: d.count, discountPct,
         ...(order === undefined ? {} : { order, lowAt: CONFIG.stock.lowAtDefault }) } });
       return null;
     },

@@ -1,6 +1,6 @@
 // Counter actions (F-05..F-18). Every rule about what a tap may do lives here; screens only call these.
 import { CONFIG } from '../config';
-import type { Discount, Line, Order, Paise, PaySource, PaymentBody } from '../contract';
+import { itemUnitPrice, type Discount, type Line, type Order, type Paise, type PaySource, type PaymentBody } from '../contract';
 import type { Core, Log } from './core';
 import { liveOrders } from './fold/fold';
 import { due, held, preRound, subtotal, total } from './rules/bill';
@@ -142,7 +142,7 @@ function lineActions(x: Ctx, nav: Nav) {
       const draft = [...o.lines].reverse().find((l) => l.itemId === itemId && l.status === 'draft');
       if (draft) { self.setQty(draft.lineId, draft.qty + 1); return; }
       if (o.lines.length >= CONFIG.limits.linesMax) { toast('This order is full; start another one'); return; }
-      log.dispatch('line.add', { orderId: o.id, lineId: core.env.makeId(), itemId, name: it.name, price: it.price, category: it.category, stationId: it.stationId, qty: 1 });
+      log.dispatch('line.add', { orderId: o.id, lineId: core.env.makeId(), itemId, name: it.name, price: itemUnitPrice(it.price, it.discountPct), category: it.category, stationId: it.stationId, qty: 1 });
     },
     /** Menu −: take one off the newest line of this item that is not being made yet. */
     removeItem(itemId: string) {

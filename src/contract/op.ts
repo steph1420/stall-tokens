@@ -23,6 +23,8 @@ export interface ItemFields {
   supply: boolean;
   /** P-3 A (2.1.0): category record id (`name:<text>` for a virtual one). '' = use the legacy `category` text. Additive. */
   categoryId: string;
+  /** Item-level percentage discount, captured in each new order line's unit price. */
+  discountPct: number;
 }
 /** Q-REFUND-1 A: one refunded line (qty of that line). */
 export interface RefundLine { lineId: string; qty: number }

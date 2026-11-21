@@ -69,19 +69,23 @@ function ItemSheet({ itemId }: { itemId: string | null }) {
   const [category, setCategory] = useState(it?.category ?? cats[0] ?? '');
   const [station, setStation] = useState(it?.stationId ?? CONFIG.stations[0]);
   const [count, setCount] = useState(it?.count == null ? '' : String(it.count));
+  const [discountPct, setDiscountPct] = useState(String(it?.discountPct ?? 0));
   const [err, setErr] = useState('');
   const save = () => {
     const p = parseRupees(price);
     if (p === null) { setErr('Check the price'); return; }
     const n = count.trim() === '' ? null : Number(count);
     if (n !== null && !Number.isSafeInteger(n)) { setErr('Stock must be a whole number'); return; }
-    const e = cat.saveItem(itemId, { name, price: p, swatch, category, stationId: station, count: n });
+    const discount = discountPct.trim() === '' ? 0 : Number(discountPct);
+    const e = cat.saveItem(itemId, { name, price: p, swatch, category, stationId: station, count: n, discountPct: discount });
     if (e) setErr(e); else close();
   };
   return (
     <Sheet title={it ? 'Edit item' : 'Add item'} onClose={close}>
       <Field id="iname" label="Name"><input id="iname" className={k.input} value={name} maxLength={CONFIG.limits.nameMaxChars} onChange={(e) => { setName(e.target.value); }} autoComplete="off" /></Field>
       <Field id="iprice" label="Price (₹)"><input id="iprice" className={k.input} value={price} inputMode="decimal" onChange={(e) => { setPrice(e.target.value); }} /></Field>
+      <Field id="idiscount" label="Item discount (%)"><input id="idiscount" className={k.input} value={discountPct} inputMode="decimal" placeholder="0" onChange={(e) => { setDiscountPct(e.target.value); }} /></Field>
+      <div className={k.hint}>Applied automatically to each new order line.</div>
       <Swatches value={swatch} onPick={setSwatch} />
       <CategoryPick value={category} cats={cats} onPick={(c) => { setCategory(c); if (!it) setStation(stationFor(c) ?? station); }} />
       <Field id="istation" label="Station"><select id="istation" className={k.input} value={station} onChange={(e) => { setStation(e.target.value); }}>

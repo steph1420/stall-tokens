@@ -2,7 +2,7 @@
 // Tap = +1, press-and-hold = stock panel (F-08), pencil = item note. Stock badge from Q-STOCK-SET.
 import { useState } from 'react';
 import { CONFIG } from '../../../config';
-import type { Item } from '../../../contract';
+import { itemUnitPrice, type Item } from '../../../contract';
 import { bill, useApp, type Folded } from '../../../store';
 import { Icon } from '../../kit/Icon';
 import { usePress } from '../../kit/hold';
@@ -38,7 +38,10 @@ function Card({ it }: { it: Item }) {
         <button type="button" className={note ? s.pencilHas : s.pencil} aria-label={note ? 'Edit note' : 'Add note'}
           onClick={() => { openSheet({ kind: 'lineNote', lineId: noteLine.lineId }); }}><Icon name="pencil" /></button>
       ) : null}
-      <Money p={it.price} className={s.price} />
+      <div className={s.priceWrap}>
+        <Money p={itemUnitPrice(it.price, it.discountPct)} className={s.price} />
+        {it.discountPct > 0 ? <><Money p={it.price} className={s.oldPrice} /><span className={s.discountTag}>{`${String(it.discountPct)}% off`}</span></> : null}
+      </div>
       {note ? <div className={s.snippet}>{note}</div> : null}
       {qty > 0 ? (
         <div className={s.qty}>

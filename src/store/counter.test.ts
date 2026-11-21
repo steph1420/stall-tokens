@@ -66,6 +66,26 @@ describe('counter flow (F-06..F-18)', () => {
     expect(cur(s).lines.some((l) => l.itemId === id.tea)).toBe(false);
   });
 
+  it('applies item discounts to ordinary menu taps and snapshots the discounted unit price', async () => {
+    const { s } = await ready();
+    expect(s().catalog.saveItem(null, { name: 'Discounted tea', price: 10000, swatch: 0, category: 'Drinks', stationId: 'Tea', count: null, discountPct: 15 })).toBeNull();
+    const item = Object.values(s().folded.items).find((i) => i.name === 'Discounted tea');
+    expect(item?.discountPct).toBe(15);
+    if (!item) throw new Error('discounted item missing');
+
+    s().counter.addItem(item.id);
+    expect(cur(s).lines[0]?.price).toBe(8500);
+    expect(bill.subtotal(cur(s))).toBe(8500);
+    const firstOrderId = cur(s).id;
+
+    const secondOrderId = s().counter.newOrder();
+    expect(s().catalog.saveItem(item.id, { name: item.name, price: item.price, swatch: item.swatch, category: item.category, stationId: item.stationId, count: item.count, discountPct: 20 })).toBeNull();
+    s().counter.addItem(item.id);
+    expect(s().folded.orders[firstOrderId]?.lines[0]?.price).toBe(8500);
+    expect(s().folded.orders[secondOrderId]?.lines[0]?.price).toBe(8000);
+    expect(s().catalog.saveItem(item.id, { name: item.name, price: item.price, swatch: item.swatch, category: item.category, stationId: item.stationId, count: item.count, discountPct: 101 })).toBe('Discount must be between 0 and 100');
+  });
+
   it('waived gap must match; tips are separate; over-collection is refused', async () => {
     const { s } = await ready();
     const id = seedMenu(s);
