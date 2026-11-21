@@ -91,7 +91,7 @@ export function overview(orders: readonly Order[], station: string): Overview {
       }
     }
   }
-  return { items: [...items].map(([key, qty]) => { const [name, unit] = key.split('\u0000'); return { name: unit ? name + ' (' + unit + ')' : name, qty }; }).sort((a, b) => b.qty - a.qty || a.name.localeCompare(b.name)), split };
+  return { items: [...items].map(([key, qty]) => { const splitAt = key.indexOf('\u0000'); const name = key.slice(0, splitAt); const unit = key.slice(splitAt + 1); return { name: unit ? name + ' (' + unit + ')' : name, qty }; }).sort((a, b) => b.qty - a.qty || a.name.localeCompare(b.name)), split };
 }
 
 /** Counter side (Q-KITCHEN-3 A): what the Open orders row offers for this order. */
@@ -156,7 +156,7 @@ export function overviewAll(orders: readonly Order[]): Overview {
       }
     }
   }
-  return { items: [...items].map(([key, qty]) => { const [name, unit] = key.split('\u0000'); return { name: unit ? name + ' (' + unit + ')' : name, qty }; }).sort((a, b) => b.qty - a.qty || a.name.localeCompare(b.name)), split };
+  return { items: [...items].map(([key, qty]) => { const splitAt = key.indexOf('\u0000'); const name = key.slice(0, splitAt); const unit = key.slice(splitAt + 1); return { name: unit ? name + ' (' + unit + ')' : name, qty }; }).sort((a, b) => b.qty - a.qty || a.name.localeCompare(b.name)), split };
 }
 
 // ---- P3 Kitchen + Station (PK-2, PK-4, PK-10; W-25/26/38/42) ----
