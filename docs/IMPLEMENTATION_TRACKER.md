@@ -40,8 +40,8 @@ Recovery branch: `backup/main-2026-11-21`
 | P1-06 | Verify whole-order notes | Done | Added a store-reload persistence test and a kitchen-ticket display test for the order note. CI #229 passed (57 files / 287 tests). |
 | P1-07 | Verify individual item notes | Done | Added a store-reload persistence test and a kitchen-ticket display test for line notes. CI #229 passed (57 files / 287 tests). |
 | P1-08 | Verify cart calculations | Done | End-to-end regression passed for variant + add-on pricing, item discount, 250 g conversion, order-level percentage discount, nearest-rupee discount rounding, round-off, final ₹53 total and 0.25 kg stock deduction. CI #235 passed: 57 files / 288 tests and production build. |
-| P1-09 | Verify order lifecycle | In progress | Added a sent + paid cancellation/refund/undo regression; existing kitchen tests cover Ready and handover/Completed. CI pending for the latest lifecycle and persistence batch. |
-| P1-10 | Verify persistence after reload | In progress | Expanded reload regression to check menu item data, order/token/line, whole-order note, line note, and device settings (`servingName`, `rangeIndex`) using shared op storage and local storage. CI pending. |
+| P1-09 | Verify order lifecycle | Done | CI #245 passed the sent + paid cancellation/refund/undo regression; existing kitchen UI tests also cover progression through Ready, handover and Completed. 57 files / 289 tests and production build passed. |
+| P1-10 | Verify persistence after reload | Done | CI #245 passed reload coverage for menu item data, order/token/line, whole-order note, line note, and device settings (`servingName`, `rangeIndex`) using shared op storage and local storage. 57 files / 289 tests and production build passed. |
 
 **Exit:** fundamental POS operations pass functional tests.
 
@@ -312,3 +312,12 @@ This roadmap governs the remaining work. Each stage is a set of reviewable code 
 - Existing kitchen UI coverage exercises line progression through Ready and Handed over, with the order's Completed state.
 - Expanded the reload test to cover menu items, order token and line, whole-order and line notes, plus persisted device settings through shared op storage and a shared local-storage stand-in.
 - CI validation for this batch is pending. P1-09 and P1-10 remain In progress until the complete run passes and the remaining lifecycle/persistence edge cases are reviewed.
+
+
+### Order lifecycle and persistence verification — CI run #245 (21 November 2026)
+- Workflow: [GitHub Actions run #245](https://github.com/steph1420/stall-tokens/actions/runs/44890207016)
+- Result: **success**.
+- Tests: **57 test files, 289 tests passed**; TypeScript, ESLint, Stylelint, dependency checks, contrast checks and production build passed.
+- Lifecycle coverage: paid order → cancellation → stock restoration for an unstarted line → recorded refund → refund undo. Existing kitchen UI tests cover Ready, handover and Completed.
+- Reload coverage: menu item, order/token/line, whole-order note, individual line note, serving name and token range all survive reconstruction with shared operation and device storage.
+- P1-09 and P1-10 accepted at the automated/code level. Real Android/iPad and printer acceptance remains a separate release gate.
