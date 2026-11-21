@@ -35,7 +35,7 @@ Recovery branch: `backup/main-2026-11-21`
 | P1-01 | Implement item discounts; correct price on ordinary item taps | Done | Item editor + menu price + line-price snapshot; [CI #100](https://github.com/steph1420/stall-tokens/actions/runs/44869565766), 263 tests |
 | P1-02 | Verify variant pricing | Done | Variant replaces base price; UI and order-line tests pass; [CI run](https://github.com/steph1420/stall-tokens/actions/runs/44871032905) |
 | P1-03 | Verify add-on pricing | Done | Add-ons sum with selected variant/base price; UI and order-line tests pass; [CI run](https://github.com/steph1420/stall-tokens/actions/runs/44871032905) |
-| P1-04 | Implement secondary units and multiplier effects | In progress | Core path now wired: item editor, primary/secondary sale-unit selection, measured quantity entry (up to configured cap), unit-aware draft availability, immutable order-line snapshots, converted billing, fractional stock and stock lifecycle, kitchen/history/refund/receipt quantity labels. Automated tests have been added for measured sale, stock cap, billing, send/delete, quantity edits, refund restock/undo, legacy replay, repeating ratios and snapshot immutability. Commits are recorded in the Stage 1 execution logs below. Not accepted until CI passes and remaining edge cases are checked. |
+| P1-04 | Implement secondary units and multiplier effects | In progress | Core path now wired: item editor, primary/secondary sale-unit selection, measured quantity entry (up to configured cap), unit-aware draft availability, immutable order-line snapshots, converted billing, fractional stock and stock lifecycle, kitchen/history/refund/receipt quantity labels. Automated tests have been added for measured sale, stock cap, billing, send/delete, quantity edits, refund restock/undo, legacy replay, repeating ratios and snapshot immutability. Commits are recorded in the Stage 1 execution logs below. GitHub Actions CI run #217 passed on commit `f7d7520`: TypeScript, ESLint, Stylelint, dependency checks, contrast checks, all 57 test files / 284 tests, and production build. Still not accepted: Apps Script has not been deployed to the live Sheet, and Android/iPad plus physical printer checks remain. |
 | P1-05 | Verify primary units | Pending | Display, billing and stock must agree |
 | P1-06 | Verify whole-order notes | Pending | Save, reload and display |
 | P1-07 | Verify individual item notes | Pending | Save, reload and display |
@@ -263,3 +263,14 @@ This roadmap governs the remaining work. Each stage is a set of reviewable code 
 - Added tests in `CustomizeItemSheet.test.tsx`, `counter.test.ts`, `fold.test.ts` and `bill.test.ts`.
 - Key commits in this batch: `b10bd6e`, `990c522`, `d684378`, `6728e71`, `d5a069f`, `040daea`, `eb7f112`, `f8f057e`, `ca7e0fa`, `7d7f96d`, `48ce29a`, `e1b2f3f`, `ac960a4`, `ea5d6f7`, `6b8e8ac`, `35ce724`, `67def6e`, `6bd2a2b`, `7a6a985`, `30b8c17`, `455e989`, `3b9ab58`, `5d0e607`, `4e81cce`, `65a3970`, `b135513`, `238fe3a`, `a5faccf`, `84eb77c`, `83d5433`, `b66620a`, `085619c`, `4b956a0`, `5d03c84`, `55598fd`, `6501ef7`.
 - Verification remains outstanding. The CI workflow is configured for pushes to `feat/**`, but the GitHub connector returned no status entries. A local clone/test attempt failed because this environment could not resolve `github.com`. No tests are claimed as executed; P1-04 remains In progress.
+
+
+### Verification update — CI run #217 (21 November 2026)
+- Commit: `f7d7520d78f361be88b2edf143548ff1a4ea9017`
+- Workflow: [GitHub Actions run #217](https://github.com/steph1420/stall-tokens/actions/runs/44889259879)
+- Result: **success**.
+- Passed: exact pins and lockfile, leak scan, generated-output guard, feature-ID consistency, dependency installation, token consistency, TypeScript, ESLint, Stylelint, dependency rules, light/dark contrast checks, test suite, and production build.
+- Tests: **57 test files, 284 tests passed**.
+- Build: Vite production build completed successfully (601 modules transformed).
+- No merge or deployment was performed.
+- Remaining acceptance gates for P1-04: deploy the matching Apps Script schema v4 to the live Sheet and verify sync; exercise measured sales, stock, refunds and history on Android and iPad; verify the actual 58mm Cysno receipt output. Until those are completed, P1-04 stays In progress.
