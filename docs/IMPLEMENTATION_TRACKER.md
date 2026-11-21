@@ -51,7 +51,7 @@ Recovery branch: `backup/main-2026-11-21`
 |---|---|---|
 | P2-01 | Android keyboard regression test | In progress | Found focus-stealing bug: Sheet's focus-on-open effect reran whenever an unstable onClose callback changed during controlled input updates. Stabilised the sheet close handler and counter sheet callback; added regression tests for callback changes and focus retention while typing. CI #258 passed: 57 files / 291 tests, typecheck, lint and production build. Physical Android keyboard test still required. |
 | P2-02 | iPad keyboard regression test | Pending |
-| P2-03 | Fix Settings clipping and overlap | Pending |
+| P2-03 | Fix Settings clipping and overlap | In progress | Hardened Settings rows and data cards against long values: flex children can shrink/wrap, long text can break safely, sections retain intrinsic height in the scroll container. Added a long stall/device label rendering regression. CI pending; real narrow-device visual check still required. |
 | P2-04 | Verify Home navigation on every main screen | Pending |
 | P2-05 | Verify app version display | Pending |
 | P2-06 | Phone portrait layout | Pending |
@@ -337,3 +337,10 @@ This roadmap governs the remaining work. Each stage is a set of reviewable code 
 - Tests: **57 test files, 291 tests passed**; TypeScript, ESLint, Stylelint, dependency checks, contrast checks and production build passed.
 - New tests prove that a changing sheet close callback does not move focus away from an active input, Escape still calls the latest callback, and typing into Name, Price and Discount fields retains focus.
 - P2-01 remains In progress until the native keyboard is verified on the actual Android phone. P2-02 remains separate for iPad.
+
+
+### Settings clipping/overlap hardening — 21 November 2026
+- Reviewed the actual Settings shell and CSS. The responsive row layout allowed unbounded value text and several flex children lacked explicit shrink/wrap constraints; the page also relies on a column flex scroller.
+- Hardened settings section/card sizing, added min-width constraints, enabled safe wrapping for long labels and values, and made snapshot title/metadata rows shrink and wrap.
+- Added a Settings screen regression with long stall and serving/device names to ensure the complete values remain rendered.
+- This is a CSS/DOM regression, not yet a physical viewport screenshot test. CI and narrow Android/iPad visual checks remain required.
