@@ -7,6 +7,32 @@ import { CounterSheets } from './CounterSheets';
 afterEach(cleanup);
 
 describe('item discount editor', () => {
+  it('keeps focus in controlled item fields while typing', async () => {
+    const { store } = makeTestStore();
+    await store.getState().start();
+    act(() => { store.getState().openSheet({ kind: 'item', itemId: null }); });
+    render(
+      <StoreProvider store={store}>
+        <CounterSheets />
+      </StoreProvider>,
+    );
+
+    const name = screen.getByLabelText('Name');
+    name.focus();
+    fireEvent.change(name, { target: { value: 'Rice' } });
+    expect(document.activeElement).toBe(name);
+
+    const price = screen.getByLabelText('Price (₹ per item)');
+    price.focus();
+    fireEvent.change(price, { target: { value: '100' } });
+    expect(document.activeElement).toBe(price);
+
+    const discount = screen.getByLabelText('Item discount (%)');
+    discount.focus();
+    fireEvent.change(discount, { target: { value: '10' } });
+    expect(document.activeElement).toBe(discount);
+  });
+
   it('saves the percentage from the item form and applies it to a new menu line', async () => {
     const { store } = makeTestStore();
     await store.getState().start();
