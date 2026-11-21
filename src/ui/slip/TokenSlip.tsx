@@ -17,7 +17,7 @@ function useSlipText(o: Order, draftTip?: Paise, draftWaived?: Paise): SlipText 
     stall, token: formatToken(o.token, CONFIG.tokens.pad),
     meta: `${istClock(o.payments[0]?.at ?? o.createdAt)}${o.client ? ` · ${o.client}` : ''}`,
     // pay2: tip and waive are on the slip, and the total is what was asked for.
-    lines: [...o.lines.filter((l) => l.qty > 0).map((l) => [`${l.name}${l.qty > 1 ? ` ×${String(l.qty)}` : ''}`, formatInr(l.price * l.qty)] as const),
+    lines: [...o.lines.filter((l) => l.qty > 0).map((l) => [l.unit ? l.name + ' ' + String(l.qty) + ' ' + l.unit : l.name + (l.qty > 1 ? ' ×' + String(l.qty) : ''), formatInr(bill.lineAmount(l))] as const),
       ...(effTip > 0 ? [['Tip', `+${formatInr(effTip)}`] as const] : []), ...(effWaived > 0 ? [['Waived', `−${formatInr(effWaived)}`] as const] : [])],
     total: formatInr(bill.total(o) + effTip - effWaived),
     paid: cash && upi ? 'Paid · cash + UPI' : upi ? 'Paid · UPI' : cash ? 'Paid · cash' : 'Not paid yet',
