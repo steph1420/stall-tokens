@@ -15,7 +15,7 @@ describe('item options editor', () => {
     render(<StoreProvider store={store}><CounterSheets /></StoreProvider>);
 
     fireEvent.change(screen.getByLabelText('Name'), { target: { value: 'Burger' } });
-    fireEvent.change(screen.getByLabelText('Price (₹)'), { target: { value: '50' } });
+    fireEvent.change(screen.getByLabelText('Price (₹ per item)'), { target: { value: '50' } });
     fireEvent.click(screen.getByRole('button', { name: '+ Add variant' }));
     fireEvent.change(screen.getByLabelText('variant name 1'), { target: { value: 'Large' } });
     fireEvent.change(screen.getByLabelText('variant price 1'), { target: { value: '80' } });
