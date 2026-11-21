@@ -131,6 +131,31 @@ describe('counter flow (F-06..F-18)', () => {
     expect(lineId).not.toBe('');
   });
 
+  it('cancels a sent paid order, restores unstarted stock and refunds the recorded amount', async () => {
+    const { s } = await ready();
+    const ids = seedMenu(s);
+    const teaId = ids.tea ?? '';
+    const initialStock = s().folded.items[teaId]?.count;
+    s().counter.addItem(teaId);
+    const order = cur(s);
+    expect(s().counter.sendToKitchen()).toBe(true);
+    expect(s().folded.items[teaId]?.count).toBe((initialStock ?? 0) - 1);
+    expect(s().counter.pay({ cash: 2000, upi: 0, upiPayeeId: null, tip: 0, waived: 0, waivedBy: '', waivedNote: '', cashGiven: 2000, notes: {} })).toBeNull();
+
+    expect(s().counter.cancelOrder(order.id, 'Guest left')).toBe(true);
+    const cancelled = s().folded.orders[order.id];
+    expect(cancelled?.cancel).toMatchObject({ reason: 'Guest left', refundDue: 2000 });
+    expect(s().folded.items[teaId]?.count).toBe(initialStock);
+
+    const refund = s().refund.offer({ orderId: order.id, ask: { kind: 'whole' }, source: 'cash', reason: 'Cancelled order', restock: false });
+    expect(refund.ok).toBe(true);
+    if (!refund.ok) throw new Error(refund.reason);
+    expect(refund.amount).toBe(2000);
+    expect(s().folded.orders[order.id]?.refunds[0]?.amount).toBe(2000);
+    expect(s().refund.undo(order.id, refund.refundId)).toBe(true);
+    expect(s().folded.orders[order.id]?.refunds[0]?.voided).toBe('Undo');
+  });
+
   it('deleting an order releases its token for the next new order', async () => {
     const { s } = await ready();
     const id = seedMenu(s);
