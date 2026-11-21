@@ -68,7 +68,7 @@ function saveItemForm(
   const price = parseRupees(fields.priceText);
   if (price === null) return 'Check the price';
   const count = fields.countText.trim() === '' ? null : Number(fields.countText);
-  if (count !== null && (!Number.isFinite(count) || count < 0 || !/^\d+(\.\d{1,6})?$/.test(fields.countText.trim()))) return 'Stock must be 0 or more (up to 6 decimal places)';
+  if (count !== null && (!Number.isFinite(count) || count < 0 || !/^\d+(\.\d{1,12})?$/.test(fields.countText.trim()))) return 'Stock must be 0 or more (up to 12 decimal places)';
   const discountPct = fields.discountPctText.trim() === '' ? 0 : Number(fields.discountPctText);
   const secondaryUnit = fields.secondaryUnitText.trim();
   const secondaryMultiplier = secondaryUnit ? Number(fields.secondaryMultiplierText) : 1;
@@ -102,7 +102,7 @@ function ItemSheet({ itemId }: { itemId: string | null }) {
   const [unit, setUnit] = useState(it?.unit ?? '');
   const [secondaryUnit, setSecondaryUnit] = useState(it?.secondaryUnit ?? '');
   const [secondaryMultiplier, setSecondaryMultiplier] = useState(String(it?.secondaryMultiplier ?? 1));
-  const [count, setCount] = useState(it?.count == null ? '' : String(it.count));
+  const [count, setCount] = useState(it?.count == null ? '' : String(Number(it.count.toFixed(12))));
   const [discountPct, setDiscountPct] = useState(String(it?.discountPct ?? 0));
   const [err, setErr] = useState('');
   const save = () => {
