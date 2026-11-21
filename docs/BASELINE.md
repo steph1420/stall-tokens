@@ -41,10 +41,12 @@ The following findings apply to the separate mobile repository snapshot at commi
 - The active `feat/pos-hardening-2026-11-21` branch currently contains documentation changes only relative to `feat/v2.1.0`.
 - A direct local checkout was attempted, but this execution environment could not resolve `github.com`; local `npm ci` and `npm run check` have not been run.
 - The CI workflow defines a full gate: pinned dependencies, leak scan, build-output check, feature-ID check, install, token drift, TypeScript, ESLint, Stylelint, dependency rules, contrast, tests and production build.
-- GitHub's available connector returned no workflow run or commit status for the baseline commit. A temporary draft PR (#3) against `feat/v2.1.0` was created to expose pull-request CI, then closed unmerged; no successful run was returned for inspection.
-- The branch status document records a 236-test pass on v2.1.0 Beta work. This is historical project documentation, not independent verification of this baseline commit.
+- GitHub Actions run #95 for baseline commit `36b2e99bcf6a4950f3ac3bc5508a2709a6b4e684` completed successfully: [run 44868414884](https://github.com/steph1420/stall-tokens/actions/runs/44868414884).
+- All 16 CI steps passed: pin/lockfile, leak scan, build-output check, feature-ID check, install, token drift, TypeScript, ESLint, Stylelint, dependency rules, contrast, tests and production build.
+- Vitest result: 50 test files passed, 259 tests passed. Production build transformed 597 modules and completed successfully. Vite emitted a non-fatal chunk-size warning for the 659.57 kB main JS chunk (210.78 kB gzip); this is a performance follow-up, not a failed build.
+- This verifies the v2.1.0 baseline source in GitHub Actions. It does not verify physical hardware or actual Android/iPad runtime behavior.
 
 ## Acceptance
 - P0-07 source-level defect/gap inventory: recorded above.
-- P0-06 remains pending until a full CI/build/test result for the baseline commit is inspected.
+- P0-06 is complete: full GitHub Actions CI/build/test gate passed for the baseline commit.
 - A successful build/test gate is not hardware verification and does not establish Android, iPad or physical-printer operation.
