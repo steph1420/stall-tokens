@@ -80,7 +80,7 @@ export function MenuScreen() {
   const [sort, setSort] = useState<Sort>('menu');
   const all = Object.values(folded.items).filter((i) => !i.removed && !i.supply);
   const items = sortItems(all.filter((i) => matches(i, q)), sort, folded);
-  const count = order?.lines.reduce((n, l) => n + l.qty, 0) ?? 0;
+  const count = order?.lines.reduce((n, l) => n + (l.unit && l.priceUnit && l.unit !== l.priceUnit ? (l.qty > 0 ? 1 : 0) : l.qty), 0) ?? 0;
   return (
     <>
       {all.length > CONFIG.menu.searchFrom ? (
