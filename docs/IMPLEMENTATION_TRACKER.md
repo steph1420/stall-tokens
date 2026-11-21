@@ -35,7 +35,7 @@ Recovery branch: `backup/main-2026-11-21`
 | P1-01 | Implement item discounts; correct price on ordinary item taps | Done | Item editor + menu price + line-price snapshot; [CI #100](https://github.com/steph1420/stall-tokens/actions/runs/44869565766), 263 tests |
 | P1-02 | Verify variant pricing | Done | Variant replaces base price; UI and order-line tests pass; [CI run](https://github.com/steph1420/stall-tokens/actions/runs/44871032905) |
 | P1-03 | Verify add-on pricing | Done | Add-ons sum with selected variant/base price; UI and order-line tests pass; [CI run](https://github.com/steph1420/stall-tokens/actions/runs/44871032905) |
-| P1-04 | Implement secondary units and multiplier effects | In progress | Semantics confirmed: multiplier = primary units represented by one secondary unit (e.g. 1 g = 0.001 kg). Must carry the selected sale unit and conversion snapshot through order lines; convert billing and stock consistently. Not yet implemented or accepted. |
+| P1-04 | Implement secondary units and multiplier effects | In progress | Semantics confirmed. Foundational batch committed: conversion/line-total helpers, additive item and line contract fields, line-level unit/rate/multiplier snapshots, fractional stock fold movements, and converted bill totals. Commits: `67fdd34`, `e193b4c`, `6d93b81`, `0033dac`, `4cea41e`, `0632623`, `0800c33`, `2be6afa`, `26b7f6b`, `01701a1`, `53f5f03`, `dd25691`, `80c0dae`, `0d4cec8`, `1038b25`. Still missing unit-selection UI, quantity entry, unit-aware availability, end-to-end lifecycle tests and a successful CI run; not accepted. |
 | P1-05 | Verify primary units | Pending | Display, billing and stock must agree |
 | P1-06 | Verify whole-order notes | Pending | Save, reload and display |
 | P1-07 | Verify individual item notes | Pending | Save, reload and display |
@@ -238,3 +238,15 @@ This roadmap governs the remaining work. Each stage is a set of reviewable code 
 - If a batch exposes a structural issue, stop and correct the model before layering more UI on top.
 - Do not import the separate mobile experiment repository wholesale; selectively port only reviewed ideas that fit this repository's contract and architecture.
 - Do not merge, tag as production, or deploy without explicit release approval.
+
+
+### Stage 1 execution log — first domain batch (21 November 2026)
+- Implemented reusable conversion math and tests for integer sale quantities, signed stock deltas, discount handling, paise rounding and repeating ratios.
+- Added additive item fields for secondary unit and multiplier; old items fold with multiplier 1.
+- Added optional line.add unit, price-unit and stock-multiplier snapshots; old line.add operations replay with the item's primary unit and multiplier 1.
+- Updated order folding so send, quantity changes, cancel, delete, refund restock and refund void convert sale quantities into primary inventory quantities.
+- Updated billing line totals to calculate from the captured primary-unit rate and conversion factor.
+- Enabled fractional inventory counts and adjustments, with a small floating-point tolerance to avoid false oversold flags at zero.
+- Added fold and bill regression tests for 250 g from 1 kg, historical line snapshots and legacy operation replay.
+- Commits: `67fdd343778d0a7e1ea6b03c162ffcbc43a0cd32`, `e193b4c18ce038ff4268303a83fbaf7ed92008a1`, `6d93b81c123b2bd57a9b0b63290bab903b78018a`, `0033dac35097db65a2381c175b781de5992d2395`, `4cea41e222fe5bff422b224035ed75e4456b75e5`, `06326230fb56f057d030080a1635891dc6302bf2`, `0800c33042d3c8ac8a5e15f2175fd08ab7825096`, `2be6afad46665a6101b5e6394e1be40f2673f21b`, `26b7f6bd9f18189573004f2e24072a26a47878f0`, `01701a16d90c3c5899c20dc6f2ad71a779dd1d64`, `53f5f03e93d4a25aa3aaf3c6577e255762f711ff`, `dd2569153cc4ed5f8d64d56ed32782c04ab66b2b`, `80c0dae7b46066123e76b7a13059ce262ce8bef9`, `0d4cec887db8b8f2307ad3c5ff819467b810dc8b`, `1038b2505624e042236b02c0cfb2840af52d71cb`.
+- Verification limitation: this environment could not resolve `github.com`, so a local checkout/test run was unavailable. GitHub combined-status queries returned no status entries for these commits. Do not treat the added tests as executed or P1-04 as accepted.
