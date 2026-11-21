@@ -72,7 +72,7 @@ function saveItemForm(
   const discountPct = fields.discountPctText.trim() === '' ? 0 : Number(fields.discountPctText);
   const secondaryUnit = fields.secondaryUnitText.trim();
   const secondaryMultiplier = secondaryUnit ? Number(fields.secondaryMultiplierText) : 1;
-  if (secondaryUnit && (!Number.isFinite(secondaryMultiplier) || secondaryMultiplier <= 0)) return 'Enter a multiplier greater than 0';
+  if (secondaryUnit && (!Number.isFinite(secondaryMultiplier) || secondaryMultiplier < 1e-9 || secondaryMultiplier > 1e9)) return 'Enter a multiplier between 0.000000001 and 1,000,000,000';
   const variantError = validateDraftOptions(fields.variants, 'variant');
   if (variantError) return variantError;
   const addonError = validateDraftOptions(fields.addons, 'add-on');
