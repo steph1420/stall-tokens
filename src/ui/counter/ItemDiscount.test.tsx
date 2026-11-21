@@ -3,8 +3,20 @@ import { afterEach, describe, expect, it } from 'vitest';
 import { StoreProvider } from '../../store';
 import { makeTestStore } from '../../store/testkit';
 import { CounterSheets } from './CounterSheets';
+import { CounterShell } from './CounterShell';
 
 afterEach(cleanup);
+
+describe('Counter home navigation', () => {
+  it('provides a direct Home button from Counter pages', async () => {
+    const { store } = makeTestStore();
+    await store.getState().start();
+    store.getState().go('counter');
+    render(<StoreProvider store={store}><CounterShell /></StoreProvider>);
+    fireEvent.click(screen.getByRole('button', { name: 'Home' }));
+    expect(store.getState().ui.screen).toBe('launch');
+  });
+});
 
 describe('item discount editor', () => {
   it('keeps focus in controlled item fields while typing', async () => {
