@@ -5,7 +5,7 @@
 import { useState } from 'react';
 import { CONFIG } from '../../config';
 import { formatInr, type Entry, type Order } from '../../contract';
-import { bill, closing, extraOn, formatToken, history, istClock, useApp } from '../../store';
+import { bill, closing, extraOn, formatToken, history, istClock, kitchen, useApp } from '../../store';
 import { Money } from '../kit/Money';
 import { DayNotesSheet } from './DayNotesSheet';
 import { EntrySheet, OrderHistorySheet } from './HistorySheets';
@@ -14,7 +14,7 @@ import s from './Stall.module.css';
 
 type Seg = 'orders' | 'money';
 const TONE = { ok: s.tagOk, warn: s.tagW, danger: s.tagR, info: s.tagI } as const;
-const items = (o: Order) => o.lines.filter((l) => l.qty > 0).map((l) => (l.qty > 1 ? `${l.name} ×${String(l.qty)}` : l.name)).join(', ');
+const items = (o: Order) => o.lines.filter((l) => l.qty > 0).map((l) => kitchen.lineQuantityLabel(l) + ' ' + l.name).join(', ');
 
 function OrderRow({ o, onPick }: { o: Order; onPick: () => void }) {
   const tag = history.historyTag(o);
