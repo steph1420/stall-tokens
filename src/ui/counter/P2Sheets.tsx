@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { CONFIG } from '../../config';
 import { parseRupees, type Order, type Paise, type PaySource } from '../../contract';
-import { ago, bill, draftOrders, formatToken, liveOrders, useApp, type RefundAsk } from '../../store';
+import { ago, bill, draftOrders, formatToken, kitchen, liveOrders, useApp, type RefundAsk } from '../../store';
 import { Money } from '../kit/Money';
 import { Sheet } from '../kit/Sheet';
 import k from '../kit/kit.module.css';
@@ -30,7 +30,7 @@ export function DraftsSheet() {
           <li key={o.id} className={s.row}>
             <button type="button" className={s.open} onClick={() => { c.selectOrder(o.id); c.setPage('menu'); close(); }}>
               <b>{formatToken(o.token, CONFIG.tokens.pad)}</b>
-              <span>{o.lines.filter((l) => l.qty > 0).map((l) => `${String(l.qty)}× ${l.name}`).join(', ')}</span>
+              <span>{o.lines.filter((l) => l.qty > 0).map((l) => kitchen.lineQuantityLabel(l) + ' ' + l.name).join(', ')}</span>
               <small>{`${o.device || o.servedBy || 'This phone'} · ${ago(o.createdAt, now)}`}</small>
             </button>
             <Money p={bill.total(o)} className={s.amt} />
@@ -96,7 +96,7 @@ function PickLines({ o, f }: { o: Order; f: Form }) {
         const set = (n: number) => { f.setPick({ ...f.pick, [l.lineId]: Math.max(0, Math.min(l.qty, n)) }); };
         return (
           <li key={l.lineId} className={s.pick}>
-            <span>{`${l.name} · ${String(l.qty)} ordered`}</span>
+            <span>{l.name + ' · ' + kitchen.lineQuantityLabel(l) + ' ordered'}</span>
             <span className={s.step}>
               <button type="button" aria-label={`One less ${l.name}`} onClick={() => { set(q - 1); }}>−</button>
               <b>{q}</b>
