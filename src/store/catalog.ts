@@ -60,7 +60,7 @@ function itemActions(core: Core, log: Log) {
     adjustStock(itemId: string, delta: number) {
       const it = st().folded.items[itemId];
       if (!it) return;
-      if (it.count === null) { if (delta > 0) log.dispatch('item.set', { itemId, fields: { count: Math.trunc(delta), soldOut: false } }); return; }
+      if (it.count === null) { if (delta > 0) log.dispatch('item.set', { itemId, fields: { count: delta, soldOut: false } }); return; }
       if (!Number.isFinite(delta) || it.count + delta < -1e-10) return;
       log.dispatch('stock.adjust', { itemId, delta, reason: 'panel' });
       if (it.soldOut && it.count + delta > 0) log.dispatch('item.set', { itemId, fields: { soldOut: false } });
