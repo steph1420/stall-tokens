@@ -106,14 +106,20 @@ describe('CustomizeItemSheet', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Add to order' }));
 
     const order = s().folded.orders[s().ui.orderId ?? ''];
-    expect(order?.lines[0]).toMatchObject({ qty: 250, unit: 'g', priceUnit: 'kg', stockMultiplier: 0.001, price: 23400 });
-    expect(order ? bill.subtotal(order) : 0).toBe(5850);
+    if (!order) throw new Error('Measured order missing');
+    const currentOrder = () => {
+      const current = s().folded.orders[order.id];
+      if (!current) throw new Error('Measured order was lost');
+      return current;
+    };
+    expect(order.lines[0]).toMatchObject({ qty: 250, unit: 'g', priceUnit: 'kg', stockMultiplier: 0.001, price: 23400 });
+    expect(bill.subtotal(order)).toBe(5850);
     s().counter.setDiscount({ kind: 'pct', value: 10, allowedBy: 'S', note: '' });
-    expect(bill.discountAmount(bill.subtotal(order!), s().folded.orders[order!.id]!.discount)).toBe(600);
-    expect(bill.preRound(s().folded.orders[order!.id]!)).toBe(5250);
+    expect(bill.discountAmount(bill.subtotal(currentOrder()), currentOrder().discount)).toBe(600);
+    expect(bill.preRound(currentOrder())).toBe(5250);
     s().counter.setRoundOff(50);
-    expect(bill.roundOffAmount(s().folded.orders[order!.id]!)).toBe(50);
-    expect(bill.total(s().folded.orders[order!.id]!)).toBe(5300);
+    expect(bill.roundOffAmount(currentOrder())).toBe(50);
+    expect(bill.total(currentOrder())).toBe(5300);
     expect(s().counter.sendToKitchen()).toBe(true);
     expect(s().folded.items[item.id]?.count).toBeCloseTo(0.75, 10);
   });
