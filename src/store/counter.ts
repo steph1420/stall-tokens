@@ -1,6 +1,6 @@
 // Counter actions (F-05..F-18). Every rule about what a tap may do lives here; screens only call these.
 import { CONFIG } from '../config';
-import { itemUnitPrice, type Discount, type Line, type Order, type Paise, type PaySource, type PaymentBody } from '../contract';
+import { itemUnitPrice, primaryQuantity, type Discount, type Line, type Order, type Paise, type PaySource, type PaymentBody } from '../contract';
 import type { Core, Log } from './core';
 import { liveOrders } from './fold/fold';
 import { due, held, preRound, subtotal, total } from './rules/bill';
@@ -45,7 +45,7 @@ function makeCtx(core: Core, log: Log) {
     if (!it || it.removed || it.soldOut || it.supply) return 0;
     if (it.count === null) return Number.POSITIVE_INFINITY;
     const drafts = liveOrders(st().folded).filter((o) => !o.cancel)
-      .reduce((n, o) => n + o.lines.filter((l) => l.itemId === itemId).reduce((m, l) => m + Math.max(0, l.qty - l.committed), 0), 0);
+      .reduce((n, o) => n + o.lines.filter((l) => l.itemId === itemId).reduce((m, l) => m + primaryQuantity(Math.max(0, l.qty - l.committed), l.stockMultiplier ?? 1), 0), 0);
     return it.count - drafts;
   };
   const editable = (l: Line) => l.status === 'draft' || l.status === 'waiting';
@@ -128,23 +128,28 @@ function dayActions(x: Ctx) {
   return self;
 }
 
-function addCustomLine(x: Ctx, nav: Nav, itemId: string, customName: string, customPrice: Paise, setQty: (lineId: string, qty: number) => void): void {
+function addCustomLine(x: Ctx, nav: Nav, itemId: string, customName: string, customPrice: Paise, setQty: (lineId: string, qty: number) => void, unit?: string, priceUnit?: string, stockMultiplier = 1, qty = 1): void {
   const { core, log, st, toast, current, available } = x;
   if (x.locked()) return;
   const it = st().folded.items[itemId];
   if (!it || it.removed || it.supply) return;
-  if (it.soldOut || available(itemId) < 1) { toast(`${it.name} is sold out`); return; }
+  if (!Number.isSafeInteger(qty) || qty < 1 || !Number.isFinite(stockMultiplier) || stockMultiplier <= 0) { toast('Check the quantity and unit'); return; }
+  const requiredStock = primaryQuantity(qty, stockMultiplier);
+  if (it.soldOut || available(itemId) + 1e-10 < requiredStock) { toast(`${it.name} is sold out or there is not enough stock`); return; }
   const name = customName.trim().slice(0, CONFIG.limits.nameMaxChars) || it.name;
   if (!Number.isSafeInteger(customPrice) || customPrice < 0 || customPrice > CONFIG.limits.moneyMaxPaise) { toast('Check the selected price'); return; }
   const order = current() ?? ensureOrder(x, nav);
   if (!order) {
-    if (st().ui.sheet?.kind === 'newDay') x.ui({ pendingItem: { itemId, name, price: customPrice } });
+    if (st().ui.sheet?.kind === 'newDay') x.ui({ pendingItem: { itemId, name, price: customPrice, unit: unit ?? it.unit, priceUnit: priceUnit ?? it.unit, stockMultiplier, qty } });
     return;
   }
-  const draft = [...order.lines].reverse().find((line) => line.itemId === itemId && line.name === name && line.price === customPrice && line.status === 'draft');
-  if (draft) { setQty(draft.lineId, draft.qty + 1); return; }
+  const saleUnit = unit ?? it.unit;
+  const rateUnit = priceUnit ?? it.unit;
+  const draft = [...order.lines].reverse().find((line) => line.itemId === itemId && line.name === name && line.price === customPrice
+    && line.unit === saleUnit && line.priceUnit === rateUnit && (line.stockMultiplier ?? 1) === stockMultiplier && line.status === 'draft');
+  if (draft) { setQty(draft.lineId, draft.qty + qty); return; }
   if (order.lines.length >= CONFIG.limits.linesMax) { toast('This order is full; start another one'); return; }
-  log.dispatch('line.add', { orderId: order.id, lineId: core.env.makeId(), itemId, name, price: customPrice, category: it.category, stationId: it.stationId, qty: 1 });
+  log.dispatch('line.add', { orderId: order.id, lineId: core.env.makeId(), itemId, name, price: customPrice, category: it.category, stationId: it.stationId, qty, unit: saleUnit, priceUnit: rateUnit, stockMultiplier });
 }
 
 function lineActions(x: Ctx, nav: Nav) {
@@ -153,11 +158,11 @@ function lineActions(x: Ctx, nav: Nav) {
     /** Tap a plain menu card: +1 at its current discounted base price. */
     addItem(itemId: string) {
       const it = st().folded.items[itemId];
-      if (it) addCustomLine(x, nav, itemId, it.name, itemUnitPrice(it.price, it.discountPct), (lineId, qty) => { self.setQty(lineId, qty); });
+      if (it) addCustomLine(x, nav, itemId, it.name, itemUnitPrice(it.price, it.discountPct), (lineId, qty) => { self.setQty(lineId, qty); }, it.unit, it.unit, 1, 1);
     },
     /** Add a chosen variant/add-on combination; capture its selected unit price on the order line. */
-    addItemCustom(itemId: string, customName: string, customPrice: Paise) {
-      addCustomLine(x, nav, itemId, customName, customPrice, (lineId, qty) => { self.setQty(lineId, qty); });
+    addItemCustom(itemId: string, customName: string, customPrice: Paise, unit?: string, priceUnit?: string, stockMultiplier = 1, qty = 1) {
+      addCustomLine(x, nav, itemId, customName, customPrice, (lineId, next) => { self.setQty(lineId, next); }, unit, priceUnit, stockMultiplier, qty);
     },
     /** Menu −: take one off the newest line of this item that is not being made yet. */
     removeItem(itemId: string) {
@@ -176,8 +181,9 @@ function lineActions(x: Ctx, nav: Nav) {
       if (q === line.qty) return;
       if (!editable(line) && q < line.qty) { toast('Already being made; change it from the kitchen'); return; }
       const left = available(line.itemId);
-      if (q > line.qty && left < q - line.qty) {
-        toast(left <= 0 ? `${line.name} is sold out` : `Only ${String(left)} more ${line.name} left`);
+      const requiredStock = primaryQuantity(q - line.qty, line.stockMultiplier ?? 1);
+      if (q > line.qty && left + 1e-10 < requiredStock) {
+        toast(left <= 0 ? `${line.name} is sold out` : `Not enough ${line.unit || 'stock'} for ${line.name}`);
         return;
       }
       log.dispatch('line.qty', { orderId: o.id, lineId, qty: q });
