@@ -54,7 +54,8 @@ export function CustomizeItemSheet({ itemId, onClose }: { itemId: string; onClos
   const secondaryUnit = item.secondaryUnit ?? '';
   const multiplier = useSecondary && secondaryUnit ? (item.secondaryMultiplier ?? 1) : 1;
   const saleUnit = useSecondary && secondaryUnit ? secondaryUnit : item.unit;
-  const maxQty = Math.max(0, Math.min(CONFIG.limits.qtyMax, Math.floor((available + 1e-10) / multiplier)));
+  const quantityLimit = useSecondary ? CONFIG.limits.measuredQtyMax : CONFIG.limits.qtyMax;
+  const maxQty = Math.max(0, Math.min(quantityLimit, Math.floor((available + 1e-10) / multiplier)));
   const selectedQty = Math.min(qty, maxQty);
   const lineTotal = convertedLineTotal(unitPrice, 0, selectedQty, multiplier);
   const toggleAddon = (key: string) => { setAddonKeys((current) => current.includes(key) ? current.filter((x) => x !== key) : [...current, key]); };
