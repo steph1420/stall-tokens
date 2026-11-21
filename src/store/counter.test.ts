@@ -173,6 +173,24 @@ describe('counter flow (F-06..F-18)', () => {
     expect(cur(s).lines[0]?.note.length).toBe(140);
   });
 
+  it('persists whole-order and individual item notes across a store reload', async () => {
+    const { s, ops } = await ready();
+    const ids = seedMenu(s);
+    s().counter.addItem(ids.samosa ?? '');
+    const orderId = s().ui.orderId;
+    const lineId = cur(s).lines[0]?.lineId;
+    if (!orderId || !lineId) throw new Error('Order line missing');
+    s().counter.setOrderNote('  Please serve together.  ');
+    s().counter.setLineNote(lineId, '  No onion.  ');
+    await flush();
+
+    const reloaded = makeTestStore({ ops });
+    await reloaded.store.getState().start();
+    const restored = reloaded.store.getState().folded.orders[orderId];
+    expect(restored?.note).toBe('Please serve together.');
+    expect(restored?.lines[0]?.note).toBe('No onion.');
+  });
+
   it('storage full is shown, the change is kept, and Retry saves it', async () => {
     const { s, ops } = await ready();
     await flush(); // the first-start device.set / setting.set ops (Q-SYNC-ALL) are saved first
