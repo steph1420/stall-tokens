@@ -33,7 +33,8 @@ describe('secondary-unit conversion math', () => {
   });
 
   it('rejects invalid quantities, multipliers and unsafe totals', () => {
-    expect(() => primaryQuantity(-1, 0.001)).toThrow(RangeError);
+    expect(primaryQuantity(-250, 0.001)).toBe(-0.25);
+    expect(() => convertedLineTotal(20000, 0, -1, 0.001)).toThrow(RangeError);
     expect(() => primaryQuantity(1.5, 0.001)).toThrow(RangeError);
     expect(() => primaryQuantity(1, 0)).toThrow(RangeError);
     expect(() => primaryQuantity(1, Number.NaN)).toThrow(RangeError);
