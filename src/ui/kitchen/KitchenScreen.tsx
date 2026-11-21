@@ -26,7 +26,6 @@ export function KitchenScreen() {
   const filter = useApp((st) => st.ui.kitchenFilter);
   const stallName = useApp((st) => st.folded.settings.stallName ?? 'Fair stall');
   const k = useApp((st) => st.kitchen);
-  const go = useApp((st) => st.go);
   const all = liveOrders(folded);
   // W-36: one rule for the station filter (stationOrders), so a station's finished orders drop off its filter.
   const list = filter === null ? kitchen.kitchenOrders(all) : kitchen.stationOrders(all, filter);
