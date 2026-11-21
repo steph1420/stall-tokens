@@ -39,7 +39,7 @@ Recovery branch: `backup/main-2026-11-21`
 | P1-05 | Verify primary units | Done | Primary-unit UI/store regression passed: default kg selection, captured kg rate and multiplier 1, ₹200 bill total, and one-for-one stock deduction. Included in CI #229 (57 files / 287 tests, production build passed). |
 | P1-06 | Verify whole-order notes | Done | Added a store-reload persistence test and a kitchen-ticket display test for the order note. CI #229 passed (57 files / 287 tests). |
 | P1-07 | Verify individual item notes | Done | Added a store-reload persistence test and a kitchen-ticket display test for line notes. CI #229 passed (57 files / 287 tests). |
-| P1-08 | Verify cart calculations | In progress | Added an end-to-end customizer/cart regression combining variant price, add-on price, item discount, 250 g conversion, order-level percentage discount, round-off, final total and stock deduction. CI #235 pending. |
+| P1-08 | Verify cart calculations | Done | End-to-end regression passed for variant + add-on pricing, item discount, 250 g conversion, order-level percentage discount, nearest-rupee discount rounding, round-off, final ₹53 total and 0.25 kg stock deduction. CI #235 passed: 57 files / 288 tests and production build. |
 | P1-09 | Verify order lifecycle | Pending | Create, send, ready, complete, cancel and refund |
 | P1-10 | Verify persistence after reload | Pending | Orders, settings and menu survive reload |
 
@@ -297,3 +297,11 @@ This roadmap governs the remaining work. Each stage is a set of reviewable code 
 - Then a 10% order discount rounds to ₹6 off under the existing nearest-rupee rule; a ₹0.50 round-off produces a ₹53.00 final total.
 - Sending the order deducts 0.25 kg from stock.
 - This test is intended to exercise the full chain from option selection to final cart total and stock. CI run #235 is pending; P1-08 remains In progress until it passes and the broader regression review is complete.
+
+
+### Cart calculation verification — CI run #235 (21 November 2026)
+- Workflow: [GitHub Actions run #235](https://github.com/steph1420/stall-tokens/actions/runs/44889921684)
+- Result: **success**.
+- Tests: **57 test files, 288 tests passed**; TypeScript, ESLint, Stylelint, dependency checks, contrast checks and production build passed.
+- The new end-to-end measured-cart scenario passed: selected variant ₹240/kg + add-on ₹20/kg, 10% item discount → ₹234/kg; 250 g → ₹58.50; 10% order discount → ₹6 off; ₹0.50 round-off → ₹53.00 total; send-to-kitchen reduces 1 kg stock to 0.75 kg.
+- P1-08 accepted. P1-09 order lifecycle and P1-10 reload/persistence are next verification slices.
