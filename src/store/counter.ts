@@ -153,11 +153,11 @@ function lineActions(x: Ctx, nav: Nav) {
     /** Tap a plain menu card: +1 at its current discounted base price. */
     addItem(itemId: string) {
       const it = st().folded.items[itemId];
-      if (it) addCustomLine(x, nav, itemId, it.name, itemUnitPrice(it.price, it.discountPct), (lineId, qty) => self.setQty(lineId, qty));
+      if (it) addCustomLine(x, nav, itemId, it.name, itemUnitPrice(it.price, it.discountPct), (lineId, qty) => { self.setQty(lineId, qty); });
     },
     /** Add a chosen variant/add-on combination; capture its selected unit price on the order line. */
     addItemCustom(itemId: string, customName: string, customPrice: Paise) {
-      addCustomLine(x, nav, itemId, customName, customPrice, (lineId, qty) => self.setQty(lineId, qty));
+      addCustomLine(x, nav, itemId, customName, customPrice, (lineId, qty) => { self.setQty(lineId, qty); });
     },
     /** Menu −: take one off the newest line of this item that is not being made yet. */
     removeItem(itemId: string) {
