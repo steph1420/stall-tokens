@@ -5,7 +5,7 @@ import type { Core, Log } from './core';
 import { isUpiId } from './rules/upi';
 import * as amounts from './rules/amounts';
 
-export type ItemDraft = Pick<ItemFields, 'name' | 'price' | 'swatch' | 'category' | 'stationId'> & { count: number | null; discountPct?: number; variants?: string; addons?: string };
+export type ItemDraft = Pick<ItemFields, 'name' | 'price' | 'swatch' | 'category' | 'stationId'> & { count: number | null; discountPct?: number; variants?: string; addons?: string; unit?: string; secondaryUnit?: string; secondaryMultiplier?: number };
 
 function validOptionJson(raw: string): boolean {
   if (!raw) return true;
@@ -32,7 +32,14 @@ function itemActions(core: Core, log: Log) {
       const name = d.name.trim().replace(/\s+/g, ' ').slice(0, CONFIG.limits.nameMaxChars);
       if (!name) return 'Give the item a name';
       if (!Number.isSafeInteger(d.price) || d.price < 0 || d.price > CONFIG.limits.moneyMaxPaise) return 'Check the price';
-      if (d.count !== null && (!Number.isSafeInteger(d.count) || d.count < 0)) return 'Stock must be 0 or more';
+      if (d.count !== null && (!Number.isFinite(d.count) || d.count < 0)) return 'Stock must be 0 or more';
+      const existing = itemId ? st().folded.items[itemId] : undefined;
+      const unit = (d.unit ?? existing?.unit ?? '').trim().slice(0, 20);
+      const secondaryUnit = (d.secondaryUnit ?? existing?.secondaryUnit ?? '').trim().slice(0, 20);
+      const secondaryMultiplier = d.secondaryMultiplier ?? existing?.secondaryMultiplier ?? 1;
+      if (!Number.isFinite(secondaryMultiplier) || secondaryMultiplier <= 0) return 'Secondary unit multiplier must be greater than 0';
+      if (secondaryUnit && (!unit || secondaryUnit === unit)) return 'Choose a different secondary unit and set a primary unit';
+      if (!secondaryUnit && secondaryMultiplier !== 1) return 'Add a secondary unit or use multiplier 1';
       const discountPct = d.discountPct ?? 0;
       if (!Number.isFinite(discountPct) || discountPct < 0 || discountPct > 100) return 'Discount must be between 0 and 100';
       const variants = d.variants ?? '';
@@ -44,7 +51,7 @@ function itemActions(core: Core, log: Log) {
       const order = itemId ? undefined : items.reduce((m, i) => Math.max(m, i.order), 0) + 1;
       const id = itemId ?? core.env.makeId();
       const swatch = Math.abs(Math.trunc(d.swatch)) % CONFIG.swatchCount;
-      log.dispatch('item.set', { itemId: id, fields: { name, price: d.price, swatch, category: d.category.trim(), stationId: d.stationId, count: d.count, discountPct, variants, addons,
+      log.dispatch('item.set', { itemId: id, fields: { name, price: d.price, swatch, category: d.category.trim(), stationId: d.stationId, count: d.count, unit, secondaryUnit, secondaryMultiplier, discountPct, variants, addons,
         ...(order === undefined ? {} : { order, lowAt: CONFIG.stock.lowAtDefault }) } });
       return null;
     },
@@ -54,8 +61,8 @@ function itemActions(core: Core, log: Log) {
       const it = st().folded.items[itemId];
       if (!it) return;
       if (it.count === null) { if (delta > 0) log.dispatch('item.set', { itemId, fields: { count: Math.trunc(delta), soldOut: false } }); return; }
-      if (it.count + delta < 0) return;
-      log.dispatch('stock.adjust', { itemId, delta: Math.trunc(delta), reason: 'panel' });
+      if (!Number.isFinite(delta) || it.count + delta < -1e-10) return;
+      log.dispatch('stock.adjust', { itemId, delta, reason: 'panel' });
       if (it.soldOut && it.count + delta > 0) log.dispatch('item.set', { itemId, fields: { soldOut: false } });
     },
     setSoldOut(itemId: string, soldOut: boolean) { log.dispatch('item.set', { itemId, fields: { soldOut } }); },
