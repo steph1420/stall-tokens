@@ -42,7 +42,7 @@ function Body({ o }: { o: Order }) {
       <div className={s.shRow}><span>Priority</span>
         <button type="button" role="switch" aria-checked={o.priority} aria-label="Priority" className={o.priority ? s.swOn : s.sw} onClick={() => { k.togglePriority(o.id); }}><i /></button></div>
       <ul className={s.shList}>
-        {o.lines.filter((l) => l.qty > 0).map((l) => <li key={l.lineId}><span>{`${String(l.qty)}× ${l.name}`}</span><Money p={bill.lineAmount(l)} /></li>)}
+        {o.lines.filter((l) => l.qty > 0).map((l) => <li key={l.lineId}><span>{kitchen.lineQuantityLabel(l) + ' ' + l.name}</span><Money p={bill.lineAmount(l)} /></li>)}
         <li className={s.shTot}><span>{`Total · ${paidText(o)}`}</span><Money p={due > 0 ? due : bill.total(o)} /></li>
       </ul>
       <div className={s.shRow}><span>Note</span><span className={s.shFaint}>{o.note || '—'}</span></div>
