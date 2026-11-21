@@ -14,7 +14,7 @@ function Others({ o, station }: { o: Order; station: string }) {
   return (
     <ul className={s.others} aria-label="Other stations">
       {others.map((l) => (
-        <li key={l.lineId} style={stationVar(l.stationId)}><span>{`${String(l.qty)}× ${l.name}`}</span><LineMark l={l} small /></li>
+        <li key={l.lineId} style={stationVar(l.stationId)}><span>{kitchen.lineQuantityLabel(l) + ' ' + l.name}</span><LineMark l={l} small /></li>
       ))}
     </ul>
   );
@@ -25,7 +25,7 @@ function ItemCard({ o, l }: { o: Order; l: Line }) {
   const cls = [s.icard, l.status === 'done?' ? s.icardDone : '', l.status === 'handed' || l.byCounter ? s.icardHanded : ''].join(' ');
   return (
     <div role="button" tabIndex={0} className={cls} style={stationVar(l.stationId)} {...press} aria-label={lineLabel(l)}>
-      <span className={s.iqty}>{l.qty}</span>
+      <span className={s.iqty}>{kitchen.lineQuantityLabel(l)}</span>
       <span className={s.iname}>{l.name}</span>
       {l.note ? <span className={s.inote}>{l.note}</span> : null}
       <span className={s.istate}><LineMark l={l} /></span>
@@ -49,7 +49,7 @@ function TicketRow({ o, l }: { o: Order; l: Line }) {
   const press = useLinePress(o, l);
   return (
     <li role="button" tabIndex={0} className={[s.trow, l.status === 'done?' ? s.trowDone : '', l.status === 'handed' ? s.icardHanded : ''].join(' ')} {...press} aria-label={lineLabel(l)}>
-      <span className={s.tqty}>{l.qty}×</span>
+      <span className={s.tqty}>{kitchen.lineQuantityLabel(l)}</span>
       <span className={s.tname}>{l.name}{l.note ? <small>{l.note}</small> : null}</span>
       <LineMark l={l} />
     </li>
