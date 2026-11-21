@@ -1,5 +1,5 @@
 // Every Counter sheet, one owner (ARCHITECTURE §5). F-07 item, F-08 stock, F-09 notes, F-10/F-11 adjust, F-15 payees, F-18 refund, F-37 more.
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
 import { CONFIG } from '../../config';
 import type { ItemDraft } from '../../store/catalog';
 import { ItemOptionsEditor, serializeOptions, useItemOptions, validateDraftOptions, type DraftOption } from './ItemOptionsEditor';
@@ -15,7 +15,7 @@ import { DraftsSheet, NewDaySheet, RefundLinesSheet, SlipSheet } from './P2Sheet
 
 const R = CONFIG.money.paisePerRupee;
 
-function useClose() { const o = useApp((st) => st.openSheet); return () => { o(null); }; }
+function useClose() { const openSheet = useApp((st) => st.openSheet); return useCallback(() => { openSheet(null); }, [openSheet]); }
 
 function Field({ id, label, children }: { id: string; label: string; children: React.ReactNode }) {
   return <div className={k.field}><label className={k.fieldLab} htmlFor={id}>{label}</label>{children}</div>;
