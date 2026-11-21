@@ -148,7 +148,7 @@ function addCustomLine(x: Ctx, nav: Nav, itemId: string, customName: string, cus
 }
 
 function lineActions(x: Ctx, nav: Nav) {
-  const { log, st, toast, current, available, editable } = x;
+  const { core, log, st, toast, current, available, editable } = x;
   const self = {
     /** Tap a plain menu card: +1 at its current discounted base price. */
     addItem(itemId: string) {
