@@ -87,6 +87,25 @@ function ItemDiscountField({ value, onChange }: { value: string; onChange: (valu
   </>;
 }
 
+
+function ItemPriceUnitsFields({ price, setPrice, unit, setUnit, secondaryUnit, setSecondaryUnit, secondaryMultiplier, setSecondaryMultiplier, discountPct, setDiscountPct, options, count, setCount }: {
+  price: string; setPrice: (value: string) => void; unit: string; setUnit: (value: string) => void;
+  secondaryUnit: string; setSecondaryUnit: (value: string) => void; secondaryMultiplier: string; setSecondaryMultiplier: (value: string) => void;
+  discountPct: string; setDiscountPct: (value: string) => void; options: ReturnType<typeof useItemOptions>;
+  count: string; setCount: (value: string) => void;
+}) {
+  return <>
+    <Field id="iprice" label={'Price (₹ per ' + (unit.trim() || 'item') + ')'}><input id="iprice" className={k.input} value={price} inputMode="decimal" onChange={(e) => { setPrice(e.target.value); }} /></Field>
+    <Field id="iunit" label="Primary unit (e.g. kg, litre, dozen)"><input id="iunit" className={k.input} value={unit} maxLength={20} onChange={(e) => { setUnit(e.target.value); }} /></Field>
+    <Field id="isecondary" label="Secondary sale unit (optional)"><input id="isecondary" className={k.input} value={secondaryUnit} maxLength={20} placeholder="e.g. g, ml, piece" onChange={(e) => { setSecondaryUnit(e.target.value); }} /></Field>
+    {secondaryUnit.trim() ? <Field id="imultiplier" label={'Primary units per 1 ' + secondaryUnit.trim()}><input id="imultiplier" className={k.input} value={secondaryMultiplier} inputMode="decimal" onChange={(e) => { setSecondaryMultiplier(e.target.value); }} /><div className={k.hint}>Example: 1 g = 0.001 kg, so enter 0.001.</div></Field> : null}
+    <ItemDiscountField value={discountPct} onChange={setDiscountPct} />
+    <ItemOptionsEditor variants={options.variants} onVariants={options.setVariants} addons={options.addons} onAddons={options.setAddons} />
+    {secondaryUnit.trim() ? <div className={k.hint}>Variant and add-on prices are rates per {unit.trim() || 'primary unit'}.</div> : null}
+    <Field id="icount" label={'Stock in ' + (unit.trim() || 'primary units') + ' (leave empty for no count)'}><input id="icount" className={k.input} value={count} inputMode="decimal" onChange={(e) => { setCount(e.target.value); }} /></Field>
+  </>;
+}
+
 function ItemSheet({ itemId }: { itemId: string | null }) {
   const close = useClose();
   const it = useApp((st) => (itemId ? st.folded.items[itemId] : undefined));
@@ -112,18 +131,12 @@ function ItemSheet({ itemId }: { itemId: string | null }) {
   return (
     <Sheet title={it ? 'Edit item' : 'Add item'} onClose={close}>
       <Field id="iname" label="Name"><input id="iname" className={k.input} value={name} maxLength={CONFIG.limits.nameMaxChars} onChange={(e) => { setName(e.target.value); }} autoComplete="off" /></Field>
-      <Field id="iprice" label={'Price (₹ per ' + (unit.trim() || 'item') + ')'}><input id="iprice" className={k.input} value={price} inputMode="decimal" onChange={(e) => { setPrice(e.target.value); }} /></Field>
-      <Field id="iunit" label="Primary unit (e.g. kg, litre, dozen)"><input id="iunit" className={k.input} value={unit} maxLength={20} onChange={(e) => { setUnit(e.target.value); }} /></Field>
-      <Field id="isecondary" label="Secondary sale unit (optional)"><input id="isecondary" className={k.input} value={secondaryUnit} maxLength={20} placeholder="e.g. g, ml, piece" onChange={(e) => { setSecondaryUnit(e.target.value); }} /></Field>
-      {secondaryUnit.trim() ? <Field id="imultiplier" label={'Primary units per 1 ' + secondaryUnit.trim()}><input id="imultiplier" className={k.input} value={secondaryMultiplier} inputMode="decimal" onChange={(e) => { setSecondaryMultiplier(e.target.value); }} /><div className={k.hint}>Example: 1 g = 0.001 kg, so enter 0.001.</div></Field> : null}
-      <ItemDiscountField value={discountPct} onChange={setDiscountPct} />
-      <ItemOptionsEditor variants={options.variants} onVariants={options.setVariants} addons={options.addons} onAddons={options.setAddons} />
-      {secondaryUnit.trim() ? <div className={k.hint}>Variant and add-on prices are rates per {unit.trim() || 'primary unit'}.</div> : null}
+      <ItemPriceUnitsFields price={price} setPrice={setPrice} unit={unit} setUnit={setUnit} secondaryUnit={secondaryUnit} setSecondaryUnit={setSecondaryUnit} secondaryMultiplier={secondaryMultiplier} setSecondaryMultiplier={setSecondaryMultiplier} discountPct={discountPct} setDiscountPct={setDiscountPct} options={options} count={count} setCount={setCount} />
       <Swatches value={swatch} onPick={setSwatch} />
       <CategoryPick value={category} cats={cats} onPick={(c) => { setCategory(c); if (!it) setStation(stationFor(c) ?? station); }} />
       <Field id="istation" label="Station"><select id="istation" className={k.input} value={station} onChange={(e) => { setStation(e.target.value); }}>
         {CONFIG.stations.map((x) => <option key={x} value={x}>{x}</option>)}</select></Field>
-      <Field id="icount" label={'Stock in ' + (unit.trim() || 'primary units') + ' (leave empty for no count)'}><input id="icount" className={k.input} value={count} inputMode="decimal" onChange={(e) => { setCount(e.target.value); }} /></Field>
+
       {err ? <div className={k.err} role="alert">{err}</div> : null}
       <div className={k.row}>
         {it ? <button type="button" className={k.danger} onClick={() => { cat.removeItem(it.id); close(); }}>Remove</button> : null}
