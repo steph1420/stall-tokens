@@ -8,7 +8,7 @@ import { checkPayment } from './rules/pay';
 import { isOpen, type Page } from './rules/status';
 import { istDate, rollover } from './rules/day';
 import { nextToken } from './rules/tokens';
-import type { PayDraft, UiState } from './ui';
+import type { PayDraft, PendingCustomItem, UiState } from './ui';
 import { holding } from './rules/handling';
 
 /** Q-DRAFT-SYNC device label: serving name + short device id, e.g. "Ravi · 3f9a". */
@@ -77,7 +77,7 @@ function navActions(x: Ctx) {
   const self = {
     /** + New order. W-07/W-14: an empty current draft is reused, so taps never burn tokens or strand drafts. */
     newOrder(): string {
-      if (askDay(x)) { ui({ sheet: { kind: 'newDay' }, pendingItem: '' }); return ''; }
+      if (askDay(x)) { ui({ sheet: { kind: 'newDay' }, pendingItem: null }); return ''; }
       const cur = current();
       if (cur && empty(cur) && cur.dayId === currentDay()) {
         core.set((s) => ({ ui: { ...s.ui, orderId: cur.id, counterTab: 'new', pages: { ...s.ui.pages, [cur.id]: 'menu' } } }));
@@ -118,10 +118,10 @@ function dayActions(x: Ctx) {
     },
     /** W-22 answer: "Start today" (tokens from #001) or "Keep yesterday's day" (not asked again today). Then carries on
      * with what was tapped: the menu item, or a new order. */
-    answerDay(start: boolean): string {
+    answerDay(start: boolean): string | PendingCustomItem | null {
       if (start) self.startToday(); else ui({ dayKept: istDate(core.env.now()) });
       const item = st().ui.pendingItem;
-      ui({ sheet: null, pendingItem: '' });
+      ui({ sheet: null, pendingItem: null });
       return item;
     },
   };
@@ -131,18 +131,28 @@ function dayActions(x: Ctx) {
 function lineActions(x: Ctx, nav: Nav) {
   const { core, log, st, toast, current, available, editable } = x;
   const self = {
-    /** Tap a menu card: +1 (F-06). */
+    /** Tap a plain menu card: +1 at its current discounted base price. */
     addItem(itemId: string) {
+      const it = st().folded.items[itemId];
+      if (it) self.addItemCustom(itemId, it.name, itemUnitPrice(it.price, it.discountPct));
+    },
+    /** Add a chosen variant/add-on combination; capture its selected unit price on the order line. */
+    addItemCustom(itemId: string, customName: string, customPrice: Paise) {
       if (x.locked()) return;
       const it = st().folded.items[itemId];
       if (!it || it.removed || it.supply) return;
       if (it.soldOut || available(itemId) < 1) { toast(`${it.name} is sold out`); return; }
+      const name = customName.trim().slice(0, CONFIG.limits.nameMaxChars) || it.name;
+      if (!Number.isSafeInteger(customPrice) || customPrice < 0 || customPrice > CONFIG.limits.moneyMaxPaise) { toast('Check the selected price'); return; }
       const o = current() ?? ensureOrder(x, nav);
-      if (!o) { if (st().ui.sheet?.kind === 'newDay') x.ui({ pendingItem: itemId }); return; }
-      const draft = [...o.lines].reverse().find((l) => l.itemId === itemId && l.status === 'draft');
+      if (!o) {
+        if (st().ui.sheet?.kind === 'newDay') x.ui({ pendingItem: { itemId, name, price: customPrice } });
+        return;
+      }
+      const draft = [...o.lines].reverse().find((l) => l.itemId === itemId && l.name === name && l.price === customPrice && l.status === 'draft');
       if (draft) { self.setQty(draft.lineId, draft.qty + 1); return; }
       if (o.lines.length >= CONFIG.limits.linesMax) { toast('This order is full; start another one'); return; }
-      log.dispatch('line.add', { orderId: o.id, lineId: core.env.makeId(), itemId, name: it.name, price: itemUnitPrice(it.price, it.discountPct), category: it.category, stationId: it.stationId, qty: 1 });
+      log.dispatch('line.add', { orderId: o.id, lineId: core.env.makeId(), itemId, name, price: customPrice, category: it.category, stationId: it.stationId, qty: 1 });
     },
     /** Menu −: take one off the newest line of this item that is not being made yet. */
     removeItem(itemId: string) {

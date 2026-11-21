@@ -16,6 +16,9 @@ export interface EntryBody {
   personId: string | null;
 }
 
+export interface ItemVariant { readonly id?: string; readonly name: string; readonly price: Paise }
+export interface ItemAddon { readonly id?: string; readonly name: string; readonly price: Paise }
+
 export interface ItemFields {
   name: string; price: Paise; swatch: number; category: string; stationId: string;
   count: number | null; unit: string; lowAt: number; soldOut: boolean; order: number; removed: boolean;
@@ -25,6 +28,10 @@ export interface ItemFields {
   categoryId: string;
   /** Item-level percentage discount, captured in each new order line's unit price. */
   discountPct: number;
+  /** JSON-encoded ItemVariant[]; empty string means no variants. */
+  variants: string;
+  /** JSON-encoded ItemAddon[]; empty string means no add-ons. */
+  addons: string;
 }
 /** Q-REFUND-1 A: one refunded line (qty of that line). */
 export interface RefundLine { lineId: string; qty: number }

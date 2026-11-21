@@ -49,7 +49,7 @@ export function NewDaySheet() {
   const c = useApp((x) => x.counter);
   const close = useClose();
   const last = useApp((x) => x.folded.days[x.folded.days.length - 1]?.label ?? '');
-  const go = (start: boolean) => { const item = c.answerDay(start); if (item) c.addItem(item); else c.newOrder(); };
+  const go = (start: boolean) => { const item = c.answerDay(start); if (typeof item === 'string') c.addItem(item); else if (item) c.addItemCustom(item.itemId, item.name, item.price); else c.newOrder(); };
   return (
     <Sheet title="A new day?" onClose={close}>
       <p className={s.lead}>{`Yesterday's day (${last}) is still open.`}</p>

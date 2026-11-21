@@ -2,6 +2,7 @@
 import { useState } from 'react';
 import { CONFIG } from '../../config';
 import type { ItemDraft } from '../../store/catalog';
+import { ItemOptionsEditor, serializeOptions, useItemOptions, validateDraftOptions, type DraftOption } from './ItemOptionsEditor';
 import { formatInr, parseRupees, type Order, type Paise } from '../../contract';
 import { amounts, bill, useApp } from '../../store';
 import { AmountsEdit } from '../kit/AmountsEdit';
@@ -9,6 +10,7 @@ import { Money } from '../kit/Money';
 import { Sheet } from '../kit/Sheet';
 import k from '../kit/kit.module.css';
 import { StallNav } from '../stall/StallNav';
+import { CustomizeItemSheet } from './CustomizeItemSheet';
 import { DraftsSheet, NewDaySheet, RefundLinesSheet, SlipSheet } from './P2Sheets';
 
 const R = CONFIG.money.paisePerRupee;
@@ -61,14 +63,18 @@ function CategoryPick({ value, cats, onPick }: { value: string; cats: readonly s
 function saveItemForm(
   saveItem: (itemId: string | null, draft: ItemDraft) => string | null,
   itemId: string | null,
-  fields: Omit<ItemDraft, 'price' | 'count' | 'discountPct'> & { priceText: string; countText: string; discountPctText: string },
+  fields: Omit<ItemDraft, 'price' | 'count' | 'discountPct' | 'variants' | 'addons'> & { priceText: string; countText: string; discountPctText: string; variants: readonly DraftOption[]; addons: readonly DraftOption[] },
 ): string | null {
   const price = parseRupees(fields.priceText);
   if (price === null) return 'Check the price';
   const count = fields.countText.trim() === '' ? null : Number(fields.countText);
   if (count !== null && !Number.isSafeInteger(count)) return 'Stock must be a whole number';
   const discountPct = fields.discountPctText.trim() === '' ? 0 : Number(fields.discountPctText);
-  return saveItem(itemId, { name: fields.name, price, swatch: fields.swatch, category: fields.category, stationId: fields.stationId, count, discountPct });
+  const variantError = validateDraftOptions(fields.variants, 'variant');
+  if (variantError) return variantError;
+  const addonError = validateDraftOptions(fields.addons, 'add-on');
+  if (addonError) return addonError;
+  return saveItem(itemId, { name: fields.name, price, swatch: fields.swatch, category: fields.category, stationId: fields.stationId, count, discountPct, variants: serializeOptions(fields.variants), addons: serializeOptions(fields.addons) });
 }
 
 function ItemDiscountField({ value, onChange }: { value: string; onChange: (value: string) => void }) {
@@ -84,6 +90,7 @@ function ItemSheet({ itemId }: { itemId: string | null }) {
   const cats = useApp((st) => [...new Set(Object.values(st.folded.items).filter((i) => !i.removed && !i.supply).map((i) => i.category).filter(Boolean))]);
   const cat = useApp((st) => st.catalog);
   const stationFor = useStationFor();
+  const options = useItemOptions(it);
   const [name, setName] = useState(it?.name ?? '');
   const [price, setPrice] = useState(it ? String(it.price / R) : '');
   const [swatch, setSwatch] = useState(it?.swatch ?? 0);
@@ -93,7 +100,7 @@ function ItemSheet({ itemId }: { itemId: string | null }) {
   const [discountPct, setDiscountPct] = useState(String(it?.discountPct ?? 0));
   const [err, setErr] = useState('');
   const save = () => {
-    const e = saveItemForm((id, draft) => cat.saveItem(id, draft), itemId, { name, priceText: price, swatch, category, stationId: station, countText: count, discountPctText: discountPct });
+    const e = saveItemForm((id, draft) => cat.saveItem(id, draft), itemId, { name, priceText: price, swatch, category, stationId: station, countText: count, discountPctText: discountPct, variants: options.variants, addons: options.addons });
     if (e) setErr(e); else close();
   };
   return (
@@ -101,6 +108,7 @@ function ItemSheet({ itemId }: { itemId: string | null }) {
       <Field id="iname" label="Name"><input id="iname" className={k.input} value={name} maxLength={CONFIG.limits.nameMaxChars} onChange={(e) => { setName(e.target.value); }} autoComplete="off" /></Field>
       <Field id="iprice" label="Price (₹)"><input id="iprice" className={k.input} value={price} inputMode="decimal" onChange={(e) => { setPrice(e.target.value); }} /></Field>
       <ItemDiscountField value={discountPct} onChange={setDiscountPct} />
+      <ItemOptionsEditor variants={options.variants} onVariants={options.setVariants} addons={options.addons} onAddons={options.setAddons} />
       <Swatches value={swatch} onPick={setSwatch} />
       <CategoryPick value={category} cats={cats} onPick={(c) => { setCategory(c); if (!it) setStation(stationFor(c) ?? station); }} />
       <Field id="istation" label="Station"><select id="istation" className={k.input} value={station} onChange={(e) => { setStation(e.target.value); }}>
@@ -366,11 +374,17 @@ function MoreSheet() {
   );
 }
 
+function CustomizeItemSheetRoute({ itemId }: { itemId: string }) {
+  const close = useClose();
+  return <CustomizeItemSheet itemId={itemId} onClose={close} />;
+}
+
 export function CounterSheets() {
   const sheet = useApp((st) => st.ui.sheet);
   if (!sheet) return null;
   switch (sheet.kind) {
     case 'item': return <ItemSheet key={sheet.itemId ?? 'new'} itemId={sheet.itemId} />;
+    case 'customizeItem': return <CustomizeItemSheetRoute key={sheet.itemId} itemId={sheet.itemId} />
     case 'stock': return <StockSheet itemId={sheet.itemId} />;
     case 'lineNote': return <NoteSheet key={sheet.lineId} lineId={sheet.lineId} />;
     case 'orderNote': return <NoteSheet lineId={null} />;

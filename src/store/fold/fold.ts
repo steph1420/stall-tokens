@@ -8,7 +8,7 @@ import { lww } from './lww';
 import { applyMoneyOp, MONEY_KINDS, type MoneyKind } from './money';
 
 const ITEM_DEFAULTS: ItemFields = {
-  name: '', price: 0, swatch: 0, category: '', stationId: '', count: null, unit: '', lowAt: 0, soldOut: false, order: 0, removed: false, supply: false, categoryId: '', discountPct: 0,
+  name: '', price: 0, swatch: 0, category: '', stationId: '', count: null, unit: '', lowAt: 0, soldOut: false, order: 0, removed: false, supply: false, categoryId: '', discountPct: 0, variants: '', addons: '',
 };
 
 function fieldOk(key: keyof ItemFields, value: unknown): boolean {

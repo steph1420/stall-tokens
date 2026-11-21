@@ -9,8 +9,10 @@ export type StallScreen = 'money' | 'settle' | 'stock' | 'history' | 'settings' 
 export type CounterTab = 'new' | 'open' | 'unpaid';
 /** Station page place (Q-BACK-1 A: Back returns to where it was opened from). */
 export interface StationPlace { readonly id: string; readonly from: 'kitchen' | 'launch'; readonly orderId: string | null }
+export interface PendingCustomItem { readonly itemId: string; readonly name: string; readonly price: Paise }
 export type Sheet =
   | { kind: 'item'; itemId: string | null }
+  | { kind: 'customizeItem'; itemId: string }
   | { kind: 'stock'; itemId: string }
   | { kind: 'lineNote'; lineId: string }
   | { kind: 'orderNote' }
@@ -69,9 +71,9 @@ export interface UiState {
   /** s127a: when the next automatic check runs (ms, this phone's clock). */
   readonly nextCheckAt: number;
   /** W-22: the menu item tapped when the new-day question opened (added after the answer); '' = none. */
-  readonly pendingItem: string;
+  readonly pendingItem: string | PendingCustomItem | null;
   /** W-22: IST date on which "Keep yesterday's day" was chosen ('' = not asked). */
   readonly dayKept: string;
 }
 
-export const initialUi: UiState = { screen: 'launch', orderId: null, pages: {}, sheet: null, toast: null, payUndo: null, kitchenFilter: null, station: null, counterTab: 'new', openId: null, stallFrom: 'launch', unlocked: false, orderView: null, waitFor: null, waitLabel: '', heldHere: [], nextCheckAt: 0, pendingItem: '', dayKept: '' };
+export const initialUi: UiState = { screen: 'launch', orderId: null, pages: {}, sheet: null, toast: null, payUndo: null, kitchenFilter: null, station: null, counterTab: 'new', openId: null, stallFrom: 'launch', unlocked: false, orderView: null, waitFor: null, waitLabel: '', heldHere: [], nextCheckAt: 0, pendingItem: null, dayKept: '' };

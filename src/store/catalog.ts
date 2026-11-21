@@ -5,7 +5,24 @@ import type { Core, Log } from './core';
 import { isUpiId } from './rules/upi';
 import * as amounts from './rules/amounts';
 
-export type ItemDraft = Pick<ItemFields, 'name' | 'price' | 'swatch' | 'category' | 'stationId'> & { count: number | null; discountPct?: number };
+export type ItemDraft = Pick<ItemFields, 'name' | 'price' | 'swatch' | 'category' | 'stationId'> & { count: number | null; discountPct?: number; variants?: string; addons?: string };
+
+function validOptionJson(raw: string): boolean {
+  if (!raw) return true;
+  try {
+    const parsed: unknown = JSON.parse(raw);
+    return Array.isArray(parsed) && parsed.length <= 20 && parsed.every((entry) => {
+      if (typeof entry !== 'object' || entry === null) return false;
+      const option = entry as Record<string, unknown>;
+      return typeof option.name === 'string' && option.name.trim().length > 0
+        && typeof option.price === 'number' && Number.isSafeInteger(option.price)
+        && option.price >= 0 && option.price <= CONFIG.limits.moneyMaxPaise
+        && (option.id === undefined || typeof option.id === 'string');
+    });
+  } catch {
+    return false;
+  }
+}
 
 function itemActions(core: Core, log: Log) {
   const st = () => core.get();
@@ -18,12 +35,16 @@ function itemActions(core: Core, log: Log) {
       if (d.count !== null && (!Number.isSafeInteger(d.count) || d.count < 0)) return 'Stock must be 0 or more';
       const discountPct = d.discountPct ?? 0;
       if (!Number.isFinite(discountPct) || discountPct < 0 || discountPct > 100) return 'Discount must be between 0 and 100';
+      const variants = d.variants ?? '';
+      const addons = d.addons ?? '';
+      if (!validOptionJson(variants)) return 'Check variant names and prices';
+      if (!validOptionJson(addons)) return 'Check add-on names and prices';
       const items = Object.values(st().folded.items).filter((i) => !i.removed);
       if (!itemId && items.length >= CONFIG.limits.itemsMax) return 'The menu is full';
       const order = itemId ? undefined : items.reduce((m, i) => Math.max(m, i.order), 0) + 1;
       const id = itemId ?? core.env.makeId();
       const swatch = Math.abs(Math.trunc(d.swatch)) % CONFIG.swatchCount;
-      log.dispatch('item.set', { itemId: id, fields: { name, price: d.price, swatch, category: d.category.trim(), stationId: d.stationId, count: d.count, discountPct,
+      log.dispatch('item.set', { itemId: id, fields: { name, price: d.price, swatch, category: d.category.trim(), stationId: d.stationId, count: d.count, discountPct, variants, addons,
         ...(order === undefined ? {} : { order, lowAt: CONFIG.stock.lowAtDefault }) } });
       return null;
     },

@@ -2,7 +2,7 @@
 // Tap = +1, press-and-hold = stock panel (F-08), pencil = item note. Stock badge from Q-STOCK-SET.
 import { useState } from 'react';
 import { CONFIG } from '../../../config';
-import { itemUnitPrice, type Item } from '../../../contract';
+import { itemUnitPrice, parseAddons, parseVariants, type Item } from '../../../contract';
 import { bill, useApp, type Folded } from '../../../store';
 import { Icon } from '../../kit/Icon';
 import { usePress } from '../../kit/hold';
@@ -25,12 +25,13 @@ function Card({ it }: { it: Item }) {
   const left = useApp((st) => (it.count === null ? Number.POSITIVE_INFINITY : st.counter.available(it.id)));
   const badge = stockLabel(it, left);
   const out = badge?.tone === 'out';
-  const press = usePress(() => { c.addItem(it.id); }, () => { openSheet({ kind: 'stock', itemId: it.id }); });
+  const hasCustom = parseVariants(it).length > 0 || parseAddons(it).length > 0;
+  const press = usePress(() => { if (hasCustom) openSheet({ kind: 'customizeItem', itemId: it.id }); else c.addItem(it.id); }, () => { openSheet({ kind: 'stock', itemId: it.id }); });
   const noteLine = [...mine].reverse().find((l) => l.status === 'draft') ?? mine[mine.length - 1];
   const cls = [s.card, qty > 0 ? s.isIn : '', out ? s.isOut : ''].join(' ');
   return (
     <article className={cls} style={{ '--item-accent': `var(--dl-stall-swatch-${String(it.swatch)})` } as React.CSSProperties}>
-      <div role="button" tabIndex={0} className={s.hit} aria-label={`${it.name}, add one${badge ? `, ${badge.text}` : ''}`} {...press} />
+      <div role="button" tabIndex={0} className={s.hit} aria-label={`${it.name}, add one${hasCustom ? ', choose options' : ''}${badge ? `, ${badge.text}` : ''}`} {...press} />
       <span className={s.accent} />
       <div className={s.name}>{it.name}</div>
       {badge && qty === 0 ? <div className={badge.tone === 'low' ? s.stockLow : badge.tone === 'out' ? s.stockOut : s.stock}>{badge.text}</div> : null}
@@ -41,13 +42,14 @@ function Card({ it }: { it: Item }) {
       <div className={s.priceWrap}>
         <Money p={itemUnitPrice(it.price, it.discountPct)} className={s.price} />
         {it.discountPct > 0 ? <><Money p={it.price} className={s.oldPrice} /><span className={s.discountTag}>{`${String(it.discountPct)}% off`}</span></> : null}
+        {hasCustom ? <span className={s.unitTag}>Options</span> : null}
       </div>
       {note ? <div className={s.snippet}>{note}</div> : null}
       {qty > 0 ? (
         <div className={s.qty}>
           <button type="button" className={s.qb} aria-label={`One less ${it.name}`} onClick={() => { c.removeItem(it.id); }}>−</button>
           <span className={s.qn} aria-live="polite">{qty}</span>
-          <button type="button" className={s.qb} aria-label={`One more ${it.name}`} onClick={() => { c.addItem(it.id); }}>+</button>
+          <button type="button" className={s.qb} aria-label={`One more ${it.name}`} onClick={() => { if (hasCustom) openSheet({ kind: 'customizeItem', itemId: it.id }); else c.addItem(it.id); }}>+</button>
         </div>
       ) : null}
     </article>
