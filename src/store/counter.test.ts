@@ -222,4 +222,23 @@ describe('counter flow (F-06..F-18)', () => {
     s().counter.addItem(id.tea ?? '');
     expect(isOpen(cur(s))).toBe(true);
   });
+  it('reserves fractional primary stock for measured-unit draft lines', async () => {
+    const { s } = await ready();
+    expect(s().catalog.saveItem(null, {
+      name: 'Saffron', price: 10000, swatch: 0, category: 'Spices', stationId: 'Kitchen', count: 0.25,
+      unit: 'kg', secondaryUnit: 'g', secondaryMultiplier: 0.001,
+    })).toBeNull();
+    const item = Object.values(s().folded.items).find((i) => i.name === 'Saffron');
+    if (!item) throw new Error('Saffron missing');
+    s().counter.newOrder();
+    s().counter.addItemCustom(item.id, item.name, item.price, 'g', 'kg', 0.001, 250);
+    const line = cur(s).lines[0];
+    expect(line).toMatchObject({ qty: 250, unit: 'g', priceUnit: 'kg', stockMultiplier: 0.001 });
+    expect(s().counter.available(item.id)).toBeCloseTo(0, 10);
+    s().counter.addItemCustom(item.id, item.name, item.price, 'g', 'kg', 0.001, 1);
+    expect(cur(s).lines[0]?.qty).toBe(250);
+    s().counter.setQty(line.lineId, 251);
+    expect(cur(s).lines[0]?.qty).toBe(250);
+  });
+
 });
