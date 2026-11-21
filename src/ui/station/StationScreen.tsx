@@ -6,6 +6,7 @@ import { CONFIG } from '../../config';
 import type { Order } from '../../contract';
 import { formatToken, kitchen, liveOrders, useApp, type Folded, type StationPlace } from '../../store';
 import { Icon } from '../kit/Icon';
+import { HomeButton } from '../kit/HomeButton';
 import { useWakeLock } from '../kit/wakeLock';
 import { KitchenCard } from '../kitchen/KitchenCard';
 import { StatusMark, type Mark } from '../kitchen/StatusMark';
@@ -115,7 +116,10 @@ function StationHeader({ station, count }: { station: string; count: number }) {
   return (
     <div className={k.hdr}>
       <div className={k.kicker}>{stallName}</div>
-      <button type="button" className={k.back} aria-label="Back" onClick={() => { a.closeStation(); }}><Icon name="chevLeft" /></button>
+      <div className={s.navBtns}>
+        <HomeButton className={k.back} />
+        <button type="button" className={k.back} aria-label="Back" onClick={() => { a.closeStation(); }}><Icon name="chevLeft" /></button>
+      </div>
       <h1 className={s.title}><Icon name={stationIcon(station)} className={s.titleIc} /><span>{`${station} · ${String(count)}`}</span></h1>
       <button type="button" className={k.open} onClick={() => { openSheet({ kind: 'overview' }); }}>Overview</button>
     </div>
