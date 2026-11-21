@@ -143,3 +143,98 @@ Recovery branch: `backup/main-2026-11-21`
 5. Do not merge into or deploy from production `main` without a separate release decision.
 6. Keep the production backup recoverable.
 7. A CI pass does not replace real Android, iPad, Bluetooth or USB testing.
+
+## Staged execution roadmap — implementation order
+
+This roadmap governs the remaining work. Each stage is a set of reviewable code batches, not a promise that a feature is complete merely because its UI exists. Update the relevant task rows with commit, CI and device evidence after each accepted batch.
+
+### Stage 0 — Protect the baseline and execute only on the feature branch
+**Status: Complete.**
+- Keep `main` and `backup/main-2026-11-21` untouched.
+- Work only on `feat/pos-hardening-2026-11-21`; no production deployment without explicit release approval.
+- Keep the existing baseline record, CI gate and tracker as the source of truth.
+- Existing evidence: P1-01 through P1-03 are accepted; the last recorded full gate passed 57 test files / 271 tests. This does not cover later code changes or physical device behaviour.
+
+### Stage 1 — Finish the core data, unit, stock and pricing model
+**Next implementation stage. P1-04 is the first coding task.**
+1. Extend the item contract with primary-unit and optional secondary-unit configuration. Define the multiplier as primary units represented by one secondary unit.
+2. Make old item records and old operations fold safely with primary-unit defaults. Do not invalidate historical orders.
+3. Snapshot the selected sale unit and conversion factor on each new order line. Historical lines must not change when an item is edited later.
+4. Use paise-safe arithmetic. Calculate converted line totals from the captured rate, quantity and conversion factor, with rounding at the defined line-total boundary; do not round a sub-paise unit price first and multiply it later.
+5. Support the fractional primary-stock quantities required by conversions (for example, 0.25 kg). Keep inventory precision bounded and validation consistent; do not allow negative stock through rounding drift.
+6. Apply converted quantities to every stock path: draft holds/availability, commit, quantity change, cancel, remove, refund/restock and refund void. Preserve replay determinism and idempotency.
+7. Add unit-aware item editing, menu display and billing quantity entry. Ordinary items must remain unchanged when no secondary unit is configured.
+8. Explicitly define how variants and add-ons are priced for converted items. Never silently scale a flat add-on as though it were a per-kg rate; ambiguous combinations must be clearly represented or prevented.
+9. Add contract, fold/replay, pricing, counter, UI and regression tests.
+
+**Stage 1 acceptance examples:** At ₹200/kg, 1 kg totals ₹200, 250 g totals ₹50 and 100 g totals ₹20; selling 250 g reduces 1.00 kg stock to 0.75 kg; cancellation/restock restores exactly 0.25 kg; insufficient stock is rejected; changing the menu unit/rate does not rewrite an older order; old op logs still fold.
+
+### Stage 2 — Complete everyday POS workflows
+- Finish and verify whole-order notes and individual line notes.
+- Verify cart arithmetic across discounts, variants, add-ons, quantities, rounding and payment splits.
+- Exercise the full order lifecycle: create, edit, send, ready, handover/complete, cancel, refund, restock and void/refund reversal.
+- Verify first-day/new-day behaviour, reload recovery and persistence of menu, orders, settings and captured line details.
+- Add failing regression tests for every defect found; do not close a task based only on a visual inspection.
+
+**Exit gate:** an automated order-to-payment-to-stock-to-refund scenario passes from a clean store and after reload/replay.
+
+### Stage 3 — Make the interface reliable on phone and tablet
+- Fix keyboard focus/visibility and input dismissal regressions; test numeric and text inputs in every relevant sheet.
+- Fix Settings clipping/overlap and verify Home navigation and app version on every main screen.
+- Complete phone portrait/landscape, tablet and iPad layouts, including text scaling and small viewport checks.
+- Add Playwright end-to-end specs. The dependency is present, but the current repository documentation says no E2E specs exist.
+- Test touch targets, scrolling, modal/sheet behaviour and navigation under realistic viewport sizes.
+
+**Exit gate:** automated browser/device-size tests pass, followed by hands-on checks on the actual Android phone and iPad. A simulated viewport alone is not device acceptance.
+
+### Stage 4 — Make Google Sheets sync turnkey and recoverable
+- Trace the deployed Apps Script bridge and the actual production endpoint before changing configuration.
+- Inject production sync configuration through deployment secrets/variables; never commit a live key into source.
+- Remove manual URL/key and token-range setup from the normal user path; retain an explicit developer/diagnostic route only if needed.
+- Verify first-install sync, two-device order visibility, menu changes, duplicate delivery, sequence-gap recovery, offline operation, reconnect and conflict review.
+- Add a tested backup export and restore path.
+
+**Exit gate:** clean installation joins without manual pairing; two devices exchange orders and menu edits; offline work converges after reconnect; no lost or duplicated orders in the test log.
+
+### Stage 5 — Printer compatibility spike (do this before building the full printer UI)
+- Identify the exact Cysno model/revision from its self-test page or label.
+- Determine its real Bluetooth mode/profile (BLE GATT or Bluetooth Classic/SPP), USB interface, ESC/POS compatibility and supported paper width.
+- Test connection and one raw ESC/POS test receipt on the actual Android device and iPad. Do not infer iPad compatibility from Android or from a printer name.
+- Choose the transport architecture only after these results: browser transport where supported, native platform bridge where required, or a supported network/print path. Record any device/transport limitation honestly.
+
+**Exit gate:** a written compatibility matrix for Android Bluetooth, Android USB, iPad Bluetooth/USB or an explicitly supported alternative. If the printer cannot connect directly to iPad, surface that as a hardware constraint before further investment.
+
+### Stage 6 — Build the independent printing foundation
+- Separate receipt rendering from transport. Keep the ESC/POS byte generator pure and unit-tested.
+- Implement only the transport(s) proven in Stage 5, with permission handling, discovery/selection, real connection state, reconnect, timeouts and a serialized print queue.
+- Make printer preferences persistent without treating a saved device name as a live connection.
+- Wire paper width to the actual renderer; verify 58 mm and 80 mm independently where supported.
+- Remove third-party printer-app branding/dependencies from the print path.
+- Physically test partial writes, retries, duplicate prevention, power loss, paper-out and repeated receipts.
+
+**Exit gate:** repeatable receipts print from each claimed platform and connection path, with no unwanted middleware text. Each claim needs device evidence.
+
+### Stage 7 — Build Receipt Template Studio on the stable printer engine
+- Define a versioned receipt-template document model and variable registry.
+- Implement add/remove/reorder blocks, field visibility, conditional blocks, alignment, emphasis, font sizing, spacing and dividers.
+- Add business/event identity, logo/image support and monochrome raster conversion.
+- Provide live 58 mm / 80 mm previews that match the renderer, plus welcome, order, kitchen, payment and thank-you presets.
+- Persist multiple templates and per-template print-field choices; test every variable against a rendered and physical receipt.
+
+**Dependency:** do not start template-builder polish before Stage 6's renderer and transport contracts are stable.
+
+### Stage 8 — Full acceptance, release candidate and controlled deployment
+- Run the complete CI gate and end-to-end suite on the final candidate.
+- Run Android phone, Android tablet, iPad, printer, multi-device sync, offline/recovery and data round-trip checks.
+- Complete a regression sweep of every tracker item and record the evidence in a verification log.
+- Fix release-blocking defects, prepare version/changelog/rollback notes and produce a release candidate.
+- Merge/deploy only after a separate explicit release approval. Verify the deployed build and data path after release.
+
+**Exit gate:** every required tracker row is Done or explicitly documented as a known limitation; no silent failures or untested hardware claims.
+
+## Execution discipline
+- Work in small vertical slices: contract/model → domain logic → UI → tests → CI → tracker update.
+- After every batch, record the changed files, commit, tests and remaining gaps. Mark Done only when its acceptance gate passes.
+- If a batch exposes a structural issue, stop and correct the model before layering more UI on top.
+- Do not import the separate mobile experiment repository wholesale; selectively port only reviewed ideas that fit this repository's contract and architecture.
+- Do not merge, tag as production, or deploy without explicit release approval.
