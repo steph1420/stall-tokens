@@ -76,7 +76,7 @@ describe('CustomizeItemSheet', () => {
     act(() => { s().counter.newOrder(); });
     render(<StoreProvider store={store}><CustomizeItemSheet itemId={spice.id} onClose={vi.fn()} /></StoreProvider>);
     fireEvent.click(screen.getByRole('radio', { name: 'g' }));
-    const quantity = screen.getByRole('spinbutton', { name: 'Quantity' }) as HTMLInputElement;
+    const quantity = screen.getByRole<HTMLInputElement>('spinbutton', { name: 'Quantity' });
     expect(quantity.max).toBe('250');
     fireEvent.change(quantity, { target: { value: '251' } });
     expect(quantity.value).toBe('250');
