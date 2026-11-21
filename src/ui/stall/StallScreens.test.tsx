@@ -44,6 +44,24 @@ describe('Stall screens (F-32 F-34)', () => {
     expect(screen.getByText('Data')).toBeTruthy();
   });
 
+  it('provides a direct Home button on Stall pages, Open the stall and the passcode gate', async () => {
+    const { store } = makeTestStore();
+    await store.getState().start();
+    const view = render(<StoreProvider store={store}><StallScreens screen="settings" /></StoreProvider>);
+    fireEvent.click(screen.getByRole('button', { name: 'Home' }));
+    expect(store.getState().ui.screen).toBe('launch');
+
+    view.rerender(<StoreProvider store={store}><StallScreens screen="float" /></StoreProvider>);
+    fireEvent.click(screen.getByRole('button', { name: 'Home' }));
+    expect(store.getState().ui.screen).toBe('launch');
+
+    store.getState().setPrefs({ passcodeOff: false });
+    view.rerender(<StoreProvider store={store}><StallScreens screen="settings" /></StoreProvider>);
+    expect(screen.getByText('Set a passcode')).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Home' }));
+    expect(store.getState().ui.screen).toBe('launch');
+  });
+
   it('Open the stall starts today and saves the float', async () => {
     const { store } = makeTestStore();
     await store.getState().start();
