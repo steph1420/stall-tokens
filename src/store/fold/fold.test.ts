@@ -127,12 +127,13 @@ describe('fold (F-02)', () => {
     expect(s.items.flour?.count).toBeCloseTo(0.75, 10);
     s = fold([...log, mk('line.qty', { orderId: 'o-unit-refund', lineId: 'l-unit-refund', qty: 100 })]);
     expect(s.items.flour?.count).toBeCloseTo(0.9, 10);
-    s = fold([...log,
+    const reducedQty = mk('line.qty', { orderId: 'o-unit-refund', lineId: 'l-unit-refund', qty: 100 });
+    s = fold([...log, reducedQty,
       mk('line.status', { orderId: 'o-unit-refund', lineId: 'l-unit-refund', status: 'preparing' }),
       mk('refund.add', { refundId: 'r-unit-refund', orderId: 'o-unit-refund', amount: 0, source: 'cash', lines: [{ lineId: 'l-unit-refund', qty: 100 }], restock: true }),
     ]);
     expect(s.items.flour?.count).toBe(1);
-    s = fold([...log,
+    s = fold([...log, reducedQty,
       mk('line.status', { orderId: 'o-unit-refund', lineId: 'l-unit-refund', status: 'preparing' }),
       mk('refund.add', { refundId: 'r-unit-refund', orderId: 'o-unit-refund', amount: 0, source: 'cash', lines: [{ lineId: 'l-unit-refund', qty: 100 }], restock: true }),
       mk('refund.void', { refundId: 'r-unit-refund', orderId: 'o-unit-refund', reason: 'Undo' }),
