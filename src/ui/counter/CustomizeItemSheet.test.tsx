@@ -48,8 +48,8 @@ describe('CustomizeItemSheet', () => {
     if (!rice) throw new Error('Rice missing');
     act(() => { s().counter.newOrder(); });
     render(<StoreProvider store={store}><CustomizeItemSheet itemId={rice.id} onClose={vi.fn()} /></StoreProvider>);
-    expect(screen.getByRole('radio', { name: 'kg' })).toHaveAttribute('aria-checked', 'true');
-    expect(screen.getByText('Rate per kg')).toBeInTheDocument();
+    expect(screen.getByRole('radio', { name: 'kg' }).getAttribute('aria-checked')).toBe('true');
+    expect(screen.getByText('Rate per kg')).toBeTruthy();
     fireEvent.click(screen.getByRole('button', { name: 'Add to order' }));
     const order = s().folded.orders[s().ui.orderId ?? ''];
     expect(order?.lines[0]).toMatchObject({ qty: 1, unit: 'kg', priceUnit: 'kg', stockMultiplier: 1, price: 20000 });
