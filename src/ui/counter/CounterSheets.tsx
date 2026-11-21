@@ -93,7 +93,7 @@ function ItemSheet({ itemId }: { itemId: string | null }) {
   const [discountPct, setDiscountPct] = useState(String(it?.discountPct ?? 0));
   const [err, setErr] = useState('');
   const save = () => {
-    const e = saveItemForm(cat.saveItem, itemId, { name, priceText: price, swatch, category, stationId: station, countText: count, discountPctText: discountPct });
+    const e = saveItemForm((id, draft) => cat.saveItem(id, draft), itemId, { name, priceText: price, swatch, category, stationId: station, countText: count, discountPctText: discountPct });
     if (e) setErr(e); else close();
   };
   return (
