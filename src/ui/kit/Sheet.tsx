@@ -25,7 +25,7 @@ function trapFocus(e: KeyboardEvent, el: HTMLElement) {
 export function Sheet({ title, onClose, children, label }: { title?: string; label?: string; onClose: () => void; children: ReactNode }) {
   const ref = useRef<HTMLDivElement>(null);
   const onCloseRef = useRef(onClose);
-  onCloseRef.current = onClose;
+  useEffect(() => { onCloseRef.current = onClose; }, [onClose]);
   // Keep the keyboard listener and drag handler stable. A changing parent callback
   // must never rerun initial focus and steal focus from a text field while typing.
   const close = useCallback(() => { onCloseRef.current(); }, []);
