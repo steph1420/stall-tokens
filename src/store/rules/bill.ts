@@ -1,7 +1,8 @@
 // F-10 F-11 F-18 Bill maths. All paise. Pure.
-import type { Discount, Order, Paise } from '../../contract';
+import { convertedLineTotal, type Discount, type Order, type Paise } from '../../contract';
 
-export const lineAmount = (l: { price: Paise; qty: number }): Paise => l.price * l.qty;
+export const lineAmount = (l: { price: Paise; qty: number; stockMultiplier?: number }): Paise =>
+  convertedLineTotal(l.price, 0, l.qty, l.stockMultiplier ?? 1);
 export const subtotal = (o: Pick<Order, 'lines'>): Paise => o.lines.reduce((t, l) => t + lineAmount(l), 0);
 
 /** Percent rounds to the nearest rupee; the discount never exceeds the subtotal (spec order rules). */
