@@ -24,7 +24,7 @@ The baseline setup commits change documentation only. No application source, dep
 3. **Printer controls are not yet in the active v2.1.0 Settings screen.** The inspected Settings screen imports General, Display, Menu, Kitchen, Money, Sync, Data, Account and About groups, but not the separate mobile repository's PrinterSettings component.
 4. **General settings still expose Token range.** The active branch's `GeneralSettings.tsx` still cycles token ranges; the mobile repository removed that control and added event name.
 5. **Receipt formatting is still a fixed token-slip implementation.** The active renderer is not a receipt-template studio and uses a fixed 32-column ESC/POS layout. No template-block editor or image/logo rendering path was found in the inspected slip modules.
-6. **Item-level variants, add-ons, secondary units and item discounts are not present in the active base's inspected order model/path.** These are mobile-repository changes that still need deliberate integration into this working branch.
+6. **Variants, add-ons and secondary units are not yet present in the active base's order model/path.** Item-level percentage discounts have since been implemented on the active working branch; see the completion record below.
 
 ## Defects / incomplete behavior to fix before importing mobile-repository work
 The following findings apply to the separate mobile repository snapshot at commit `e7179bc82726268b7d0571f4952af74e2f1e54ee`; they must not be described as defects already present in the v2.1.0 base unless reproduced there.
@@ -34,6 +34,18 @@ The following findings apply to the separate mobile repository snapshot at commi
 3. **Printer connection status can become stale after reload.** The mobile printer module stores a printer name in localStorage but keeps the Bluetooth device and writable characteristic in module memory. The Settings UI displays “Paired and ready” based on the saved name; the live connection is not restored from that name. Sources: [Bluetooth adapter](https://github.com/steph1420/stall-tokens-mobile/blob/e7179bc82726268b7d0571f4952af74e2f1e54ee/src/data/adapters/btPrinter.ts), [PrinterSettings](https://github.com/steph1420/stall-tokens-mobile/blob/e7179bc82726268b7d0571f4952af74e2f1e54ee/src/ui/stall/settings/PrinterSettings.tsx).
 4. **Paper-width preference is not wired through to ESC/POS rendering.** The mobile Settings UI toggles `printerPaper`, but the inspected renderer remains fixed at 32 columns and the print path does not pass the selected width. Thus the 80 mm option is not verified as functional. Sources: [PrinterSettings](https://github.com/steph1420/stall-tokens-mobile/blob/e7179bc82726268b7d0571f4952af74e2f1e54ee/src/ui/stall/settings/PrinterSettings.tsx), [ESC/POS renderer](https://github.com/steph1420/stall-tokens-mobile/blob/e7179bc82726268b7d0571f4952af74e2f1e54ee/src/store/rules/escpos.ts).
 5. **Hardware claims remain unverified.** Neither the repository's historical notes nor these source inspections establish a successful physical print on the user's Cysno 58 mm printer, USB printing, or direct printing from iPad.
+
+## Completed implementation after baseline
+
+### P1-01 — Item-level percentage discounts
+- Added an additive `discountPct` item field with legacy default 0 and 0–100 validation.
+- Added an Item discount (%) input to the Add/Edit Item sheet.
+- Menu cards show the discounted price and strike through the original price.
+- Ordinary menu taps now store the discounted unit price on the order line. Existing order lines retain their original captured price after menu edits.
+- Added pure price-calculation tests, counter/order-flow tests, and a UI interaction test that enters the discount in the item form and verifies the resulting order-line price.
+- Implementation commits: `c29d90d3492177660ecc3f260a081892118c3b09`, `1d8c5592033a45ade3dc43abeb7a5bae7ed27362`, `37ba99ce63fe0fa55f53a62fd10927b65cb3d3fe`, `bb29c630dbdde7d30144f3c0573bfa2a96fd5182`, `bf05c55175eeeed1ce9702ca018f433c1c78b857`.
+- GitHub Actions run #100 [44869565766](https://github.com/steph1420/stall-tokens/actions/runs/44869565766) passed all 16 CI steps: 52 test files, 263 tests, TypeScript, ESLint, Stylelint, dependency/contrast checks and production build.
+- This is automated verification. The discount input and order flow have a UI-level test; it is not a claim of physical-device acceptance.
 
 ## Verification state
 - GitHub branch comparison confirmed `backup/main-2026-11-21` is identical to production `main` at `e383374bd22516ca676fea775b1252858d6e3648`.
