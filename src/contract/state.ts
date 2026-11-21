@@ -6,6 +6,8 @@ export interface Item extends ItemFields { readonly id: string; readonly sold: n
 export interface Line {
   readonly lineId: string; readonly itemId: string; readonly name: string; readonly price: Paise;
   readonly category: string; readonly stationId: string; readonly qty: number; readonly note: string; readonly status: LineStatus;
+  /** Immutable sale-unit and conversion snapshots for historical billing and stock replay. */
+  readonly unit?: string; readonly priceUnit?: string; readonly stockMultiplier?: number;
   readonly committed: number; // qty already taken out of stock (sent or paid)
   readonly byCounter: boolean; // Q-COUNTER-FINISH: Ready because the Counter marked it, not the station
   readonly restocked: number; // Q-REFUND-1 A: qty of this line put back to stock by live (not voided) refunds
