@@ -35,7 +35,7 @@ Recovery branch: `backup/main-2026-11-21`
 | P1-01 | Implement item discounts; correct price on ordinary item taps | Done | Item editor + menu price + line-price snapshot; [CI #100](https://github.com/steph1420/stall-tokens/actions/runs/44869565766), 263 tests |
 | P1-02 | Verify variant pricing | Done | Variant replaces base price; UI and order-line tests pass; [CI run](https://github.com/steph1420/stall-tokens/actions/runs/44871032905) |
 | P1-03 | Verify add-on pricing | Done | Add-ons sum with selected variant/base price; UI and order-line tests pass; [CI run](https://github.com/steph1420/stall-tokens/actions/runs/44871032905) |
-| P1-04 | Implement secondary units and multiplier effects | Blocked | Need confirmation of multiplier direction/meaning before changing price and stock conversions |
+| P1-04 | Implement secondary units and multiplier effects | In progress | Semantics confirmed: multiplier = primary units represented by one secondary unit (e.g. 1 g = 0.001 kg). Must carry the selected sale unit and conversion snapshot through order lines; convert billing and stock consistently. Not yet implemented or accepted. |
 | P1-05 | Verify primary units | Pending | Display, billing and stock must agree |
 | P1-06 | Verify whole-order notes | Pending | Save, reload and display |
 | P1-07 | Verify individual item notes | Pending | Save, reload and display |
