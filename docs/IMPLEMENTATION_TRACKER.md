@@ -49,11 +49,11 @@ Recovery branch: `backup/main-2026-11-21`
 
 | ID | Task | Status |
 |---|---|---|
-| P2-01 | Android keyboard regression test | In progress | Found focus-stealing bug: Sheet's focus-on-open effect reran whenever an unstable onClose callback changed during controlled input updates. Stabilised the sheet close handler and counter sheet callback; added regression tests for callback changes and focus retention while typing. CI #258 passed: 57 files / 291 tests, typecheck, lint and production build. Physical Android keyboard test still required. |
+| P2-01 | Android keyboard regression test | In progress | Found focus-stealing bug: Sheet's focus-on-open effect reran whenever an unstable onClose callback changed during controlled input updates. Stabilised the sheet close handler and counter sheet callback; added regression tests for callback changes and focus retention while typing. CI #258 passed: 57 files / 291 tests, typecheck, lint and production build. CI #258 passed: 57 files / 291 tests, typecheck, lint and production build. Physical Android keyboard test still required. |
 | P2-02 | iPad keyboard regression test | Pending |
-| P2-03 | Fix Settings clipping and overlap | In progress | Hardened Settings rows and data cards against long values: flex children can shrink/wrap, long text can break safely, sections retain intrinsic height in the scroll container. Added a long stall/device label rendering regression. CI pending; real narrow-device visual check still required. |
-| P2-04 | Verify Home navigation on every main screen | In progress | Added a shared HomeButton and integrated it into Counter, Kitchen, Station, StallPage screens, Open the stall and the passcode gate. Added navigation regressions for Counter, Kitchen, Station and Stall/Float/passcode flows. CI pending. |
-| P2-05 | Verify app version display | Pending |
+| P2-03 | Fix Settings clipping and overlap | In progress | Hardened Settings rows and data cards against long values: flex children can shrink/wrap, long text can break safely, sections retain intrinsic height in the scroll container. Added a long stall/device label rendering regression. CI #270 passed: 57 files / 292 tests, including long Settings label regression; real narrow-device visual check still required. |
+| P2-04 | Verify Home navigation on every main screen | In progress | Shared HomeButton integrated into Counter, Kitchen, Station, StallPage screens, Open the stall and passcode gate. Navigation regressions passed in CI #301 (57 files / 296 tests). Physical phone/tablet layout acceptance remains. |
+| P2-05 | Verify app version display | Done | Existing Settings footer/About regression verifies version stamp, channel and What's New; passed in CI #301 (57 files / 296 tests). |
 | P2-06 | Phone portrait layout | Pending |
 | P2-07 | Phone landscape layout | Pending |
 | P2-08 | Tablet layout | Pending |
@@ -351,3 +351,13 @@ This roadmap governs the remaining work. Each stage is a set of reviewable code 
 - Integrated into the Counter shell, Kitchen screen, Station screen (alongside Back), shared StallPage screens, Open the stall, and the passcode gate. This covers the main Counter tabs and Stall pages through their shared shells.
 - Added automated navigation tests for Counter, Kitchen, Station, StallPage, Open the stall and the passcode gate.
 - P2-04 remains In progress until CI passes and navigation is checked on phone/tablet layouts.
+
+
+### Home navigation and Settings verification — CI run #301 (21 November 2026)
+- Workflow: [GitHub Actions run #301](https://github.com/steph1420/stall-tokens/actions/runs/44891514771)
+- Result: **success**.
+- Tests: **57 test files, 296 tests passed**; TypeScript, ESLint, Stylelint, dependency checks, contrast checks and production build passed.
+- New Home navigation tests passed for Counter, Kitchen, Station, StallPage, Open the stall and the passcode gate.
+- The Settings long-value CSS/DOM regression also passed earlier in CI #270 (57 files / 292 tests).
+- App version display and What's New footer regression passed as part of #301.
+- P2-04 remains In progress for actual phone/tablet navigation layout acceptance; P2-03 remains In progress for real narrow-device visual verification; P2-01/P2-02 remain open for physical Android/iPad keyboard testing.
