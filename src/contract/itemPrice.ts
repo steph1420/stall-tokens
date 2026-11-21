@@ -5,3 +5,28 @@ export function itemUnitPrice(price: Paise, discountPct: number): Paise {
   const pct = Number.isFinite(discountPct) ? Math.max(0, Math.min(100, discountPct)) : 0;
   return Math.max(0, price - Math.round((price * pct) / 100));
 }
+
+/**
+ * Convert an integer sale quantity into primary inventory units.
+ * Example: 250 g × 0.001 primary kg per gram = 0.25 kg.
+ * Six decimal places bound floating-point drift in repeated stock movements.
+ */
+export function primaryQuantity(quantity: number, multiplier: number): number {
+  if (!Number.isSafeInteger(quantity) || quantity < 0) throw new RangeError('Quantity must be a non-negative safe integer');
+  if (!Number.isFinite(multiplier) || multiplier <= 0) throw new RangeError('Unit multiplier must be a positive finite number');
+  return Math.round(quantity * multiplier * 1_000_000) / 1_000_000;
+}
+
+/**
+ * Calculate the complete line total from the discounted primary-unit rate.
+ * Do not round a converted per-sale-unit price first: sub-paise prices must
+ * accumulate across the line before rounding to the nearest paise.
+ */
+export function convertedLineTotal(price: Paise, discountPct: number, quantity: number, multiplier: number): Paise {
+  if (!Number.isSafeInteger(price) || price < 0) throw new RangeError('Price must be non-negative whole paise');
+  const primaryQty = primaryQuantity(quantity, multiplier);
+  const rate = itemUnitPrice(price, discountPct);
+  const total = Math.round(rate * primaryQty);
+  if (!Number.isSafeInteger(total)) throw new RangeError('Line total exceeds the safe money range');
+  return total;
+}
