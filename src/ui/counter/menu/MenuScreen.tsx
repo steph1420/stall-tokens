@@ -21,7 +21,7 @@ function Card({ it }: { it: Item }) {
   const openSheet = useApp((st) => st.openSheet);
   const lines = useApp((st) => (st.ui.orderId ? st.folded.orders[st.ui.orderId]?.lines : undefined)) ?? [];
   const mine = lines.filter((l) => l.itemId === it.id);
-  const qty = mine.reduce((n, l) => n + l.qty, 0);
+  const qty = mine.reduce((n, l) => n + (l.unit && l.priceUnit && l.unit !== l.priceUnit ? (l.qty > 0 ? 1 : 0) : l.qty), 0);
   const note = [...mine].reverse().find((l) => l.status === 'draft' && l.note)?.note ?? mine.find((l) => l.note)?.note ?? '';
   const left = useApp((st) => (it.count === null ? Number.POSITIVE_INFINITY : st.counter.available(it.id)));
   const badge = stockLabel(it, left);
@@ -67,7 +67,7 @@ function sortItems(items: Item[], sort: Sort, f: Folded): Item[] {
   if (sort === 'menu') return [...items].sort(byMenu);
   const day = f.days[f.days.length - 1]?.id;
   const sold = new Map<string, number>();
-  for (const o of Object.values(f.orders)) if (o.dayId === day && !o.deleted && !o.cancel) for (const l of o.lines) sold.set(l.itemId, (sold.get(l.itemId) ?? 0) + l.qty);
+  for (const o of Object.values(f.orders)) if (o.dayId === day && !o.deleted && !o.cancel) for (const l of o.lines) sold.set(l.itemId, (sold.get(l.itemId) ?? 0) + l.qty * (l.stockMultiplier ?? 1));
   return [...items].sort((a, b) => (sold.get(b.id) ?? 0) - (sold.get(a.id) ?? 0) || byMenu(a, b));
 }
 
