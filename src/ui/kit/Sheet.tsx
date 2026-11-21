@@ -1,7 +1,7 @@
 // Bottom sheet: one owner for every sheet's open/close (ARCHITECTURE §5).
 // Standing rule: draggable handle, closes on tap outside, closes with a downward flick.
 // Accessibility: focus trapped inside modal dialog (WCAG 2.1.2 / 2.4.3, FIND-UI-04).
-import { useEffect, useRef, type ReactNode } from 'react';
+import { useCallback, useEffect, useRef, type ReactNode } from 'react';
 import s from './kit.module.css';
 import { useSheetDrag } from './sheetDrag';
 
@@ -24,26 +24,28 @@ function trapFocus(e: KeyboardEvent, el: HTMLElement) {
 
 export function Sheet({ title, onClose, children, label }: { title?: string; label?: string; onClose: () => void; children: ReactNode }) {
   const ref = useRef<HTMLDivElement>(null);
+  const onCloseRef = useRef(onClose);
+  onCloseRef.current = onClose;
+  // Keep the keyboard listener and drag handler stable. A changing parent callback
+  // must never rerun initial focus and steal focus from a text field while typing.
+  const close = useCallback(() => { onCloseRef.current(); }, []);
   useEffect(() => {
     const el = ref.current;
     if (el) {
       // Prefer focusing the first non-text-input element (e.g. button) to prevent mobile virtual keyboard auto-open.
       // If no button exists, focus the dialog container itself.
       const nonInput = el.querySelector<HTMLElement>('button:not([disabled]), [href], [tabindex]:not([tabindex="-1"])');
-      if (nonInput) {
-        nonInput.focus();
-      } else {
-        el.focus();
-      }
+      if (nonInput) nonInput.focus();
+      else el.focus();
     }
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose();
+      if (e.key === 'Escape') close();
       else if (el) trapFocus(e, el);
     };
     window.addEventListener('keydown', onKey);
     return () => { window.removeEventListener('keydown', onKey); };
-  }, [onClose]);
-  const { y, handle } = useSheetDrag(onClose);
+  }, [close]);
+  const { y, handle } = useSheetDrag(close);
   return (
     <div className={s.sheetWrap}>
       <button type="button" className={s.scrim} aria-label="Close" onClick={onClose} />
