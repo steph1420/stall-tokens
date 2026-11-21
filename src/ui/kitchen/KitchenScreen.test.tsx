@@ -40,6 +40,13 @@ describe('Kitchen and Station screens', () => {
     act(() => { fireEvent.pointerDown(tea, { clientX: 5, clientY: 5 }); fireEvent.pointerUp(tea); });
     expect(screen.getAllByText('Preparing').length).toBeGreaterThan(0);
   });
+  it('provides a direct Home button from the Kitchen screen', async () => {
+    const store = await seeded();
+    render(<StoreProvider store={store}><KitchenScreen /></StoreProvider>);
+    fireEvent.click(screen.getByRole('button', { name: 'Home' }));
+    expect(store.getState().ui.screen).toBe('launch');
+  });
+
   it('shows the whole-order note and individual item notes on kitchen tickets', async () => {
     const store = await seeded();
     const order = Object.values(store.getState().folded.orders)[0];
