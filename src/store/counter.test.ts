@@ -243,4 +243,27 @@ describe('counter flow (F-06..F-18)', () => {
     expect(cur(s).lines[0]?.qty).toBe(250);
   });
 
+  it('calculates a measured-line refund and restores converted stock, including undo', async () => {
+    const { s } = await ready();
+    s().catalog.saveItem(null, {
+      name: 'Rice', price: 20000, swatch: 0, category: 'Food', stationId: 'Kitchen', count: 1,
+      unit: 'kg', secondaryUnit: 'g', secondaryMultiplier: 0.001,
+    });
+    const item = Object.values(s().folded.items).find((i) => i.name === 'Rice');
+    if (!item) throw new Error('Rice missing');
+    s().counter.addItemCustom(item.id, item.name, item.price, 'g', 'kg', 0.001, 250);
+    const order = cur(s);
+    const line = order.lines[0];
+    if (!line) throw new Error('Measured line missing');
+    expect(bill.subtotal(order)).toBe(5000);
+    expect(s().counter.sendToKitchen()).toBe(true);
+    expect(s().counter.pay({ cash: 5000, upi: 0, upiPayeeId: null, tip: 0, waived: 0, waivedBy: '', waivedNote: '', cashGiven: 5000, notes: { 5000: 1 } })).toBeNull();
+    const refund = s().refund.offer({ orderId: order.id, ask: { kind: 'lines', lines: [{ lineId: line.lineId, qty: 250 }] }, source: 'cash', reason: 'Measured item', restock: true });
+    if (!refund.ok) throw new Error(refund.reason);
+    expect(refund.amount).toBe(5000);
+    expect(s().folded.items[item.id]?.count).toBe(1);
+    expect(s().refund.undo(order.id, refund.refundId)).toBe(true);
+    expect(s().folded.items[item.id]?.count).toBeCloseTo(0.75, 10);
+  });
+
 });
