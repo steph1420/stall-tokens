@@ -12,7 +12,8 @@ import s from './Menu.module.css';
 function stockLabel(it: Item, left: number): { text: string; tone: 'quiet' | 'low' | 'out' } | null {
   if (it.soldOut || (it.count !== null && left <= 0)) return { text: 'Sold out', tone: 'out' };
   if (it.count === null) return null;
-  return { text: `${String(Math.max(0, left))} left`, tone: left <= it.lowAt ? 'low' : 'quiet' };
+  const shown = Number(Math.max(0, left).toFixed(6)).toLocaleString('en-IN', { maximumFractionDigits: 6 });
+  return { text: shown + (it.unit ? ' ' + it.unit : '') + ' left', tone: left <= it.lowAt ? 'low' : 'quiet' };
 }
 
 function Card({ it }: { it: Item }) {
