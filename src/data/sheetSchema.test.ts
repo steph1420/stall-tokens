@@ -14,7 +14,7 @@ interface Gs {
   CFG: { VERSION: string };
   infoCols_: (t: string) => [string, string, string][];
   project_: (op: unknown) => [string, Row] | null;
-  foldState_: (ops: unknown[]) => { conflicts: { winner: string; loser: string; rule: string }[] };
+  foldState_: (ops: unknown[]) => { items: Record<string, { count: number | null; sold: number }>; conflicts: { winner: string; loser: string; rule: string }[] };
   renderRows_: (s: unknown) => Record<string, Row[]>;
   rowToOps_: (tab: string, row: Row, edited: string[]) => { kind: string; body: Row }[];
   gaps_: (vv: VV, ops: unknown[]) => { writer: string; fromSeq: number }[];
@@ -107,7 +107,7 @@ describe('sheet bridge (F-35 F-48 Q-HARM-10)', () => {
     expect(gs.CFG.VERSION).toBe('2.1.1');
     expect(gs.infoCols_('menu').map((c) => c[0])).toContain('secondary_multiplier');
     expect(gs.infoCols_('stock_current').map((c) => c[0])).toContain('secondary_unit');
-    expect(gs.TABS.order_lines.map((c) => c[0])).toContain('stock_multiplier');
+    expect(gs.TABS.order_lines?.map((c) => c[0]) ?? []).toContain('stock_multiplier');
     expect(gs.INFO_ORDER).toContain('categories');
     expect(gs.INFO_ORDER).toContain('day_notes');
     const stationCols = gs.infoCols_('stations').map((c) => c[0]);
