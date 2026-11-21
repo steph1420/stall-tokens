@@ -118,6 +118,7 @@ function ItemSheet({ itemId }: { itemId: string | null }) {
       {secondaryUnit.trim() ? <Field id="imultiplier" label={'Primary units per 1 ' + secondaryUnit.trim()}><input id="imultiplier" className={k.input} value={secondaryMultiplier} inputMode="decimal" onChange={(e) => { setSecondaryMultiplier(e.target.value); }} /><div className={k.hint}>Example: 1 g = 0.001 kg, so enter 0.001.</div></Field> : null}
       <ItemDiscountField value={discountPct} onChange={setDiscountPct} />
       <ItemOptionsEditor variants={options.variants} onVariants={options.setVariants} addons={options.addons} onAddons={options.setAddons} />
+      {secondaryUnit.trim() ? <div className={k.hint}>Variant and add-on prices are rates per {unit.trim() || 'primary unit'}.</div> : null}
       <Swatches value={swatch} onPick={setSwatch} />
       <CategoryPick value={category} cats={cats} onPick={(c) => { setCategory(c); if (!it) setStation(stationFor(c) ?? station); }} />
       <Field id="istation" label="Station"><select id="istation" className={k.input} value={station} onChange={(e) => { setStation(e.target.value); }}>
@@ -147,7 +148,7 @@ function StockSheet({ itemId }: { itemId: string }) {
         <button type="button" className={k.quiet} onClick={() => { openSheet({ kind: 'item', itemId }); }}>Edit</button></div>
       <div className={k.stockRow}>
         <button type="button" className={k.stepBig} aria-label="One less" disabled={it.count === null || it.count <= 0} onClick={() => { cat.adjustStock(itemId, -1); }}>−</button>
-        <div className={k.stockNum} aria-live="polite">{it.count === null ? 'No count' : `${String(Math.max(0, left))} left`}</div>
+        <div className={k.stockNum} aria-live="polite">{it.count === null ? 'No count' : Number(Math.max(0, left).toFixed(6)).toLocaleString('en-IN', { maximumFractionDigits: 6 }) + (it.unit ? ' ' + it.unit : '') + ' left'}</div>
         <button type="button" className={k.stepBig} aria-label="One more" onClick={() => { cat.adjustStock(itemId, 1); }}>+</button>
       </div>
       {it.oversold ? <div className={k.err}>Sold more than counted. Check the stock.</div> : null}
