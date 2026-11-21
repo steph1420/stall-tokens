@@ -14,7 +14,7 @@ interface Gs {
   CFG: { VERSION: string };
   infoCols_: (t: string) => [string, string, string][];
   project_: (op: unknown) => [string, Row] | null;
-  foldState_: (ops: unknown[]) => { conflicts: { winner: string; loser: string; rule: string }[] };
+  foldState_: (ops: unknown[]) => { items: Record<string, { count: number | null; sold: number }>; conflicts: { winner: string; loser: string; rule: string }[] };
   renderRows_: (s: unknown) => Record<string, Row[]>;
   rowToOps_: (tab: string, row: Row, edited: string[]) => { kind: string; body: Row }[];
   gaps_: (vv: VV, ops: unknown[]) => { writer: string; fromSeq: number }[];
@@ -72,6 +72,24 @@ describe('sheet bridge (F-35 F-48 Q-HARM-10)', () => {
     expect(S.conflicts.map((c) => [c.winner, c.loser, c.rule])).toEqual(app.conflicts.map((c) => [c.winner, c.loser, c.rule]));
     expect(rows.partners?.[0]).toMatchObject({ person_id: 'p1', name: 'Ravi', share_pct: 50, active: true });
   });
+  it('mirrors measured-unit sales and fractional stock in the Apps Script fold', () => {
+    const ops: Op[] = [
+      op('units.1', 1, 1, {}, 'item.set', { itemId: 'flour', fields: { name: 'Flour', price: 20000, count: 1, unit: 'kg', secondaryUnit: 'g', secondaryMultiplier: 0.001, category: 'Food', stationId: 'Kitchen' } }),
+      op('units.1', 2, 2, { 'units.1': 1 }, 'day.start', { dayId: 'd-units', label: '2026-11-21' }),
+      op('units.1', 3, 3, { 'units.1': 2 }, 'order.create', { orderId: 'o-units', dayId: 'd-units', token: 1, servedBy: 'A' }),
+      op('units.1', 4, 4, { 'units.1': 3 }, 'line.add', { orderId: 'o-units', lineId: 'l-units', itemId: 'flour', name: 'Flour', price: 20000, category: 'Food', stationId: 'Kitchen', qty: 250, unit: 'g', priceUnit: 'kg', stockMultiplier: 0.001 }),
+      op('units.1', 5, 5, { 'units.1': 4 }, 'order.send', { orderId: 'o-units' }),
+    ];
+    const app = fold([...ops].sort(compareOps));
+    const bridge = gs.foldState_(ops);
+    const rows = gs.renderRows_(bridge);
+    expect([app.items.flour?.count, app.items.flour?.sold]).toEqual([0.75, 0.25]);
+    expect([bridge.items.flour?.count, bridge.items.flour?.sold]).toEqual([0.75, 0.25]);
+    expect(rows.stock_current?.[0]).toMatchObject({ on_hand: 0.75, unit: 'kg', secondary_unit: 'g', secondary_multiplier: 0.001 });
+    expect(rows.menu?.[0]).toMatchObject({ unit: 'kg', secondary_unit: 'g', secondary_multiplier: 0.001 });
+    const edit = gs.rowToOps_('stock_current', { item_id: 'flour', on_hand: 0.25, secondary_unit: 'g', secondary_multiplier: 0.001 }, ['on_hand', 'secondary_unit', 'secondary_multiplier']);
+    expect(edit).toEqual([{ kind: 'item.set', body: { itemId: 'flour', fields: { secondaryUnit: 'g', secondaryMultiplier: 0.001, count: 0.25 } } }]);
+  });
   it('hand edits become ops; read-only columns are ignored', () => {
     expect(gs.rowToOps_('menu', { item_id: 'tea', price_inr: 25.5, name: 'Tea' }, ['price_inr', 'updated_at'])).toEqual([{ kind: 'item.set', body: { itemId: 'tea', fields: { price: 2550 } } }]);
     expect(gs.rowToOps_('stock_current', { item_id: 'tea', sold: 9 }, ['sold'])).toEqual([]);
@@ -84,9 +102,12 @@ describe('sheet bridge (F-35 F-48 Q-HARM-10)', () => {
     expect(gs.gaps_({ 'aaaa.1': 2 }, [{ writer: 'aaaa.1', seq: 5 }, { writer: 'bbbb.1', seq: 1 }])).toEqual([{ writer: 'aaaa.1', fromSeq: 3 }]);
     expect(gs.gaps_({}, [{ writer: 'x.1', seq: 1 }, { writer: 'x.1', seq: 2 }])).toEqual([]);
   });
-  it('schema 3 (2.1.0) defines categories, day_notes, station icon/colour, digest and compaction plan', () => {
-    expect(gs.SCHEMA_VERSION).toBe(3);
-    expect(gs.CFG.VERSION).toBe('2.1.0');
+  it('schema 4 (2.1.1) defines measured units alongside the existing info tabs', () => {
+    expect(gs.SCHEMA_VERSION).toBe(4);
+    expect(gs.CFG.VERSION).toBe('2.1.1');
+    expect(gs.infoCols_('menu').map((c) => c[0])).toContain('secondary_multiplier');
+    expect(gs.infoCols_('stock_current').map((c) => c[0])).toContain('secondary_unit');
+    expect(gs.TABS.order_lines?.map((c) => c[0]) ?? []).toContain('stock_multiplier');
     expect(gs.INFO_ORDER).toContain('categories');
     expect(gs.INFO_ORDER).toContain('day_notes');
     const stationCols = gs.infoCols_('stations').map((c) => c[0]);

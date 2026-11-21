@@ -21,7 +21,7 @@
     0 0 1.125rem color-mix(in srgb, var(--item-accent) 16%, transparent);
 }
 .isOut { box-shadow: inset 0 0 0 var(--dl-stall-hair) var(--dl-color-hairline); }
-.isOut > .name, .isOut > .price, .isOut > .accent { opacity: 0.42; }
+.isOut > .name, .isOut .priceWrap, .isOut > .accent { opacity: 0.42; }
 .accent {
   position: absolute; left: 0; top: 0.875rem; bottom: 0.875rem; width: var(--dl-stall-accent-bar); border-radius: var(--dl-radius-pill);
   background: var(--item-accent); box-shadow: 0 0 0.625rem color-mix(in srgb, var(--item-accent) 50%, transparent); z-index: 2;
@@ -33,11 +33,16 @@
   /* W-17: at most 2 lines with an ellipsis, so the price row always shows; Billing shows the full name. */
   display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2; overflow: hidden;
 }
-.price {
+.priceWrap {
   grid-column: 1; grid-row: 2; margin-top: 0.25rem; position: relative; z-index: 1; pointer-events: none;
+  display: flex; align-items: baseline; flex-wrap: wrap; column-gap: 0.35rem; row-gap: 0.1rem;
+}
+.price {
   font-weight: var(--dl-stall-num-weight); font-size: 2rem; line-height: 1; letter-spacing: -0.04em;
   color: var(--dl-color-text-display); font-variant-numeric: tabular-nums; text-shadow: var(--dl-stall-glow); white-space: nowrap;
 }
+.oldPrice { font-size: 0.8rem; line-height: 1; color: var(--dl-color-text-faint); text-decoration: line-through; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.discountTag { font-size: 0.65rem; line-height: 1; font-weight: 700; color: var(--dl-stall-warn-text); white-space: nowrap; }
 .snippet {
   grid-column: 2; grid-row: 2; align-self: center; min-width: 0; position: relative; z-index: 1; pointer-events: none;
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 0.75rem; line-height: 1rem; font-style: italic; color: var(--dl-color-text-muted);

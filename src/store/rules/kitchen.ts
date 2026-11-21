@@ -8,6 +8,8 @@ export const TO_MAKE: ReadonlySet<LineStatus> = new Set<LineStatus>(['waiting', 
 const FINISHED: ReadonlySet<LineStatus> = new Set<LineStatus>(['done?', 'ready', 'handed']);
 
 const live = (o: Order): Line[] => o.lines.filter((l) => l.qty > 0 && l.status !== 'draft');
+/** Human-readable sale quantity; measured lines keep their selected unit visible in kitchen and order views. */
+export const lineQuantityLabel = (l: Pick<Line, 'qty' | 'unit'>): string => l.unit ? String(l.qty) + ' ' + l.unit : String(l.qty) + '×';
 export const linesAt = (o: Order, station: string | null): Line[] => live(o).filter((l) => station === null || l.stationId === station);
 
 /** Q-COMPLETE-2 A (W-06, W-27): a line is complete only when handed over. Ready never completes, whoever marked it. */
@@ -83,10 +85,13 @@ export function overview(orders: readonly Order[], station: string): Overview {
   for (const o of stationOrders(orders, station)) {
     for (const l of linesAt(o, station)) {
       split[l.status] = (split[l.status] ?? 0) + 1;
-      if (TO_MAKE.has(l.status)) items.set(l.name, (items.get(l.name) ?? 0) + l.qty);
+      if (TO_MAKE.has(l.status)) {
+        const key = l.name + '\u0000' + (l.unit ?? '');
+        items.set(key, (items.get(key) ?? 0) + l.qty);
+      }
     }
   }
-  return { items: [...items].map(([name, qty]) => ({ name, qty })).sort((a, b) => b.qty - a.qty || a.name.localeCompare(b.name)), split };
+  return { items: [...items].map(([key, qty]) => { const splitAt = key.indexOf('\u0000'); const name = key.slice(0, splitAt); const unit = key.slice(splitAt + 1); return { name: unit ? name + ' (' + unit + ')' : name, qty }; }).sort((a, b) => b.qty - a.qty || a.name.localeCompare(b.name)), split };
 }
 
 /** Counter side (Q-KITCHEN-3 A): what the Open orders row offers for this order. */
@@ -145,10 +150,13 @@ export function overviewAll(orders: readonly Order[]): Overview {
     for (const l of linesAt(o, null)) {
       if (lineComplete(l)) continue;
       split[l.status] = (split[l.status] ?? 0) + 1;
-      if (TO_MAKE.has(l.status)) items.set(l.name, (items.get(l.name) ?? 0) + l.qty);
+      if (TO_MAKE.has(l.status)) {
+        const key = l.name + '\u0000' + (l.unit ?? '');
+        items.set(key, (items.get(key) ?? 0) + l.qty);
+      }
     }
   }
-  return { items: [...items].map(([name, qty]) => ({ name, qty })).sort((a, b) => b.qty - a.qty || a.name.localeCompare(b.name)), split };
+  return { items: [...items].map(([key, qty]) => { const splitAt = key.indexOf('\u0000'); const name = key.slice(0, splitAt); const unit = key.slice(splitAt + 1); return { name: unit ? name + ' (' + unit + ')' : name, qty }; }).sort((a, b) => b.qty - a.qty || a.name.localeCompare(b.name)), split };
 }
 
 // ---- P3 Kitchen + Station (PK-2, PK-4, PK-10; W-25/26/38/42) ----

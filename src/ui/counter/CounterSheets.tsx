@@ -1,6 +1,8 @@
 // Every Counter sheet, one owner (ARCHITECTURE §5). F-07 item, F-08 stock, F-09 notes, F-10/F-11 adjust, F-15 payees, F-18 refund, F-37 more.
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
 import { CONFIG } from '../../config';
+import type { ItemDraft } from '../../store/catalog';
+import { ItemOptionsEditor, serializeOptions, useItemOptions, validateDraftOptions, type DraftOption } from './ItemOptionsEditor';
 import { formatInr, parseRupees, type Order, type Paise } from '../../contract';
 import { amounts, bill, useApp } from '../../store';
 import { AmountsEdit } from '../kit/AmountsEdit';
@@ -8,11 +10,12 @@ import { Money } from '../kit/Money';
 import { Sheet } from '../kit/Sheet';
 import k from '../kit/kit.module.css';
 import { StallNav } from '../stall/StallNav';
+import { CustomizeItemSheet } from './CustomizeItemSheet';
 import { DraftsSheet, NewDaySheet, RefundLinesSheet, SlipSheet } from './P2Sheets';
 
 const R = CONFIG.money.paisePerRupee;
 
-function useClose() { const o = useApp((st) => st.openSheet); return () => { o(null); }; }
+function useClose() { const openSheet = useApp((st) => st.openSheet); return useCallback(() => { openSheet(null); }, [openSheet]); }
 
 function Field({ id, label, children }: { id: string; label: string; children: React.ReactNode }) {
   return <div className={k.field}><label className={k.fieldLab} htmlFor={id}>{label}</label>{children}</div>;
@@ -57,36 +60,83 @@ function CategoryPick({ value, cats, onPick }: { value: string; cats: readonly s
   );
 }
 
+function saveItemForm(
+  saveItem: (itemId: string | null, draft: ItemDraft) => string | null,
+  itemId: string | null,
+  fields: Omit<ItemDraft, 'price' | 'count' | 'discountPct' | 'variants' | 'addons' | 'secondaryUnit' | 'secondaryMultiplier'> & { priceText: string; countText: string; discountPctText: string; secondaryUnitText: string; secondaryMultiplierText: string; variants: readonly DraftOption[]; addons: readonly DraftOption[] },
+): string | null {
+  const price = parseRupees(fields.priceText);
+  if (price === null) return 'Check the price';
+  const count = fields.countText.trim() === '' ? null : Number(fields.countText);
+  if (count !== null && (!Number.isFinite(count) || count < 0 || !/^\d+(\.\d{1,12})?$/.test(fields.countText.trim()))) return 'Stock must be 0 or more (up to 12 decimal places)';
+  const discountPct = fields.discountPctText.trim() === '' ? 0 : Number(fields.discountPctText);
+  const secondaryUnit = fields.secondaryUnitText.trim();
+  const secondaryMultiplier = secondaryUnit ? Number(fields.secondaryMultiplierText) : 1;
+  if (secondaryUnit && (!Number.isFinite(secondaryMultiplier) || secondaryMultiplier < 1e-9 || secondaryMultiplier > 1e9)) return 'Enter a multiplier between 0.000000001 and 1,000,000,000';
+  const variantError = validateDraftOptions(fields.variants, 'variant');
+  if (variantError) return variantError;
+  const addonError = validateDraftOptions(fields.addons, 'add-on');
+  if (addonError) return addonError;
+  return saveItem(itemId, { name: fields.name, price, swatch: fields.swatch, category: fields.category, stationId: fields.stationId, count, unit: fields.unit ?? '', secondaryUnit, secondaryMultiplier, discountPct, variants: serializeOptions(fields.variants), addons: serializeOptions(fields.addons) });
+}
+
+function ItemDiscountField({ value, onChange }: { value: string; onChange: (value: string) => void }) {
+  return <>
+    <Field id="idiscount" label="Item discount (%)"><input id="idiscount" className={k.input} value={value} inputMode="decimal" placeholder="0" onChange={(e) => { onChange(e.target.value); }} /></Field>
+    <div className={k.hint}>Applied automatically to each new order line.</div>
+  </>;
+}
+
+
+function ItemPriceUnitsFields({ price, setPrice, unit, setUnit, secondaryUnit, setSecondaryUnit, secondaryMultiplier, setSecondaryMultiplier, discountPct, setDiscountPct, options, count, setCount }: {
+  price: string; setPrice: (value: string) => void; unit: string; setUnit: (value: string) => void;
+  secondaryUnit: string; setSecondaryUnit: (value: string) => void; secondaryMultiplier: string; setSecondaryMultiplier: (value: string) => void;
+  discountPct: string; setDiscountPct: (value: string) => void; options: ReturnType<typeof useItemOptions>;
+  count: string; setCount: (value: string) => void;
+}) {
+  return <>
+    <Field id="iprice" label={'Price (₹ per ' + (unit.trim() || 'item') + ')'}><input id="iprice" className={k.input} value={price} inputMode="decimal" onChange={(e) => { setPrice(e.target.value); }} /></Field>
+    <Field id="iunit" label="Primary unit (e.g. kg, litre, dozen)"><input id="iunit" className={k.input} value={unit} maxLength={20} onChange={(e) => { setUnit(e.target.value); }} /></Field>
+    <Field id="isecondary" label="Secondary sale unit (optional)"><input id="isecondary" className={k.input} value={secondaryUnit} maxLength={20} placeholder="e.g. g, ml, piece" onChange={(e) => { setSecondaryUnit(e.target.value); }} /></Field>
+    {secondaryUnit.trim() ? <Field id="imultiplier" label={'Primary units per 1 ' + secondaryUnit.trim()}><input id="imultiplier" className={k.input} value={secondaryMultiplier} inputMode="decimal" onChange={(e) => { setSecondaryMultiplier(e.target.value); }} /><div className={k.hint}>Example: 1 g = 0.001 kg, so enter 0.001.</div></Field> : null}
+    <ItemDiscountField value={discountPct} onChange={setDiscountPct} />
+    <ItemOptionsEditor variants={options.variants} onVariants={options.setVariants} addons={options.addons} onAddons={options.setAddons} />
+    {secondaryUnit.trim() ? <div className={k.hint}>Variant and add-on prices are rates per {unit.trim() || 'primary unit'}.</div> : null}
+    <Field id="icount" label={'Stock in ' + (unit.trim() || 'primary units') + ' (leave empty for no count)'}><input id="icount" className={k.input} value={count} inputMode="decimal" onChange={(e) => { setCount(e.target.value); }} /></Field>
+  </>;
+}
+
 function ItemSheet({ itemId }: { itemId: string | null }) {
   const close = useClose();
   const it = useApp((st) => (itemId ? st.folded.items[itemId] : undefined));
   const cats = useApp((st) => [...new Set(Object.values(st.folded.items).filter((i) => !i.removed && !i.supply).map((i) => i.category).filter(Boolean))]);
   const cat = useApp((st) => st.catalog);
   const stationFor = useStationFor();
+  const options = useItemOptions(it);
   const [name, setName] = useState(it?.name ?? '');
   const [price, setPrice] = useState(it ? String(it.price / R) : '');
   const [swatch, setSwatch] = useState(it?.swatch ?? 0);
   const [category, setCategory] = useState(it?.category ?? cats[0] ?? '');
   const [station, setStation] = useState(it?.stationId ?? CONFIG.stations[0]);
-  const [count, setCount] = useState(it?.count == null ? '' : String(it.count));
+  const [unit, setUnit] = useState(it?.unit ?? '');
+  const [secondaryUnit, setSecondaryUnit] = useState(it?.secondaryUnit ?? '');
+  const [secondaryMultiplier, setSecondaryMultiplier] = useState(String(it?.secondaryMultiplier ?? 1));
+  const [count, setCount] = useState(it?.count == null ? '' : String(Number(it.count.toFixed(12))));
+  const [discountPct, setDiscountPct] = useState(String(it?.discountPct ?? 0));
   const [err, setErr] = useState('');
   const save = () => {
-    const p = parseRupees(price);
-    if (p === null) { setErr('Check the price'); return; }
-    const n = count.trim() === '' ? null : Number(count);
-    if (n !== null && !Number.isSafeInteger(n)) { setErr('Stock must be a whole number'); return; }
-    const e = cat.saveItem(itemId, { name, price: p, swatch, category, stationId: station, count: n });
+    const e = saveItemForm((id, draft) => cat.saveItem(id, draft), itemId, { name, priceText: price, swatch, category, stationId: station, unit, countText: count, discountPctText: discountPct, secondaryUnitText: secondaryUnit, secondaryMultiplierText: secondaryMultiplier, variants: options.variants, addons: options.addons });
     if (e) setErr(e); else close();
   };
   return (
     <Sheet title={it ? 'Edit item' : 'Add item'} onClose={close}>
       <Field id="iname" label="Name"><input id="iname" className={k.input} value={name} maxLength={CONFIG.limits.nameMaxChars} onChange={(e) => { setName(e.target.value); }} autoComplete="off" /></Field>
-      <Field id="iprice" label="Price (₹)"><input id="iprice" className={k.input} value={price} inputMode="decimal" onChange={(e) => { setPrice(e.target.value); }} /></Field>
+      <ItemPriceUnitsFields price={price} setPrice={setPrice} unit={unit} setUnit={setUnit} secondaryUnit={secondaryUnit} setSecondaryUnit={setSecondaryUnit} secondaryMultiplier={secondaryMultiplier} setSecondaryMultiplier={setSecondaryMultiplier} discountPct={discountPct} setDiscountPct={setDiscountPct} options={options} count={count} setCount={setCount} />
       <Swatches value={swatch} onPick={setSwatch} />
       <CategoryPick value={category} cats={cats} onPick={(c) => { setCategory(c); if (!it) setStation(stationFor(c) ?? station); }} />
       <Field id="istation" label="Station"><select id="istation" className={k.input} value={station} onChange={(e) => { setStation(e.target.value); }}>
         {CONFIG.stations.map((x) => <option key={x} value={x}>{x}</option>)}</select></Field>
-      <Field id="icount" label="Stock (leave empty for no count)"><input id="icount" className={k.input} value={count} inputMode="numeric" onChange={(e) => { setCount(e.target.value.replace(/[^\d]/g, '')); }} /></Field>
+
       {err ? <div className={k.err} role="alert">{err}</div> : null}
       <div className={k.row}>
         {it ? <button type="button" className={k.danger} onClick={() => { cat.removeItem(it.id); close(); }}>Remove</button> : null}
@@ -111,7 +161,7 @@ function StockSheet({ itemId }: { itemId: string }) {
         <button type="button" className={k.quiet} onClick={() => { openSheet({ kind: 'item', itemId }); }}>Edit</button></div>
       <div className={k.stockRow}>
         <button type="button" className={k.stepBig} aria-label="One less" disabled={it.count === null || it.count <= 0} onClick={() => { cat.adjustStock(itemId, -1); }}>−</button>
-        <div className={k.stockNum} aria-live="polite">{it.count === null ? 'No count' : `${String(Math.max(0, left))} left`}</div>
+        <div className={k.stockNum} aria-live="polite">{it.count === null ? 'No count' : Number(Math.max(0, left).toFixed(6)).toLocaleString('en-IN', { maximumFractionDigits: 6 }) + (it.unit ? ' ' + it.unit : '') + ' left'}</div>
         <button type="button" className={k.stepBig} aria-label="One more" onClick={() => { cat.adjustStock(itemId, 1); }}>+</button>
       </div>
       {it.oversold ? <div className={k.err}>Sold more than counted. Check the stock.</div> : null}
@@ -347,11 +397,17 @@ function MoreSheet() {
   );
 }
 
+function CustomizeItemSheetRoute({ itemId }: { itemId: string }) {
+  const close = useClose();
+  return <CustomizeItemSheet itemId={itemId} onClose={close} />;
+}
+
 export function CounterSheets() {
   const sheet = useApp((st) => st.ui.sheet);
   if (!sheet) return null;
   switch (sheet.kind) {
     case 'item': return <ItemSheet key={sheet.itemId ?? 'new'} itemId={sheet.itemId} />;
+    case 'customizeItem': return <CustomizeItemSheetRoute key={sheet.itemId} itemId={sheet.itemId} />
     case 'stock': return <StockSheet itemId={sheet.itemId} />;
     case 'lineNote': return <NoteSheet key={sheet.lineId} lineId={sheet.lineId} />;
     case 'orderNote': return <NoteSheet lineId={null} />;

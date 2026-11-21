@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { createFakeHub, createMemoryChannelHub } from '../data';
 import { DEMO_MENU } from '../mock/fixtures';
 import { bill, isOpen, orderStatus } from '.';
-import { makeTestStore } from './testkit';
+import { makeTestStore, memoryStorage } from './testkit';
 
 const flush = () => new Promise((r) => setTimeout(r, 0));
 
@@ -66,6 +66,26 @@ describe('counter flow (F-06..F-18)', () => {
     expect(cur(s).lines.some((l) => l.itemId === id.tea)).toBe(false);
   });
 
+  it('applies item discounts to ordinary menu taps and snapshots the discounted unit price', async () => {
+    const { s } = await ready();
+    expect(s().catalog.saveItem(null, { name: 'Discounted tea', price: 10000, swatch: 0, category: 'Drinks', stationId: 'Tea', count: null, discountPct: 15 })).toBeNull();
+    const item = Object.values(s().folded.items).find((i) => i.name === 'Discounted tea');
+    expect(item?.discountPct).toBe(15);
+    if (!item) throw new Error('discounted item missing');
+
+    s().counter.addItem(item.id);
+    expect(cur(s).lines[0]?.price).toBe(8500);
+    expect(bill.subtotal(cur(s))).toBe(8500);
+    const firstOrderId = cur(s).id;
+
+    const secondOrderId = s().counter.newOrder();
+    expect(s().catalog.saveItem(item.id, { name: item.name, price: item.price, swatch: item.swatch, category: item.category, stationId: item.stationId, count: item.count, discountPct: 20 })).toBeNull();
+    s().counter.addItem(item.id);
+    expect(s().folded.orders[firstOrderId]?.lines[0]?.price).toBe(8500);
+    expect(s().folded.orders[secondOrderId]?.lines[0]?.price).toBe(8000);
+    expect(s().catalog.saveItem(item.id, { name: item.name, price: item.price, swatch: item.swatch, category: item.category, stationId: item.stationId, count: item.count, discountPct: 101 })).toBe('Discount must be between 0 and 100');
+  });
+
   it('waived gap must match; tips are separate; over-collection is refused', async () => {
     const { s } = await ready();
     const id = seedMenu(s);
@@ -111,6 +131,31 @@ describe('counter flow (F-06..F-18)', () => {
     expect(lineId).not.toBe('');
   });
 
+  it('cancels a sent paid order, restores unstarted stock and refunds the recorded amount', async () => {
+    const { s } = await ready();
+    const ids = seedMenu(s);
+    const teaId = ids.tea ?? '';
+    const initialStock = s().folded.items[teaId]?.count;
+    s().counter.addItem(teaId);
+    const order = cur(s);
+    expect(s().counter.sendToKitchen()).toBe(true);
+    expect(s().folded.items[teaId]?.count).toBe((initialStock ?? 0) - 1);
+    expect(s().counter.pay({ cash: 2000, upi: 0, upiPayeeId: null, tip: 0, waived: 0, waivedBy: '', waivedNote: '', cashGiven: 2000, notes: {} })).toBeNull();
+
+    expect(s().counter.cancelOrder(order.id, 'Guest left')).toBe(true);
+    const cancelled = s().folded.orders[order.id];
+    expect(cancelled?.cancel).toMatchObject({ reason: 'Guest left', refundDue: 2000 });
+    expect(s().folded.items[teaId]?.count).toBe(initialStock);
+
+    const refund = s().refund.offer({ orderId: order.id, ask: { kind: 'whole' }, source: 'cash', reason: 'Cancelled order', restock: false });
+    expect(refund.ok).toBe(true);
+    if (!refund.ok) throw new Error(refund.reason);
+    expect(refund.amount).toBe(2000);
+    expect(s().folded.orders[order.id]?.refunds[0]?.amount).toBe(2000);
+    expect(s().refund.undo(order.id, refund.refundId)).toBe(true);
+    expect(s().folded.orders[order.id]?.refunds[0]?.voided).toBe('Undo');
+  });
+
   it('deleting an order releases its token for the next new order', async () => {
     const { s } = await ready();
     const id = seedMenu(s);
@@ -151,6 +196,30 @@ describe('counter flow (F-06..F-18)', () => {
     s().counter.addItem(it?.id ?? '');
     s().counter.setLineNote(cur(s).lines[0]?.lineId ?? '', `  ${'x'.repeat(500)}  `);
     expect(cur(s).lines[0]?.note.length).toBe(140);
+  });
+
+  it('persists menu, order, notes and device settings across a store reload', async () => {
+    const storage = memoryStorage();
+    const { s, ops } = await ready({ storage });
+    const ids = seedMenu(s);
+    s().setPrefs({ servingName: 'Counter A', rangeIndex: 1 });
+    s().counter.addItem(ids.samosa ?? '');
+    const orderId = s().ui.orderId;
+    const lineId = cur(s).lines[0]?.lineId;
+    if (!orderId || !lineId) throw new Error('Order line missing');
+    s().counter.setOrderNote('  Please serve together.  ');
+    s().counter.setLineNote(lineId, '  No onion.  ');
+    await flush();
+
+    const reloaded = makeTestStore({ ops, storage });
+    await reloaded.store.getState().start();
+    const state = reloaded.store.getState();
+    const restored = state.folded.orders[orderId];
+    expect(state.folded.items[ids.samosa ?? '']).toMatchObject({ name: 'Samosa', price: DEMO_MENU.find((m) => m.itemId === 'samosa')?.price });
+    expect(restored).toMatchObject({ token: 501, note: 'Please serve together.' });
+    expect(restored?.lines[0]).toMatchObject({ itemId: ids.samosa, qty: 1, note: 'No onion.' });
+    expect(state.prefs.servingName).toBe('Counter A');
+    expect(state.prefs.rangeIndex).toBe(1);
   });
 
   it('storage full is shown, the change is kept, and Retry saves it', async () => {
@@ -202,4 +271,48 @@ describe('counter flow (F-06..F-18)', () => {
     s().counter.addItem(id.tea ?? '');
     expect(isOpen(cur(s))).toBe(true);
   });
+  it('reserves fractional primary stock for measured-unit draft lines', async () => {
+    const { s } = await ready();
+    expect(s().catalog.saveItem(null, {
+      name: 'Saffron', price: 10000, swatch: 0, category: 'Spices', stationId: 'Kitchen', count: 0.25,
+      unit: 'kg', secondaryUnit: 'g', secondaryMultiplier: 0.001,
+    })).toBeNull();
+    const item = Object.values(s().folded.items).find((i) => i.name === 'Saffron');
+    if (!item) throw new Error('Saffron missing');
+    s().counter.newOrder();
+    s().counter.addItemCustom(item.id, item.name, item.price, 'g', 'kg', 0.001, 250);
+    const line = cur(s).lines[0];
+    expect(line).toBeDefined();
+    if (!line) throw new Error('Measured line missing');
+    expect(line).toMatchObject({ qty: 250, unit: 'g', priceUnit: 'kg', stockMultiplier: 0.001 });
+    expect(s().counter.available(item.id)).toBeCloseTo(0, 10);
+    s().counter.addItemCustom(item.id, item.name, item.price, 'g', 'kg', 0.001, 1);
+    expect(cur(s).lines[0]?.qty).toBe(250);
+    s().counter.setQty(line.lineId, 251);
+    expect(cur(s).lines[0]?.qty).toBe(250);
+  });
+
+  it('calculates a measured-line refund and restores converted stock, including undo', async () => {
+    const { s } = await ready();
+    s().catalog.saveItem(null, {
+      name: 'Rice', price: 20000, swatch: 0, category: 'Food', stationId: 'Kitchen', count: 1,
+      unit: 'kg', secondaryUnit: 'g', secondaryMultiplier: 0.001,
+    });
+    const item = Object.values(s().folded.items).find((i) => i.name === 'Rice');
+    if (!item) throw new Error('Rice missing');
+    s().counter.addItemCustom(item.id, item.name, item.price, 'g', 'kg', 0.001, 250);
+    const order = cur(s);
+    const line = order.lines[0];
+    if (!line) throw new Error('Measured line missing');
+    expect(bill.subtotal(order)).toBe(5000);
+    expect(s().counter.sendToKitchen()).toBe(true);
+    expect(s().counter.pay({ cash: 5000, upi: 0, upiPayeeId: null, tip: 0, waived: 0, waivedBy: '', waivedNote: '', cashGiven: 5000, notes: { 50: 1 } })).toBeNull();
+    const refund = s().refund.offer({ orderId: order.id, ask: { kind: 'lines', lines: [{ lineId: line.lineId, qty: 250 }] }, source: 'cash', reason: 'Measured item', restock: true });
+    if (!refund.ok) throw new Error(refund.reason);
+    expect(refund.amount).toBe(5000);
+    expect(s().folded.items[item.id]?.count).toBe(1);
+    expect(s().refund.undo(order.id, refund.refundId)).toBe(true);
+    expect(s().folded.items[item.id]?.count).toBeCloseTo(0.75, 10);
+  });
+
 });

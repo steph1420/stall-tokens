@@ -3,6 +3,7 @@
 import { CONFIG } from '../../config';
 import { bill, draftOrders, formatToken, isOpen, kitchen, liveOrders, orderStatus, unpaidOrders, useApp, type Page } from '../../store';
 import { Icon } from '../kit/Icon';
+import { HomeButton } from '../kit/HomeButton';
 import { useWide } from '../kit/useWide';
 import { BillingScreen } from './billing/BillingScreen';
 import { CounterSheets } from './CounterSheets';
@@ -146,6 +147,7 @@ export function CounterShell() {
       <header className={s.chrome}>
         <div className={s.hdrTop}>
           <div className={s.kicker}>{stallName}</div>
+          <HomeButton className={s.btnMore} />
           <button type="button" className={s.btnMore} aria-label="More" onClick={() => { openSheet({ kind: 'more' }); }}><Icon name="more" /></button>
         </div>
         <TopTabs />

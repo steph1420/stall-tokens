@@ -2,7 +2,7 @@
 // History and Unpaid: whole / lines / custom amount, reason chip, Cash or UPI, optional back to stock. Instant, then
 // a 5 s Undo, which writes `refund.void` (a compensating op, never a delete). A refund never cancels the order.
 import { CONFIG } from '../config';
-import { formatInr, type Order, type PaySource, type RefundLine } from '../contract';
+import { convertedLineTotal, formatInr, type Order, type PaySource, type RefundLine } from '../contract';
 import type { Core, Log } from './core';
 import { held } from './rules/bill';
 
@@ -34,7 +34,7 @@ export function planRefund(o: Order, ask: RefundAsk): { amount: number; lines: R
     const q = Math.trunc(pick.qty);
     if (!l || q <= 0) continue;
     if (q > l.qty - refundedQty(o, l.lineId)) return `${l.name}: that is more than was ordered`;
-    amount += l.price * q;
+    amount += convertedLineTotal(l.price, 0, q, l.stockMultiplier ?? 1);
     lines.push({ lineId: l.lineId, qty: q });
   }
   if (!lines.length) return 'Pick what to refund';

@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useApp } from '../../store';
 import { Icon } from '../kit/Icon';
+import { HomeButton } from '../kit/HomeButton';
 import s from './Stall.module.css';
 
 const DIGITS = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '', '0', 'del'] as const;
@@ -28,7 +29,12 @@ export function PasscodeGate() {
   };
   return (
     <div className={s.page}>
-      <header className={s.floatTop}><button type="button" className={s.back} aria-label="Back" onClick={a.closeStall}><Icon name="chevLeft" /></button></header>
+      <header className={s.floatTop}>
+        <div className={s.floatActions}>
+          <button type="button" className={s.back} aria-label="Back" onClick={a.closeStall}><Icon name="chevLeft" /></button>
+          <HomeButton className={s.back} />
+        </div>
+      </header>
       <main className={s.gate}>
         <h1 className={s.floatH}>{setting ? (first === null ? 'Set a passcode' : 'Type it again') : 'Enter passcode'}</h1>
         <p className={s.floatSub}>{setting ? '4 digits · keeps money screens on this phone to you' : 'Money, Settle up and Settings'}</p>

@@ -1,6 +1,6 @@
 // Counter actions (F-05..F-18). Every rule about what a tap may do lives here; screens only call these.
 import { CONFIG } from '../config';
-import type { Discount, Line, Order, Paise, PaySource, PaymentBody } from '../contract';
+import { convertedLineTotal, itemUnitPrice, primaryQuantity, type Discount, type Line, type Order, type Paise, type PaySource, type PaymentBody } from '../contract';
 import type { Core, Log } from './core';
 import { liveOrders } from './fold/fold';
 import { due, held, preRound, subtotal, total } from './rules/bill';
@@ -8,7 +8,7 @@ import { checkPayment } from './rules/pay';
 import { isOpen, type Page } from './rules/status';
 import { istDate, rollover } from './rules/day';
 import { nextToken } from './rules/tokens';
-import type { PayDraft, UiState } from './ui';
+import type { PayDraft, PendingCustomItem, UiState } from './ui';
 import { holding } from './rules/handling';
 
 /** Q-DRAFT-SYNC device label: serving name + short device id, e.g. "Ravi · 3f9a". */
@@ -45,8 +45,9 @@ function makeCtx(core: Core, log: Log) {
     if (!it || it.removed || it.soldOut || it.supply) return 0;
     if (it.count === null) return Number.POSITIVE_INFINITY;
     const drafts = liveOrders(st().folded).filter((o) => !o.cancel)
-      .reduce((n, o) => n + o.lines.filter((l) => l.itemId === itemId).reduce((m, l) => m + Math.max(0, l.qty - l.committed), 0), 0);
-    return it.count - drafts;
+      .reduce((n, o) => n + o.lines.filter((l) => l.itemId === itemId).reduce((m, l) => m + primaryQuantity(Math.max(0, l.qty - l.committed), l.stockMultiplier ?? 1), 0), 0);
+    const left = it.count - drafts;
+    return left <= 1e-10 ? 0 : left;
   };
   const editable = (l: Line) => l.status === 'draft' || l.status === 'waiting';
   /** s127: true (with a calm toast) when another phone has the current order; nothing changes here until Take over. */
@@ -77,7 +78,7 @@ function navActions(x: Ctx) {
   const self = {
     /** + New order. W-07/W-14: an empty current draft is reused, so taps never burn tokens or strand drafts. */
     newOrder(): string {
-      if (askDay(x)) { ui({ sheet: { kind: 'newDay' }, pendingItem: '' }); return ''; }
+      if (askDay(x)) { ui({ sheet: { kind: 'newDay' }, pendingItem: null }); return ''; }
       const cur = current();
       if (cur && empty(cur) && cur.dayId === currentDay()) {
         core.set((s) => ({ ui: { ...s.ui, orderId: cur.id, counterTab: 'new', pages: { ...s.ui.pages, [cur.id]: 'menu' } } }));
@@ -118,31 +119,56 @@ function dayActions(x: Ctx) {
     },
     /** W-22 answer: "Start today" (tokens from #001) or "Keep yesterday's day" (not asked again today). Then carries on
      * with what was tapped: the menu item, or a new order. */
-    answerDay(start: boolean): string {
+    answerDay(start: boolean): string | PendingCustomItem | null {
       if (start) self.startToday(); else ui({ dayKept: istDate(core.env.now()) });
       const item = st().ui.pendingItem;
-      ui({ sheet: null, pendingItem: '' });
+      ui({ sheet: null, pendingItem: null });
       return item;
     },
   };
   return self;
 }
 
+function addCustomLine(x: Ctx, nav: Nav, itemId: string, customName: string, customPrice: Paise, setQty: (lineId: string, qty: number) => void, unit?: string, priceUnit?: string, stockMultiplier = 1, qty = 1): void {
+  const { core, log, st, toast, current, available } = x;
+  if (x.locked()) return;
+  const it = st().folded.items[itemId];
+  if (!it || it.removed || it.supply) return;
+  const measured = Boolean(unit && priceUnit && unit !== priceUnit);
+  const maxQty = measured ? CONFIG.limits.measuredQtyMax : CONFIG.limits.qtyMax;
+  if (!Number.isSafeInteger(qty) || qty < 1 || qty > maxQty || !Number.isFinite(stockMultiplier) || stockMultiplier <= 0) { toast('Check the quantity and unit'); return; }
+  const requiredStock = primaryQuantity(qty, stockMultiplier);
+  try { convertedLineTotal(customPrice, 0, qty, stockMultiplier); } catch { toast('The selected quantity is too large'); return; }
+  const left = available(itemId);
+  if (it.soldOut || left <= 1e-10) { toast(`${it.name} is sold out`); return; }
+  if (left + 1e-10 < requiredStock) { toast(`Not enough ${unit ?? it.unit} for ${it.name}`); return; }
+  const name = customName.trim().slice(0, CONFIG.limits.nameMaxChars) || it.name;
+  if (!Number.isSafeInteger(customPrice) || customPrice < 0 || customPrice > CONFIG.limits.moneyMaxPaise) { toast('Check the selected price'); return; }
+  const order = current() ?? ensureOrder(x, nav);
+  if (!order) {
+    if (st().ui.sheet?.kind === 'newDay') x.ui({ pendingItem: { itemId, name, price: customPrice, unit: unit ?? it.unit, priceUnit: priceUnit ?? it.unit, stockMultiplier, qty } });
+    return;
+  }
+  const saleUnit = unit ?? it.unit;
+  const rateUnit = priceUnit ?? it.unit;
+  const draft = [...order.lines].reverse().find((line) => line.itemId === itemId && line.name === name && line.price === customPrice
+    && line.unit === saleUnit && line.priceUnit === rateUnit && (line.stockMultiplier ?? 1) === stockMultiplier && line.status === 'draft');
+  if (draft) { setQty(draft.lineId, draft.qty + qty); return; }
+  if (order.lines.length >= CONFIG.limits.linesMax) { toast('This order is full; start another one'); return; }
+  log.dispatch('line.add', { orderId: order.id, lineId: core.env.makeId(), itemId, name, price: customPrice, category: it.category, stationId: it.stationId, qty, unit: saleUnit, priceUnit: rateUnit, stockMultiplier });
+}
+
 function lineActions(x: Ctx, nav: Nav) {
-  const { core, log, st, toast, current, available, editable } = x;
+  const { log, st, toast, current, available, editable } = x;
   const self = {
-    /** Tap a menu card: +1 (F-06). */
+    /** Tap a plain menu card: +1 at its current discounted base price. */
     addItem(itemId: string) {
-      if (x.locked()) return;
       const it = st().folded.items[itemId];
-      if (!it || it.removed || it.supply) return;
-      if (it.soldOut || available(itemId) < 1) { toast(`${it.name} is sold out`); return; }
-      const o = current() ?? ensureOrder(x, nav);
-      if (!o) { if (st().ui.sheet?.kind === 'newDay') x.ui({ pendingItem: itemId }); return; }
-      const draft = [...o.lines].reverse().find((l) => l.itemId === itemId && l.status === 'draft');
-      if (draft) { self.setQty(draft.lineId, draft.qty + 1); return; }
-      if (o.lines.length >= CONFIG.limits.linesMax) { toast('This order is full; start another one'); return; }
-      log.dispatch('line.add', { orderId: o.id, lineId: core.env.makeId(), itemId, name: it.name, price: it.price, category: it.category, stationId: it.stationId, qty: 1 });
+      if (it) addCustomLine(x, nav, itemId, it.name, itemUnitPrice(it.price, it.discountPct), (lineId, qty) => { self.setQty(lineId, qty); }, it.unit, it.unit, 1, 1);
+    },
+    /** Add a chosen variant/add-on combination; capture its selected unit price on the order line. */
+    addItemCustom(itemId: string, customName: string, customPrice: Paise, unit?: string, priceUnit?: string, stockMultiplier = 1, qty = 1) {
+      addCustomLine(x, nav, itemId, customName, customPrice, (lineId, next) => { self.setQty(lineId, next); }, unit, priceUnit, stockMultiplier, qty);
     },
     /** Menu −: take one off the newest line of this item that is not being made yet. */
     removeItem(itemId: string) {
@@ -150,19 +176,23 @@ function lineActions(x: Ctx, nav: Nav) {
       const o = current();
       const line = o && [...o.lines].reverse().find((l) => l.itemId === itemId && editable(l));
       if (!line) { if (o?.lines.some((l) => l.itemId === itemId)) toast('Already being made; change it from the kitchen'); return; }
-      self.setQty(line.lineId, line.qty - 1);
+      self.setQty(line.lineId, line.unit && line.priceUnit && line.unit !== line.priceUnit ? 0 : line.qty - 1);
     },
     setQty(lineId: string, qty: number) {
       if (x.locked()) return;
       const o = current();
       const line = o?.lines.find((l) => l.lineId === lineId);
       if (!o || !line) return;
-      const q = Math.max(0, Math.min(CONFIG.limits.qtyMax, Math.trunc(qty)));
+      if (!Number.isFinite(qty)) return;
+      const maxQty = line.unit && line.priceUnit && line.unit !== line.priceUnit ? CONFIG.limits.measuredQtyMax : CONFIG.limits.qtyMax;
+      const q = Math.max(0, Math.min(maxQty, Math.trunc(qty)));
       if (q === line.qty) return;
       if (!editable(line) && q < line.qty) { toast('Already being made; change it from the kitchen'); return; }
       const left = available(line.itemId);
-      if (q > line.qty && left < q - line.qty) {
-        toast(left <= 0 ? `${line.name} is sold out` : `Only ${String(left)} more ${line.name} left`);
+      try { convertedLineTotal(line.price, 0, q, line.stockMultiplier ?? 1); } catch { toast('The selected quantity is too large'); return; }
+      const requiredStock = primaryQuantity(q - line.qty, line.stockMultiplier ?? 1);
+      if (q > line.qty && left + 1e-10 < requiredStock) {
+        toast(left <= 0 ? `${line.name} is sold out` : `Not enough ${line.unit || 'stock'} for ${line.name}`);
         return;
       }
       log.dispatch('line.qty', { orderId: o.id, lineId, qty: q });

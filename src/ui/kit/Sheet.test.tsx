@@ -28,6 +28,29 @@ describe('Sheet component (FIND-UI-04)', () => {
     expect(onClose).toHaveBeenCalledTimes(1);
   });
 
+  it('does not steal focus from an active input when the close callback changes', () => {
+    const firstClose = vi.fn();
+    const latestClose = vi.fn();
+    const { rerender } = render(
+      <Sheet title="Edit" onClose={firstClose}>
+        <input data-testid="editing-input" />
+        <button type="button">Done</button>
+      </Sheet>
+    );
+    const input = screen.getByTestId('editing-input');
+    input.focus();
+    rerender(
+      <Sheet title="Edit" onClose={latestClose}>
+        <input data-testid="editing-input" />
+        <button type="button">Done</button>
+      </Sheet>
+    );
+    expect(document.activeElement).toBe(input);
+    fireEvent.keyDown(window, { key: 'Escape' });
+    expect(latestClose).toHaveBeenCalledOnce();
+    expect(firstClose).not.toHaveBeenCalled();
+  });
+
   it('traps keyboard focus inside the sheet on Tab and Shift+Tab', () => {
     const onClose = vi.fn();
     render(

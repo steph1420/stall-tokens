@@ -40,6 +40,36 @@ describe('Kitchen and Station screens', () => {
     act(() => { fireEvent.pointerDown(tea, { clientX: 5, clientY: 5 }); fireEvent.pointerUp(tea); });
     expect(screen.getAllByText('Preparing').length).toBeGreaterThan(0);
   });
+  it('provides a direct Home button from a Station screen', async () => {
+    const store = await seeded();
+    const order = Object.values(store.getState().folded.orders)[0];
+    const station = order?.lines[0]?.stationId;
+    if (!station) throw new Error('Station fixture missing');
+    store.getState().kitchen.openStation(station, 'kitchen');
+    render(<StoreProvider store={store}><StationScreen /></StoreProvider>);
+    fireEvent.click(screen.getByRole('button', { name: 'Home' }));
+    expect(store.getState().ui.screen).toBe('launch');
+  });
+
+  it('provides a direct Home button from the Kitchen screen', async () => {
+    const store = await seeded();
+    render(<StoreProvider store={store}><KitchenScreen /></StoreProvider>);
+    fireEvent.click(screen.getByRole('button', { name: 'Home' }));
+    expect(store.getState().ui.screen).toBe('launch');
+  });
+
+  it('shows the whole-order note and individual item notes on kitchen tickets', async () => {
+    const store = await seeded();
+    const order = Object.values(store.getState().folded.orders)[0];
+    const line = order?.lines[0];
+    if (!order || !line) throw new Error('Seed order missing');
+    store.getState().counter.setOrderNote('Please serve together');
+    store.getState().counter.setLineNote(line.lineId, 'No onion');
+    render(<StoreProvider store={store}><KitchenScreen /></StoreProvider>);
+    expect(screen.getByText('Please serve together')).toBeTruthy();
+    expect(screen.getByText('No onion')).toBeTruthy();
+  });
+
   it('an order whose lines are all complete shows Completed for a moment, then drops off (Q-OVERLAY)', async () => {
     const store = await seeded();
     render(<StoreProvider store={store}><KitchenScreen /></StoreProvider>);

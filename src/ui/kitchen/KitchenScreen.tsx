@@ -3,6 +3,7 @@
 import { kitchen, liveOrders, useApp } from '../../store';
 import { useFreshIds, useReorderGuard } from '../kit/alerts';
 import { Icon } from '../kit/Icon';
+import { HomeButton } from '../kit/HomeButton';
 import { useBigText, useWide } from '../kit/useWide';
 import { useWakeLock } from '../kit/wakeLock';
 import { KitchenCard } from './KitchenCard';
@@ -25,7 +26,6 @@ export function KitchenScreen() {
   const filter = useApp((st) => st.ui.kitchenFilter);
   const stallName = useApp((st) => st.folded.settings.stallName ?? 'Fair stall');
   const k = useApp((st) => st.kitchen);
-  const go = useApp((st) => st.go);
   const all = liveOrders(folded);
   // W-36: one rule for the station filter (stationOrders), so a station's finished orders drop off its filter.
   const list = filter === null ? kitchen.kitchenOrders(all) : kitchen.stationOrders(all, filter);
@@ -43,7 +43,7 @@ export function KitchenScreen() {
         <header className={s.chrome}>
           <div className={s.hdr}>
             <div className={s.kicker}>{stallName}</div>
-            <button type="button" className={s.back} aria-label="Back to start" onClick={() => { go('launch'); }}><Icon name="chevLeft" /></button>
+            <HomeButton className={s.back} />
             <h1 className={s.title}>{`Kitchen · ${String(list.length)}`}</h1>
             {filter ? <button type="button" className={s.open} onClick={() => { k.openStation(filter, 'kitchen'); }}>Open {filter}<Icon name="open" className={s.openIc} /></button> : null}
           </div>

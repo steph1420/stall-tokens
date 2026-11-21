@@ -8,11 +8,14 @@ import { lww } from './lww';
 import { applyMoneyOp, MONEY_KINDS, type MoneyKind } from './money';
 
 const ITEM_DEFAULTS: ItemFields = {
-  name: '', price: 0, swatch: 0, category: '', stationId: '', count: null, unit: '', lowAt: 0, soldOut: false, order: 0, removed: false, supply: false, categoryId: '',
+  name: '', price: 0, swatch: 0, category: '', stationId: '', count: null, unit: '', lowAt: 0, soldOut: false, order: 0, removed: false, supply: false, categoryId: '', discountPct: 0, variants: '', addons: '', secondaryUnit: '', secondaryMultiplier: 1,
 };
 
 function fieldOk(key: keyof ItemFields, value: unknown): boolean {
-  if (key === 'count') return value === null || (typeof value === 'number' && Number.isFinite(value));
+  if (key === 'count') return value === null || (typeof value === 'number' && Number.isFinite(value) && value >= 0);
+  if (key === 'secondaryMultiplier') return typeof value === 'number' && Number.isFinite(value) && value >= 1e-9 && value <= 1e9;
+  if (key === 'secondaryUnit') return typeof value === 'string';
+  if (key === 'discountPct') return typeof value === 'number' && Number.isFinite(value) && value >= 0 && value <= 100;
   return value !== undefined && typeof value === typeof ITEM_DEFAULTS[key] && (typeof value !== 'number' || Number.isFinite(value));
 }
 
@@ -57,7 +60,9 @@ function applyStock(s: Folded, op: Op<'stock.adjust'>): Folded {
   const item = s.items[op.body.itemId];
   if (!item || item.count === null) return s;
   // Manual edits never take stock below 0 (plan §7.2).
-  const count = Math.max(0, item.count + Math.trunc(op.body.delta));
+  if (!Number.isFinite(op.body.delta)) return s;
+  const rawCount = item.count + op.body.delta;
+  const count = rawCount <= 1e-10 ? 0 : Math.max(0, rawCount);
   return { ...s, items: { ...s.items, [item.id]: { ...item, count, oversold: false } } };
 }
 

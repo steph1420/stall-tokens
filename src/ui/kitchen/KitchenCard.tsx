@@ -22,7 +22,7 @@ export function useLinePress(o: Order, l: Line) {
   const k = useApp((st) => st.kitchen);
   return usePress(() => { k.advance(o.id, l.lineId); }, () => { k.toggleHold(o.id, l.lineId); });
 }
-export const lineLabel = (l: Line): string => `${l.name}: tap for the next step, hold for On hold`;
+export const lineLabel = (l: Line): string => `${l.unit ? kitchen.lineQuantityLabel(l) + ' ' : ''}${l.name}: tap for the next step, hold for On hold`;
 
 const AGE = { calm: s.age, amber: [s.age, s.ageAmber].join(' '), red: [s.age, s.ageRed].join(' ') } as const;
 
@@ -59,7 +59,7 @@ function LineRow({ o, l, other, chip }: { o: Order; l: Line; other: boolean; chi
     <>
       <span className={s.bar} />
       <span className={s.main}>
-        <span className={s.name}>{`${String(l.qty)}× ${l.name}`}</span>
+        <span className={s.name}>{kitchen.lineQuantityLabel(l) + ' ' + l.name}</span>
         {l.note ? <span className={s.note}>{l.note}</span> : null}
         {chip ? <span className={s.chip}>{l.stationId}</span> : null}
       </span>

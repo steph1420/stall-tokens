@@ -1,8 +1,10 @@
 /* Settings UI styles (Q-HARM-5, LFPS S1). Driftline tokens only. */
 .row {
+  box-sizing: border-box;
   display: flex;
   align-items: center;
   gap: 0.75rem;
+  min-width: 0;
   min-height: 3.5rem;
   padding: 0.625rem 1rem;
   border-bottom: var(--dl-stall-hair) solid var(--dl-color-hairline);
@@ -14,7 +16,7 @@
 }
 
 .rowMain {
-  flex: 1;
+  flex: 1 1 8rem;
   min-width: 0;
   display: flex;
   flex-direction: column;
@@ -124,19 +126,25 @@
 .snapH {
   display: flex;
   justify-content: space-between;
-  align-items: center;
+  align-items: flex-start;
   gap: 0.5rem;
+  min-width: 0;
 }
 
 .snapTitle {
+  flex: 1;
+  min-width: 0;
   font-size: 0.9375rem;
   font-weight: 600;
   color: var(--dl-color-text-display);
+  overflow-wrap: anywhere;
 }
 
 .snapMeta {
+  min-width: 0;
   font-size: 0.8125rem;
   color: var(--dl-color-text-muted);
+  overflow-wrap: anywhere;
 }
 
 .snapActs {

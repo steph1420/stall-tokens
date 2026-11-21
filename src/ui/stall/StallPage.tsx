@@ -3,6 +3,7 @@
 import type { ReactNode } from 'react';
 import { useApp } from '../../store';
 import { Icon } from '../kit/Icon';
+import { HomeButton } from '../kit/HomeButton';
 import s from './Stall.module.css';
 
 export function StallPage({ title, right, bar, children }: { title: string; right?: ReactNode; bar?: ReactNode; children: ReactNode }) {
@@ -12,6 +13,7 @@ export function StallPage({ title, right, bar, children }: { title: string; righ
       <header className={s.top}>
         <button type="button" className={s.back} aria-label="Back" onClick={close}><Icon name="chevLeft" /></button>
         <h1 className={s.title}>{title}</h1>
+        <HomeButton className={s.back} />
         {right}
       </header>
       <main className={s.body}>{children}</main>

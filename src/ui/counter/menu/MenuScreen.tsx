@@ -2,7 +2,7 @@
 // Tap = +1, press-and-hold = stock panel (F-08), pencil = item note. Stock badge from Q-STOCK-SET.
 import { useState } from 'react';
 import { CONFIG } from '../../../config';
-import type { Item } from '../../../contract';
+import { itemUnitPrice, parseAddons, parseVariants, type Item } from '../../../contract';
 import { bill, useApp, type Folded } from '../../../store';
 import { Icon } from '../../kit/Icon';
 import { usePress } from '../../kit/hold';
@@ -12,7 +12,8 @@ import s from './Menu.module.css';
 function stockLabel(it: Item, left: number): { text: string; tone: 'quiet' | 'low' | 'out' } | null {
   if (it.soldOut || (it.count !== null && left <= 0)) return { text: 'Sold out', tone: 'out' };
   if (it.count === null) return null;
-  return { text: `${String(Math.max(0, left))} left`, tone: left <= it.lowAt ? 'low' : 'quiet' };
+  const shown = Number(Math.max(0, left).toFixed(6)).toLocaleString('en-IN', { maximumFractionDigits: 6 });
+  return { text: shown + (it.unit ? ' ' + it.unit : '') + ' left', tone: left <= it.lowAt ? 'low' : 'quiet' };
 }
 
 function Card({ it }: { it: Item }) {
@@ -20,17 +21,17 @@ function Card({ it }: { it: Item }) {
   const openSheet = useApp((st) => st.openSheet);
   const lines = useApp((st) => (st.ui.orderId ? st.folded.orders[st.ui.orderId]?.lines : undefined)) ?? [];
   const mine = lines.filter((l) => l.itemId === it.id);
-  const qty = mine.reduce((n, l) => n + l.qty, 0);
+  const qty = mine.reduce((n, l) => n + (l.unit && l.priceUnit && l.unit !== l.priceUnit ? (l.qty > 0 ? 1 : 0) : l.qty), 0);
   const note = [...mine].reverse().find((l) => l.status === 'draft' && l.note)?.note ?? mine.find((l) => l.note)?.note ?? '';
   const left = useApp((st) => (it.count === null ? Number.POSITIVE_INFINITY : st.counter.available(it.id)));
   const badge = stockLabel(it, left);
   const out = badge?.tone === 'out';
-  const press = usePress(() => { c.addItem(it.id); }, () => { openSheet({ kind: 'stock', itemId: it.id }); });
+  const hasCustom = parseVariants(it).length > 0 || parseAddons(it).length > 0 || Boolean(it.secondaryUnit);
+  const press = usePress(() => { if (hasCustom) openSheet({ kind: 'customizeItem', itemId: it.id }); else c.addItem(it.id); }, () => { openSheet({ kind: 'stock', itemId: it.id }); });
   const noteLine = [...mine].reverse().find((l) => l.status === 'draft') ?? mine[mine.length - 1];
-  const cls = [s.card, qty > 0 ? s.isIn : '', out ? s.isOut : ''].join(' ');
   return (
-    <article className={cls} style={{ '--item-accent': `var(--dl-stall-swatch-${String(it.swatch)})` } as React.CSSProperties}>
-      <div role="button" tabIndex={0} className={s.hit} aria-label={`${it.name}, add one${badge ? `, ${badge.text}` : ''}`} {...press} />
+    <article className={[s.card, qty > 0 ? s.isIn : '', out ? s.isOut : ''].join(' ')} style={{ '--item-accent': `var(--dl-stall-swatch-${String(it.swatch)})` } as React.CSSProperties}>
+      <div role="button" tabIndex={0} className={s.hit} aria-label={`${it.name}, add one${hasCustom ? ', choose options' : ''}${badge ? `, ${badge.text}` : ''}`} {...press} />
       <span className={s.accent} />
       <div className={s.name}>{it.name}</div>
       {badge && qty === 0 ? <div className={badge.tone === 'low' ? s.stockLow : badge.tone === 'out' ? s.stockOut : s.stock}>{badge.text}</div> : null}
@@ -38,13 +39,18 @@ function Card({ it }: { it: Item }) {
         <button type="button" className={note ? s.pencilHas : s.pencil} aria-label={note ? 'Edit note' : 'Add note'}
           onClick={() => { openSheet({ kind: 'lineNote', lineId: noteLine.lineId }); }}><Icon name="pencil" /></button>
       ) : null}
-      <Money p={it.price} className={s.price} />
+      <div className={s.priceWrap}>
+        <Money p={itemUnitPrice(it.price, it.discountPct)} className={s.price} />
+        {it.discountPct > 0 ? <><Money p={it.price} className={s.oldPrice} /><span className={s.discountTag}>{`${String(it.discountPct)}% off`}</span></> : null}
+        {it.unit ? <span className={s.unitTag}>/{it.unit}</span> : null}
+        {hasCustom ? <span className={s.unitTag}>{it.secondaryUnit ? 'Also ' + it.secondaryUnit : 'Options'}</span> : null}
+      </div>
       {note ? <div className={s.snippet}>{note}</div> : null}
       {qty > 0 ? (
         <div className={s.qty}>
           <button type="button" className={s.qb} aria-label={`One less ${it.name}`} onClick={() => { c.removeItem(it.id); }}>−</button>
           <span className={s.qn} aria-live="polite">{qty}</span>
-          <button type="button" className={s.qb} aria-label={`One more ${it.name}`} onClick={() => { c.addItem(it.id); }}>+</button>
+          <button type="button" className={s.qb} aria-label={`One more ${it.name}`} onClick={() => { if (hasCustom) openSheet({ kind: 'customizeItem', itemId: it.id }); else c.addItem(it.id); }}>+</button>
         </div>
       ) : null}
     </article>
@@ -60,7 +66,7 @@ function sortItems(items: Item[], sort: Sort, f: Folded): Item[] {
   if (sort === 'menu') return [...items].sort(byMenu);
   const day = f.days[f.days.length - 1]?.id;
   const sold = new Map<string, number>();
-  for (const o of Object.values(f.orders)) if (o.dayId === day && !o.deleted && !o.cancel) for (const l of o.lines) sold.set(l.itemId, (sold.get(l.itemId) ?? 0) + l.qty);
+  for (const o of Object.values(f.orders)) if (o.dayId === day && !o.deleted && !o.cancel) for (const l of o.lines) sold.set(l.itemId, (sold.get(l.itemId) ?? 0) + l.qty * (l.stockMultiplier ?? 1));
   return [...items].sort((a, b) => (sold.get(b.id) ?? 0) - (sold.get(a.id) ?? 0) || byMenu(a, b));
 }
 
@@ -73,7 +79,7 @@ export function MenuScreen() {
   const [sort, setSort] = useState<Sort>('menu');
   const all = Object.values(folded.items).filter((i) => !i.removed && !i.supply);
   const items = sortItems(all.filter((i) => matches(i, q)), sort, folded);
-  const count = order?.lines.reduce((n, l) => n + l.qty, 0) ?? 0;
+  const count = order?.lines.reduce((n, l) => n + (l.unit && l.priceUnit && l.unit !== l.priceUnit ? (l.qty > 0 ? 1 : 0) : l.qty), 0) ?? 0;
   return (
     <>
       {all.length > CONFIG.menu.searchFrom ? (

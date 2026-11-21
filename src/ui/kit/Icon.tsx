@@ -27,6 +27,7 @@ const ICONS = {
   all: <svg viewBox="0 0 24 24" {...P} strokeWidth="1.6"><rect x="4" y="4" width="7" height="7" rx="2" /><rect x="13" y="4" width="7" height="7" rx="2" /><rect x="4" y="13" width="7" height="7" rx="2" /><rect x="13" y="13" width="7" height="7" rx="2" /></svg>,
   open: <svg viewBox="0 0 16 16" {...P} strokeWidth="1.6"><path d="M3 8h10M9 4l4 4-4 4" /></svg>,
   chevLeft: <svg viewBox="0 0 24 24" {...P} strokeWidth="1.8"><path d="M15 5 8 12l7 7" /></svg>,
+  home: <svg viewBox="0 0 24 24" {...P} strokeWidth="1.8"><path d="m3 10 9-7 9 7" /><path d="M5.5 9v11h13V9" /><path d="M9.5 20v-6h5v6" /></svg>,
   stWaiting: <svg viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="2.35" /><circle cx="12" cy="12" r="2.35" /><circle cx="19" cy="12" r="2.35" /></svg>,
   stPreparing: <svg viewBox="0 0 24 24" {...P} strokeWidth="1.8"><path d="M8.5 7c0-1.4.7-2.4.7-3.6M12 6.6c0-1.6.8-2.4.8-4M15.5 7c0-1.4.7-2.2.7-3.4" /><path d="M5 11h14" /><path d="M6.2 11v7.2A2.3 2.3 0 0 0 8.5 20.5h7a2.3 2.3 0 0 0 2.3-2.3V11" /><path d="M8 11V9.2h8V11" /><path d="M5 13.2H3.6c-.9 0-1.6.7-1.6 1.6s.7 1.6 1.6 1.6H5" /><path d="M19 13.2h1.4c.9 0 1.6.7 1.6 1.6s-.7 1.6-1.6 1.6H19" /></svg>,
   stReady: <svg viewBox="0 0 24 24" {...P} strokeWidth="1.8"><path d="M8.2 11.2V20H5.4c-.8 0-1.4-.6-1.4-1.4v-6c0-.8.6-1.4 1.4-1.4h2.8z" /><path d="M8.2 11.2l2.6-6.2c.4-1 1.3-1.3 2-.8.7.5.8 1.3.5 2.1L12.2 11H18c1.2 0 2.1 1.1 1.9 2.3l-1.1 5.2A2 2 0 0 1 16.9 20H8.2" /></svg>,
