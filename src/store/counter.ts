@@ -172,7 +172,7 @@ function lineActions(x: Ctx, nav: Nav) {
       const o = current();
       const line = o && [...o.lines].reverse().find((l) => l.itemId === itemId && editable(l));
       if (!line) { if (o?.lines.some((l) => l.itemId === itemId)) toast('Already being made; change it from the kitchen'); return; }
-      self.setQty(line.lineId, line.qty - 1);
+      self.setQty(line.lineId, line.unit && line.priceUnit && line.unit !== line.priceUnit ? 0 : line.qty - 1);
     },
     setQty(lineId: string, qty: number) {
       if (x.locked()) return;
