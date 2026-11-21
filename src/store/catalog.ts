@@ -37,7 +37,7 @@ function itemActions(core: Core, log: Log) {
       const unit = (d.unit ?? existing?.unit ?? '').trim().slice(0, 20);
       const secondaryUnit = (d.secondaryUnit ?? existing?.secondaryUnit ?? '').trim().slice(0, 20);
       const secondaryMultiplier = d.secondaryMultiplier ?? existing?.secondaryMultiplier ?? 1;
-      if (!Number.isFinite(secondaryMultiplier) || secondaryMultiplier <= 0) return 'Secondary unit multiplier must be greater than 0';
+      if (!Number.isFinite(secondaryMultiplier) || secondaryMultiplier < 1e-9 || secondaryMultiplier > 1e9) return 'Secondary unit multiplier must be between 0.000000001 and 1,000,000,000';
       if (secondaryUnit && (!unit || secondaryUnit === unit)) return 'Choose a different secondary unit and set a primary unit';
       if (!secondaryUnit && secondaryMultiplier !== 1) return 'Add a secondary unit or use multiplier 1';
       const discountPct = d.discountPct ?? 0;
