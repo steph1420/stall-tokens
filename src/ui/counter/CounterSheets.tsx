@@ -77,7 +77,7 @@ function saveItemForm(
   if (variantError) return variantError;
   const addonError = validateDraftOptions(fields.addons, 'add-on');
   if (addonError) return addonError;
-  return saveItem(itemId, { name: fields.name, price, swatch: fields.swatch, category: fields.category, stationId: fields.stationId, count, unit: fields.unit, secondaryUnit, secondaryMultiplier, discountPct, variants: serializeOptions(fields.variants), addons: serializeOptions(fields.addons) });
+  return saveItem(itemId, { name: fields.name, price, swatch: fields.swatch, category: fields.category, stationId: fields.stationId, count, unit: fields.unit ?? '', secondaryUnit, secondaryMultiplier, discountPct, variants: serializeOptions(fields.variants), addons: serializeOptions(fields.addons) });
 }
 
 function ItemDiscountField({ value, onChange }: { value: string; onChange: (value: string) => void }) {
