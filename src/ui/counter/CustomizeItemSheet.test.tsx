@@ -85,6 +85,39 @@ describe('CustomizeItemSheet', () => {
     expect(s().folded.items[rice.id]?.count).toBeCloseTo(0.75, 10);
   });
 
+  it('keeps cart totals consistent across options, item discount, measured quantity, order discount and round-off', async () => {
+    const { store } = makeTestStore();
+    await store.getState().start();
+    const s = () => store.getState();
+    expect(s().catalog.saveItem(null, {
+      name: 'Premium rice', price: 20000, swatch: 0, category: 'Food', stationId: 'kitchen', count: 1,
+      unit: 'kg', secondaryUnit: 'g', secondaryMultiplier: 0.001, discountPct: 10,
+      variants: JSON.stringify([{ id: 'premium', name: 'Premium', price: 24000 }]),
+      addons: JSON.stringify([{ id: 'extra', name: 'Extra', price: 2000 }]),
+    })).toBeNull();
+    const item = Object.values(s().folded.items).find((x) => x.name === 'Premium rice');
+    if (!item) throw new Error('Premium rice missing');
+    act(() => { s().counter.newOrder(); });
+    render(<StoreProvider store={store}><CustomizeItemSheet itemId={item.id} onClose={vi.fn()} /></StoreProvider>);
+    fireEvent.click(screen.getByRole('radio', { name: 'g' }));
+    fireEvent.click(screen.getByRole('button', { name: /Premium/ }));
+    fireEvent.click(screen.getByRole('button', { name: /Extra/ }));
+    fireEvent.change(screen.getByRole('spinbutton', { name: 'Quantity' }), { target: { value: '250' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Add to order' }));
+
+    const order = s().folded.orders[s().ui.orderId ?? ''];
+    expect(order?.lines[0]).toMatchObject({ qty: 250, unit: 'g', priceUnit: 'kg', stockMultiplier: 0.001, price: 23400 });
+    expect(order ? bill.subtotal(order) : 0).toBe(5850);
+    s().counter.setDiscount({ kind: 'pct', value: 10, allowedBy: 'S', note: '' });
+    expect(bill.discountAmount(bill.subtotal(order!), s().folded.orders[order!.id]!.discount)).toBe(600);
+    expect(bill.preRound(s().folded.orders[order!.id]!)).toBe(5250);
+    s().counter.setRoundOff(50);
+    expect(bill.roundOffAmount(s().folded.orders[order!.id]!)).toBe(50);
+    expect(bill.total(s().folded.orders[order!.id]!)).toBe(5300);
+    expect(s().counter.sendToKitchen()).toBe(true);
+    expect(s().folded.items[item.id]?.count).toBeCloseTo(0.75, 10);
+  });
+
   it('caps secondary-unit quantities against fractional primary stock', async () => {
     const { store } = makeTestStore();
     await store.getState().start();
