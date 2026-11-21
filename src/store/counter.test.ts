@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { createFakeHub, createMemoryChannelHub } from '../data';
 import { DEMO_MENU } from '../mock/fixtures';
 import { bill, isOpen, orderStatus } from '.';
-import { makeTestStore } from './testkit';
+import { makeTestStore, memoryStorage } from './testkit';
 
 const flush = () => new Promise((r) => setTimeout(r, 0));
 
@@ -198,9 +198,11 @@ describe('counter flow (F-06..F-18)', () => {
     expect(cur(s).lines[0]?.note.length).toBe(140);
   });
 
-  it('persists whole-order and individual item notes across a store reload', async () => {
-    const { s, ops } = await ready();
+  it('persists menu, order, notes and device settings across a store reload', async () => {
+    const storage = memoryStorage();
+    const { s, ops } = await ready({ storage });
     const ids = seedMenu(s);
+    s().setPrefs({ servingName: 'Counter A', rangeIndex: 1 });
     s().counter.addItem(ids.samosa ?? '');
     const orderId = s().ui.orderId;
     const lineId = cur(s).lines[0]?.lineId;
@@ -209,11 +211,15 @@ describe('counter flow (F-06..F-18)', () => {
     s().counter.setLineNote(lineId, '  No onion.  ');
     await flush();
 
-    const reloaded = makeTestStore({ ops });
+    const reloaded = makeTestStore({ ops, storage });
     await reloaded.store.getState().start();
-    const restored = reloaded.store.getState().folded.orders[orderId];
-    expect(restored?.note).toBe('Please serve together.');
-    expect(restored?.lines[0]?.note).toBe('No onion.');
+    const state = reloaded.store.getState();
+    const restored = state.folded.orders[orderId];
+    expect(state.folded.items[ids.samosa ?? '']).toMatchObject({ name: 'Samosa', price: DEMO_MENU.find((m) => m.itemId === 'samosa')?.price });
+    expect(restored).toMatchObject({ token: 1, note: 'Please serve together.' });
+    expect(restored?.lines[0]).toMatchObject({ itemId: ids.samosa, qty: 1, note: 'No onion.' });
+    expect(state.prefs.servingName).toBe('Counter A');
+    expect(state.prefs.rangeIndex).toBe(1);
   });
 
   it('storage full is shown, the change is kept, and Retry saves it', async () => {
