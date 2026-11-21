@@ -9,12 +9,15 @@ export function itemUnitPrice(price: Paise, discountPct: number): Paise {
 /**
  * Convert an integer sale quantity into primary inventory units.
  * Example: 250 g × 0.001 primary kg per gram = 0.25 kg.
- * Six decimal places bound floating-point drift in repeated stock movements.
+ * Keep the full numeric ratio (including repeating ratios such as 1/12); rounding
+ * each sale separately would accumulate inventory loss over repeated sales.
  */
 export function primaryQuantity(quantity: number, multiplier: number): number {
   if (!Number.isSafeInteger(quantity) || quantity < 0) throw new RangeError('Quantity must be a non-negative safe integer');
   if (!Number.isFinite(multiplier) || multiplier <= 0) throw new RangeError('Unit multiplier must be a positive finite number');
-  return Math.round(quantity * multiplier * 1_000_000) / 1_000_000;
+  const converted = quantity * multiplier;
+  if (!Number.isFinite(converted)) throw new RangeError('Converted quantity is not finite');
+  return converted;
 }
 
 /**
