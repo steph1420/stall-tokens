@@ -2,7 +2,7 @@
 // when committed qty drops or the order is deleted. Sales may push stock below 0 (offline oversell):
 // the count clamps at 0 and the item is flagged `oversold` (plan §8).
 import { CONFIG } from '../../config';
-import { primaryQuantity, type Item, type Line, type Op, type Order, type Refund, type RefundLine } from '../../contract';
+import { convertedLineTotal, primaryQuantity, type Item, type Line, type Op, type Order, type Refund, type RefundLine } from '../../contract';
 import { due, held } from '../rules/bill';
 import type { Folded } from './state';
 import { lww } from './lww';
@@ -58,6 +58,7 @@ function setQty(s: Folded, o: Order, lineId: string, rawQty: number): Folded {
   if (!line) return s;
   const maxQty = line.unit && line.priceUnit && line.unit !== line.priceUnit ? CONFIG.limits.measuredQtyMax : CONFIG.limits.qtyMax;
   const qty = Math.max(0, Math.min(maxQty, Math.trunc(rawQty)));
+  try { convertedLineTotal(line.price, 0, qty, line.stockMultiplier ?? 1); } catch { return s; }
   let items = s.items;
   const committed = line.status === 'draft' ? 0 : qty;
   if (committed !== line.committed) items = moveStock(items, line.itemId, primaryQuantity(committed - line.committed, line.stockMultiplier ?? 1));
@@ -77,6 +78,7 @@ function addLine(s: Folded, o: Order, b: Op<'line.add'>['body']): Folded {
   const saleUnit = b.unit ?? primaryUnit;
   const priceUnit = b.priceUnit ?? primaryUnit;
   if (saleUnit === priceUnit && stockMultiplier !== 1) return s;
+  if (saleUnit !== priceUnit && (!saleUnit || !priceUnit)) return s;
   const line: Line = { lineId: b.lineId, itemId: b.itemId, name: b.name, price: Math.trunc(b.price), category: b.category,
     stationId: b.stationId, unit: saleUnit, priceUnit, stockMultiplier,
     qty: 0, note: '', status: 'draft', committed: 0, byCounter: false, restocked: 0 };
