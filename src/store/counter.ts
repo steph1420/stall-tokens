@@ -141,7 +141,7 @@ function addCustomLine(x: Ctx, nav: Nav, itemId: string, customName: string, cus
   try { convertedLineTotal(customPrice, 0, qty, stockMultiplier); } catch { toast('The selected quantity is too large'); return; }
   const left = available(itemId);
   if (it.soldOut || left <= 1e-10) { toast(`${it.name} is sold out`); return; }
-  if (left + 1e-10 < requiredStock) { toast(`Not enough ${unit ?? it.unit ?? 'stock'} for ${it.name}`); return; }
+  if (left + 1e-10 < requiredStock) { toast(`Not enough ${unit ?? it.unit} for ${it.name}`); return; }
   const name = customName.trim().slice(0, CONFIG.limits.nameMaxChars) || it.name;
   if (!Number.isSafeInteger(customPrice) || customPrice < 0 || customPrice > CONFIG.limits.moneyMaxPaise) { toast('Check the selected price'); return; }
   const order = current() ?? ensureOrder(x, nav);
