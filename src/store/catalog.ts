@@ -24,6 +24,18 @@ function validOptionJson(raw: string): boolean {
   }
 }
 
+
+function itemUnits(d: ItemDraft, existing?: Pick<ItemFields, 'unit' | 'secondaryUnit' | 'secondaryMultiplier'>) {
+  const unit = (d.unit ?? existing?.unit ?? '').trim().slice(0, 20);
+  const secondaryUnit = (d.secondaryUnit ?? existing?.secondaryUnit ?? '').trim().slice(0, 20);
+  const secondaryMultiplier = d.secondaryMultiplier ?? existing?.secondaryMultiplier ?? 1;
+  const error = !Number.isFinite(secondaryMultiplier) || secondaryMultiplier < 1e-9 || secondaryMultiplier > 1e9
+    ? 'Secondary unit multiplier must be between 0.000000001 and 1,000,000,000'
+    : secondaryUnit && (!unit || secondaryUnit === unit) ? 'Choose a different secondary unit and set a primary unit'
+      : !secondaryUnit && secondaryMultiplier !== 1 ? 'Add a secondary unit or use multiplier 1' : null;
+  return { unit, secondaryUnit, secondaryMultiplier, error };
+}
+
 function itemActions(core: Core, log: Log) {
   const st = () => core.get();
   return {
@@ -34,12 +46,9 @@ function itemActions(core: Core, log: Log) {
       if (!Number.isSafeInteger(d.price) || d.price < 0 || d.price > CONFIG.limits.moneyMaxPaise) return 'Check the price';
       if (d.count !== null && (!Number.isFinite(d.count) || d.count < 0)) return 'Stock must be 0 or more';
       const existing = itemId ? st().folded.items[itemId] : undefined;
-      const unit = (d.unit ?? existing?.unit ?? '').trim().slice(0, 20);
-      const secondaryUnit = (d.secondaryUnit ?? existing?.secondaryUnit ?? '').trim().slice(0, 20);
-      const secondaryMultiplier = d.secondaryMultiplier ?? existing?.secondaryMultiplier ?? 1;
-      if (!Number.isFinite(secondaryMultiplier) || secondaryMultiplier < 1e-9 || secondaryMultiplier > 1e9) return 'Secondary unit multiplier must be between 0.000000001 and 1,000,000,000';
-      if (secondaryUnit && (!unit || secondaryUnit === unit)) return 'Choose a different secondary unit and set a primary unit';
-      if (!secondaryUnit && secondaryMultiplier !== 1) return 'Add a secondary unit or use multiplier 1';
+      const units = itemUnits(d, existing);
+      if (units.error) return units.error;
+      const { unit, secondaryUnit, secondaryMultiplier } = units;
       const discountPct = d.discountPct ?? 0;
       if (!Number.isFinite(discountPct) || discountPct < 0 || discountPct > 100) return 'Discount must be between 0 and 100';
       const variants = d.variants ?? '';
