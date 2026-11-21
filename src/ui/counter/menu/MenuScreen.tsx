@@ -25,7 +25,7 @@ function Card({ it }: { it: Item }) {
   const left = useApp((st) => (it.count === null ? Number.POSITIVE_INFINITY : st.counter.available(it.id)));
   const badge = stockLabel(it, left);
   const out = badge?.tone === 'out';
-  const hasCustom = parseVariants(it).length > 0 || parseAddons(it).length > 0;
+  const hasCustom = parseVariants(it).length > 0 || parseAddons(it).length > 0 || Boolean(it.secondaryUnit);
   const press = usePress(() => { if (hasCustom) openSheet({ kind: 'customizeItem', itemId: it.id }); else c.addItem(it.id); }, () => { openSheet({ kind: 'stock', itemId: it.id }); });
   const noteLine = [...mine].reverse().find((l) => l.status === 'draft') ?? mine[mine.length - 1];
   const cls = [s.card, qty > 0 ? s.isIn : '', out ? s.isOut : ''].join(' ');
@@ -42,7 +42,8 @@ function Card({ it }: { it: Item }) {
       <div className={s.priceWrap}>
         <Money p={itemUnitPrice(it.price, it.discountPct)} className={s.price} />
         {it.discountPct > 0 ? <><Money p={it.price} className={s.oldPrice} /><span className={s.discountTag}>{`${String(it.discountPct)}% off`}</span></> : null}
-        {hasCustom ? <span className={s.unitTag}>Options</span> : null}
+        {it.unit ? <span className={s.unitTag}>/{it.unit}</span> : null}
+        {hasCustom ? <span className={s.unitTag}>{it.secondaryUnit ? 'Also ' + it.secondaryUnit : 'Options'}</span> : null}
       </div>
       {note ? <div className={s.snippet}>{note}</div> : null}
       {qty > 0 ? (
