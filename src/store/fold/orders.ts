@@ -74,8 +74,11 @@ function addLine(s: Folded, o: Order, b: Op<'line.add'>['body']): Folded {
   if (!Number.isSafeInteger(b.price) || b.price < 0 || b.price > CONFIG.limits.moneyMaxPaise) return s;
   if (!Number.isSafeInteger(b.qty) || b.qty < 0) return s;
   const primaryUnit = item?.unit ?? '';
+  const saleUnit = b.unit ?? primaryUnit;
+  const priceUnit = b.priceUnit ?? primaryUnit;
+  if (saleUnit === priceUnit && stockMultiplier !== 1) return s;
   const line: Line = { lineId: b.lineId, itemId: b.itemId, name: b.name, price: Math.trunc(b.price), category: b.category,
-    stationId: b.stationId, unit: b.unit ?? primaryUnit, priceUnit: b.priceUnit ?? primaryUnit, stockMultiplier,
+    stationId: b.stationId, unit: saleUnit, priceUnit, stockMultiplier,
     qty: 0, note: '', status: 'draft', committed: 0, byCounter: false, restocked: 0 };
   const next = { ...o, lines: [...o.lines, line] };
   return setQty(withOrder(s, next), next, b.lineId, b.qty);
