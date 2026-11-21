@@ -233,6 +233,8 @@ describe('counter flow (F-06..F-18)', () => {
     s().counter.newOrder();
     s().counter.addItemCustom(item.id, item.name, item.price, 'g', 'kg', 0.001, 250);
     const line = cur(s).lines[0];
+    expect(line).toBeDefined();
+    if (!line) throw new Error('Measured line missing');
     expect(line).toMatchObject({ qty: 250, unit: 'g', priceUnit: 'kg', stockMultiplier: 0.001 });
     expect(s().counter.available(item.id)).toBeCloseTo(0, 10);
     s().counter.addItemCustom(item.id, item.name, item.price, 'g', 'kg', 0.001, 1);
