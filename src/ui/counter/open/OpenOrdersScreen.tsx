@@ -73,8 +73,8 @@ function LineRow({ o, l }: { o: Order; l: Line }) {
   const cls = [s.line, l.status === 'done?' ? s.lineReady : '', muted(l) ? s.lineMuted : ''].join(' ');
   return (
     <li className={cls}>
-      <button type="button" className={s.lineTap} aria-label={`${String(l.qty)}× ${l.name}: change status`} onClick={() => { a.tapLine(o.id, l.lineId); }}>
-        <span className={s.lineName}>{`${String(l.qty)}× ${l.name}`}</span>
+      <button type="button" className={s.lineTap} aria-label={kitchen.lineQuantityLabel(l) + ' ' + l.name + ': change status'} onClick={() => { a.tapLine(o.id, l.lineId); }}>
+        <span className={s.lineName}>{kitchen.lineQuantityLabel(l) + ' ' + l.name}</span>
         <span className={s.lineSub}><StatusMark mark={l.status === 'done?' ? 'ready' : markOf(l)} small {...(textOf(l) ? { text: textOf(l) as string } : {})} />{l.note ? <span className={s.note}>{l.note}</span> : null}</span>
       </button>
       {l.status === 'done?' ? <button type="button" className={s.confirm} aria-label={`Confirm: ${l.name}`} onClick={() => { a.confirmLine(o.id, l.lineId); }}>Confirm</button>
@@ -103,8 +103,8 @@ function Cards({ o }: { o: Order }) {
     <div className={s.cards} aria-label="Cards">
       {kitchen.linesAt(o, null).map((l) => (
         <button type="button" key={l.lineId} className={[s.card, ST[markOf(l)], muted(l) ? s.lineMuted : ''].join(' ')}
-          aria-label={`${String(l.qty)}× ${l.name}: change status`} onClick={() => { a.tapLine(o.id, l.lineId); }}>
-          <span className={s.cardName}>{`${String(l.qty)}× ${l.name}`}</span>
+          aria-label={kitchen.lineQuantityLabel(l) + ' ' + l.name + ': change status'} onClick={() => { a.tapLine(o.id, l.lineId); }}>
+          <span className={s.cardName}>{kitchen.lineQuantityLabel(l) + ' ' + l.name}</span>
           <span className={s.cardSt}>{textOf(l) ?? (l.status === 'done?' ? 'Ready' : <StatusMark mark={markOf(l)} small />)}</span>
         </button>
       ))}
@@ -155,7 +155,7 @@ function OpenList({ list, currentId }: { list: readonly Order[]; currentId: stri
   return (
     <ul className={s.olist} aria-label="Open orders">
       {list.map((o) => {
-        const n = o.lines.reduce((t, l) => t + l.qty, 0);
+        const n = o.lines.reduce((t, l) => t + (l.unit && l.priceUnit && l.unit !== l.priceUnit ? (l.qty > 0 ? 1 : 0) : l.qty), 0);
         return (
           <li key={o.id}>
             <button type="button" className={o.id === currentId ? s.orowOn : s.orow} aria-current={o.id === currentId ? 'true' : undefined} onClick={() => { a.showOpen(o.id); }}>
