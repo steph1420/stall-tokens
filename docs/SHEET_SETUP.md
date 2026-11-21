@@ -2,7 +2,7 @@
 
 The app works fully offline on every phone. The Sheet bridge is how phones see each other's orders and money, the cloud copy of the op log, and (schema v2) a place Steve can read and edit the stall's information by hand.
 
-## The Sheet (made 16 Nov 2026 19:40 IST; schema v2 since 16 Nov 20:25 IST)
+## The Sheet (made 16 Nov 2026 19:40 IST; current schema v4)
 "Stall Tokens — Data (v2)" in Steve's Drive (search Drive for the name; the link is kept out of the repo by the leak scan).
 
 ### Visible, editable info tabs (master data and current state)
@@ -15,8 +15,8 @@ The app works fully offline on every phone. The Sheet bridge is how phones see e
 | `associates` | `person_id` | helpers, volunteers, staff, supplier contacts (role dropdown) |
 | `sources` | `source_id` | where raw material comes from: type Market / Online store / Supplier / Wholesaler / Other, contact, terms |
 | `source_items` | `source_item_id` | what each source supplies: item, unit, pack size, last price |
-| `menu` | `item_id` | menu (and stock-only) items: name, category, price ₹, station, sold out, active, sort order |
-| `stock_current` | `item_id` | stock on hand, unit, low-stock level, sold (read only), usual source |
+| `menu` | `item_id` | menu (and stock-only) items: name, category, price ₹ per primary unit, primary unit, optional secondary unit and multiplier, station, sold out, active, sort order |
+| `stock_current` | `item_id` | fractional stock on hand in the primary unit, optional secondary unit and multiplier, low-stock level, sold (read only), usual source |
 | `stations` | `station_id` | kitchen stations |
 | `payees` | `payee_id` | UPI payees |
 | `settings` | `key` | shared settings (tip choices, round-off steps, split mode, …) |
@@ -34,7 +34,7 @@ Every info tab: frozen bold header (the only protected part, warning only), stab
 ### How changes are merged (Q-HARM-10, D-SHEET-WINS)
 Info tabs are views the bridge rewrites from the op log; the log is never overwritten. Ops are ordered by Lamport clock and version vectors, never by wall clocks (a phone clock a day out changes nothing). A Sheet edit is an op from `sheet`, causally after everything already synced. When a phone edit and a Sheet edit truly clash (neither saw the other), the Sheet's value wins, both stay in the log, a row is written to the hidden `conflicts` tab, and the app lists it under Settings → Sync → Review, where one tap switches to the other value (a new op). Nothing blocks sync. Duplicate ops are ignored; a gap in a phone's sequence makes the bridge ask that phone to resend.
 
-Migration v1 → v2 (add only): `menu`, `people`, `payees`, `settings` logs renamed `*_log`; new info tabs, `records_log`, `conflicts`, and `ops.vv_json` added; log tabs hidden; `_meta.schema_version` = 2. `ensureSchema_` repeats this safely on every request.
+Migration v1 → v4 is add-only. Existing log tabs and the append-only `ops` source of truth are preserved. Schema v4 appends `unit`, `secondary_unit`, and `secondary_multiplier` fields to the editable menu/stock views, makes stock quantities decimal-capable, and appends sale-unit snapshots to `order_lines`. `_meta.schema_version` is 4. `ensureSchema_` repeats the column additions safely on every request.
 
 ## Deploy the bridge (Steve, one step, about 3 minutes; nothing is deployed from the repo)
 In the Sheet: **Extensions → Apps Script** → replace the code with `apps-script/Code.gs` (raw link: https://raw.githubusercontent.com/steph1420/stall-tokens/v2.0.0/apps-script/Code.gs, also on `main`) → **Project Settings → Script Properties → `STALL_KEY`** = a word only the stall team knows → optionally run `setup` once from the editor (applies the schema and fills the info tabs) → **Deploy → New deployment → Web app** (Execute as: Me; Who has access: Anyone) → allow → copy the `/exec` URL. Hand edits reach the app through the simple `onEdit` trigger in the same script (no extra set-up).
@@ -48,3 +48,13 @@ Notes
 - The key keeps strangers from writing to the Sheet; it is not a login.
 - Edit info tabs freely; never edit, sort or delete rows in hidden log tabs.
 - "Manage deployments → Edit → New version" keeps the same URL when Code.gs changes.
+
+
+### Measured stock units (schema v4)
+- `unit` is the primary stock and price-rate unit (for example `kg`).
+- `secondary_unit` is an optional sale unit (for example `g`).
+- `secondary_multiplier` means primary units represented by one secondary unit: `0.001` for 1 g = 0.001 kg.
+- `on_hand` accepts fractional primary stock (for example `0.75` kg). Do not enter a secondary-unit quantity in this column.
+- Each order-line projection stores `unit`, `price_unit`, and `stock_multiplier` snapshots. The op log remains authoritative; these columns are a readable projection.
+- The Apps Script fold converts sends, quantity changes, cancellation/deletion and refund restocking/undo using the line's captured multiplier, matching the app fold.
+- The repository change does not deploy the script. The deployed Apps Script must be updated to the matching `Code.gs` version before enabling measured-unit sales across synced devices.
