@@ -90,4 +90,25 @@ describe('fold (F-02)', () => {
     expect(s.orders.o1?.sent).toBe(true);
     expect(s.orders.o1?.payments).toHaveLength(1);
   });
+  it('snapshots sale units and converts stock movements through send and delete', () => {
+    const mk = opMaker('unit.device', 200);
+    const log = [
+      mk('item.set', { itemId: 'kg-item', fields: { name: 'Rice', price: 20000, count: 1, unit: 'kg', secondaryUnit: 'g', secondaryMultiplier: 0.001 } }),
+      mk('day.start', { dayId: 'unit-day', label: '2026-11-21' }),
+      mk('order.create', { orderId: 'unit-order', dayId: 'unit-day', token: 1, servedBy: '' }),
+      mk('line.add', { orderId: 'unit-order', lineId: 'unit-line', itemId: 'kg-item', name: 'Rice', price: 20000, category: 'Food', stationId: 'Kitchen', qty: 250, unit: 'g', priceUnit: 'kg', stockMultiplier: 0.001 }),
+      mk('order.send', { orderId: 'unit-order' }),
+    ];
+    const sent = fold(log);
+    expect(sent.items['kg-item']?.count).toBeCloseTo(0.75, 10);
+    expect(sent.orders['unit-order']?.lines[0]).toMatchObject({ qty: 250, unit: 'g', priceUnit: 'kg', stockMultiplier: 0.001, committed: 250 });
+    const deleted = fold([...log, mk('order.delete', { orderId: 'unit-order' })]);
+    expect(deleted.items['kg-item']?.count).toBe(1);
+  });
+
+  it('legacy line.add operations default to the primary unit and multiplier one', () => {
+    const s = fold(counterLog());
+    expect(s.orders.o1?.lines[0]).toMatchObject({ unit: '', priceUnit: '', stockMultiplier: 1 });
+  });
+
 });
